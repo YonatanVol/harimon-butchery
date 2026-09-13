@@ -58,7 +58,7 @@ export async function loadBoard(serviceDate: string) {
 }
 
 export type BoardAlert =
-  | { key: "CAPTURE_FAILED" | "AUTH_EXPIRED" | "AWAITING_CUSTOMER" | "NOT_HOME" | "NEEDS_REFUND"; orderId: string; orderNumber: string }
+  | { key: "CAPTURE_FAILED" | "AUTH_EXPIRED" | "AWAITING_CUSTOMER" | "NOT_HOME" | "NEEDS_REFUND" | "CAPTURE_STUCK"; orderId: string; orderNumber: string }
   | { key: "HOLD_EXPIRING" | "SLOT_SOON" | "WINDOW_CLOSED"; orderId: string; orderNumber: string; when: Date }
   | { key: "CERT_EXPIRING"; authorityHe: string; authorityEn: string; when: Date };
 
@@ -104,6 +104,13 @@ export async function loadAlerts(now = new Date()): Promise<BoardAlert[]> {
       ),
     );
   for (const o of soon) alerts.push({ key: "SLOT_SOON", orderId: o.id, orderNumber: o.orderNumber, when: o.startsAt });
+
+  // A charge that never came back: the order page offers to check it again.
+  const stuck2 = await db
+    .select({ id: order.id, orderNumber: order.orderNumber })
+    .from(order)
+    .where(and(eq(order.status, "CAPTURE_PENDING"), lt(order.updatedAt, new Date(now.getTime() - 2 * 60_000))));
+  for (const o of stuck2) alerts.push({ key: "CAPTURE_STUCK", orderId: o.id, orderNumber: o.orderNumber });
 
   // A window closed after an order was booked into it (a manual closure): someone has to call the customer.
   const stranded = await db

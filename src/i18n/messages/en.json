@@ -473,7 +473,8 @@
       "AUTHENTICATION_FAILED": "Card verification wasn't completed.",
       "EXPIRED_CARD": "The card has expired.",
       "GENERIC_DECLINE": "The card issuer didn't approve the transaction.",
-      "AMOUNT_MISMATCH": "The approved amount didn't match the order, so we cancelled it."
+      "AMOUNT_MISMATCH": "The approved amount didn't match the order, so we cancelled it.",
+      "PAGE_EXPIRED": "That payment page expired. If you were charged on it, the amount was returned to your card. You can continue to payment again."
     },
     "declinedBody": "Nothing was charged. Your cart and delivery time are still saved — you can try another card.",
     "pendingTitle": "Payment isn't finished yet",
@@ -652,7 +653,8 @@
         "CERT_EXPIRING": "{authority}'s kashrut certificate expires {when}",
         "NOT_HOME": "Order {number}: nobody was home — call to arrange, or return it to the shop",
         "NEEDS_REFUND": "Order {number}: back at the shop — a refund decision is needed",
-        "WINDOW_CLOSED": "Order {number}: its window ({when}) was closed — call to book a new one"
+        "WINDOW_CLOSED": "Order {number}: its window ({when}) was closed — call to book a new one",
+        "CAPTURE_STUCK": "Order {number}: the charge never finished — check it again on the order page"
       },
       "open": "Open",
       "denied": "You don't have permission for that ({capability})"
@@ -689,7 +691,11 @@
         "pick": "Pick sheet",
         "label": "Package label",
         "note": "Delivery note"
-      }
+      },
+      "stuckTitle": "The charge never finished",
+      "stuckCheck": "Check the charge again",
+      "stuckHelp": "The charge was sent to the payment provider and no answer came back. Checking again finds a charge that already went through, or makes it once — never twice.",
+      "stuckDone": "The charge was checked and recorded."
     },
     "pack": {
       "title": "Weighing & packing",
@@ -800,7 +806,11 @@
         "CAPTURE_FAILED": "The charge failed",
         "NETWORK": "Not saved — can't reach the server. Try again",
         "AWAITING_CUSTOMER": "This item is waiting for the customer's answer",
-        "ALREADY_ASKING": "Already waiting for the customer about another item"
+        "ALREADY_ASKING": "Already waiting for the customer about another item",
+        "MANAGER_PIN_LOCKED": "Too many tries for the manager code — try again in {minutes} min",
+        "CAPTURE_IN_PROGRESS": "The charge is still in progress — try again in a minute or two",
+        "EXTRA_ALREADY_CHARGED": "The customer already paid the extra on this item, so it can't be changed. A manager can cancel the order.",
+        "EXTRA_EXCEEDS_FINAL": "The extra already charged is more than the final total — a manager is needed."
       },
       "retrySave": "Try again",
       "saved": "Saved",
@@ -1147,7 +1157,15 @@
         "slots": "Windows updated: {added} new, {closing} closed",
         "changeWindow": "Order {order}: delivery window changed",
         "giveFree": "Order {order}: {amount} given free (over the range)",
-        "orderEvent": "Order {order}: {event} {amount}"
+        "orderEvent": "Order {order}: {event} {amount}",
+        "line_weigh": "Order {order}: weighed {weight}",
+        "line_undo": "Order {order}: weighing undone",
+        "line_short": "Order {order}: item marked short",
+        "line_substitute": "Order {order}: substituted with {name}",
+        "line_handling": "Order {order}: handling confirmed (broiling/salting)",
+        "line_package": "Order {order}: package picked",
+        "delivery": "Order {order}: {event}",
+        "restockDate": "{product}: expected back — {date}"
       },
       "events": {
         "CANCELLED_BY_SHOP": "cancelled by the shop",
@@ -1157,6 +1175,14 @@
         "REFUSED": "customer refused",
         "RETURNED_TO_SHOP": "returned to shop",
         "SAVED_CARD_CHARGED": "saved card charged"
+      },
+      "noDate": "no date",
+      "deliveryEvents": {
+        "DISPATCHED": "out for delivery",
+        "DELIVERED": "delivered",
+        "NOT_HOME": "nobody home",
+        "REFUSED": "customer refused",
+        "RETURNED_TO_SHOP": "returned to shop"
       }
     },
     "print": {

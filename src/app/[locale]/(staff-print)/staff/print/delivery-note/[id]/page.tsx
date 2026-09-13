@@ -8,6 +8,7 @@ import { vatFromGross } from "@/domain/money/vat";
 import { formatGrams, grams } from "@/domain/weight/grams";
 import type { Locale } from "@/i18n/routing";
 import { loadPrintOrder } from "@/infra/staff/print";
+import { requireStaff } from "@/infra/staff/session";
 import { PrintToolbar } from "@/ui/staff/print/PrintToolbar";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,8 @@ export default async function DeliveryNote({ params }: PageProps<"/[locale]/staf
   const { locale: raw, id } = await params;
   setRequestLocale(raw);
   const locale = raw as Locale;
+  // Checked here as well as in the layout: a layout's check doesn't protect the page's own data.
+  await requireStaff(locale, "VIEW_BOARD");
   const data = await loadPrintOrder(id);
   if (!data) notFound();
   const t = await getTranslations("staff.print");

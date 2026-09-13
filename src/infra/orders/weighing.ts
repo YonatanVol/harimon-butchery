@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { can, type StaffRole } from "@/domain/auth/permissions";
 import { agorot } from "@/domain/money/agorot";
@@ -22,11 +22,10 @@ import {
   paymentRefund,
   product,
   productVariant,
-  staffUser,
   stockItem,
   stockMovement,
 } from "../db/schema";
-import { verifyPin } from "../staff/pin";
+import { checkStaffPin } from "../staff/pinCheck";
 import { applyOrderEvent } from "./events";
 
 type Database = PostgresJsDatabase<typeof schema>;
@@ -47,6 +46,10 @@ export type WeighingProblem =
   | { key: "SUBSTITUTE_NOT_ALLOWED" }
   | { key: "SUBSTITUTE_TOO_EXPENSIVE" }
   | { key: "MANAGER_PIN_INVALID" }
+  | { key: "MANAGER_PIN_LOCKED"; minutes: number }
+  | { key: "CAPTURE_IN_PROGRESS" }
+  | { key: "EXTRA_ALREADY_CHARGED" }
+  | { key: "EXTRA_EXCEEDS_FINAL" }
   | { key: "TOO_MANY_CAPTURE_ATTEMPTS" }
   | { key: "CAPTURE_FAILED"; reason: string }
   | { key: "AWAITING_CUSTOMER" }
@@ -78,6 +81,29 @@ async function bumpVersion(tx: Tx, orderId: string) {
   return o.version;
 }
 
+/**
+ * A line the customer already paid extra for: weighed above the range and priced at its full actual weight
+ * (a free extra is priced at the top of the range instead). Changing it could leave the final total below
+ * what was already charged, so it stays as approved.
+ */
+function approvedExtra(line: typeof orderLine.$inferSelect) {
+  if (line.pricingMode !== "WEIGHT" || line.status !== "WEIGHED" || !line.actualG || !line.toleranceMaxG || line.actualG <= line.toleranceMaxG) return false;
+  return line.finalAgorot === priceForWeight(agorot(line.pricePerKgAgorot!), grams(line.actualG));
+}
+
+/** Every change on the weighing screen goes in the activity log: who weighed, undid, shorted or substituted what. */
+async function auditLine(tx: Tx, staff: Staff, line: typeof orderLine.$inferSelect, action: string, after: Record<string, unknown>) {
+  await tx.insert(auditEvent).values({
+    actorType: "STAFF",
+    actorId: staff.id,
+    entityType: "order_line",
+    entityId: line.id,
+    action,
+    before: { status: line.status, actualG: line.actualG, actualQuantity: line.actualQuantity, finalAgorot: line.finalAgorot },
+    after,
+  });
+}
+
 function requireFloor(staff: Staff) {
   if (!can(staff.role as StaffRole, "PICK_AND_WEIGH")) throw new Stop({ key: "NOT_PERMITTED" });
 }
@@ -98,6 +124,14 @@ export function startPicking(db: Database, { orderId, staff, appUrl }: { orderId
       requireFloor(staff);
       const o = await lockOrder(tx, orderId);
       if (o.status === "PICKING") return { version: o.version };
+      // A hold that has lapsed can't be charged: stop before any meat is cut, and ask the customer to pay again.
+      if (o.status === "AUTHORIZED") {
+        const [hold] = await tx.select().from(paymentIntent).where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.status, "AUTHORIZED"), eq(paymentIntent.purpose, "AUTHORIZE")));
+        if (hold?.expiresAt && hold.expiresAt <= new Date()) {
+          const expired = await applyOrderEvent(tx, { orderId, event: "HOLD_EXPIRED", ctx: { actor: "SYSTEM" }, appUrl });
+          if (expired.ok) return { version: expired.order.version, holdExpired: true as const };
+        }
+      }
       const moved = await applyOrderEvent(tx, { orderId, event: "PICKING_STARTED", ctx: { actor: staff.role as StaffRole }, actorId: staff.id, appUrl });
       if (!moved.ok) throw new Stop({ key: "WRONG_STATE", status: o.status });
       await tx.update(order).set({ assignedButcherId: staff.id }).where(eq(order.id, orderId));
@@ -118,7 +152,15 @@ export interface RecordWeightInput {
   giveExtraFree?: { managerId: string; pin: string };
 }
 
-export function recordWeight(db: Database, input: RecordWeightInput) {
+export async function recordWeight(db: Database, input: RecordWeightInput): Promise<WeighingResult<{ version: number }>> {
+  // The manager's PIN is checked first, outside the weighing transaction, so a wrong guess is counted even
+  // though nothing is written — the same 5-try lock as signing in, not an open door to all 10,000 PINs.
+  if (input.giveExtraFree) {
+    const checked = await checkStaffPin(db, input.giveExtraFree.managerId, input.giveExtraFree.pin);
+    if (!checked.ok || !can(checked.member.role as StaffRole, "OVERRIDE")) {
+      return { ok: false, problem: checked.ok || checked.problem.key !== "LOCKED" ? { key: "MANAGER_PIN_INVALID" } : { key: "MANAGER_PIN_LOCKED", minutes: checked.problem.minutes } };
+    }
+  }
   return run(() =>
     db.transaction(async (tx) => {
       requireFloor(input.staff);
@@ -128,6 +170,7 @@ export function recordWeight(db: Database, input: RecordWeightInput) {
       const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.id, input.lineId), eq(orderLine.orderId, o.id)));
       if (!line || line.pricingMode !== "WEIGHT" || !["PENDING", "WEIGHED"].includes(line.status)) throw new Stop({ key: "NOT_FOUND" });
       if (line.pendingActualG) throw new Stop({ key: "AWAITING_CUSTOMER" });
+      if (approvedExtra(line)) throw new Stop({ key: "EXTRA_ALREADY_CHARGED" });
 
       const bounds = toleranceBounds(grams(line.estimatedG!), line.toleranceBp!);
       const status = classifyWeight(grams(input.actualG), bounds);
@@ -138,10 +181,7 @@ export function recordWeight(db: Database, input: RecordWeightInput) {
       if (status.kind === "under" && !input.confirmUnder) throw new Stop({ key: "UNDER_TOLERANCE", minG: bounds.min, shortByG: status.shortBy });
       if (status.kind === "over") {
         if (!input.giveExtraFree) throw new Stop({ key: "OVER_TOLERANCE", maxG: bounds.max, overByG: status.overBy });
-        const [manager] = await tx.select().from(staffUser).where(eq(staffUser.id, input.giveExtraFree.managerId));
-        if (!manager?.active || !can(manager.role as StaffRole, "OVERRIDE") || !verifyPin(input.giveExtraFree.pin, manager.pinHash)) {
-          throw new Stop({ key: "MANAGER_PIN_INVALID" });
-        }
+        const manager = { id: input.giveExtraFree.managerId };
         // Charge the ceiling; the shop absorbs the rest — and records exactly what it cost.
         const ceiling = priceForWeight(price, bounds.max);
         goodwill = finalAgorot - ceiling;
@@ -166,6 +206,7 @@ export function recordWeight(db: Database, input: RecordWeightInput) {
       if (goodwill !== previousGoodwill) {
         await tx.update(order).set({ goodwillAgorot: sql`${order.goodwillAgorot} + ${goodwill - previousGoodwill}` }).where(eq(order.id, o.id));
       }
+      await auditLine(tx, input.staff, line, "line.weigh", { actualG: input.actualG, finalAgorot, status: status.kind });
       const version = await bumpVersion(tx, o.id);
       return { version, finalAgorot, status: status.kind };
     }),
@@ -184,8 +225,10 @@ export function askCustomer(
       const o = await lockOrder(tx, input.orderId, input.expectedVersion);
       if (o.status === "AWAITING_CUSTOMER_APPROVAL") throw new Stop({ key: "ALREADY_ASKING" });
       if (o.status !== "PICKING") throw new Stop({ key: "WRONG_STATE", status: o.status });
+      if (!Number.isSafeInteger(input.actualG) || input.actualG <= 0 || input.actualG > 50_000) throw new Stop({ key: "INVALID_WEIGHT" });
       const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.id, input.lineId), eq(orderLine.orderId, o.id)));
-      if (!line || line.pricingMode !== "WEIGHT") throw new Stop({ key: "NOT_FOUND" });
+      if (!line || line.pricingMode !== "WEIGHT" || !["PENDING", "WEIGHED"].includes(line.status)) throw new Stop({ key: "NOT_FOUND" });
+      if (approvedExtra(line)) throw new Stop({ key: "EXTRA_ALREADY_CHARGED" });
       const bounds = toleranceBounds(grams(line.estimatedG!), line.toleranceBp!);
       if (classifyWeight(grams(input.actualG), bounds).kind !== "over") throw new Stop({ key: "INVALID_WEIGHT" });
 
@@ -234,6 +277,8 @@ export function undoLine(db: Database, { orderId, lineId, expectedVersion, staff
       const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.id, lineId), eq(orderLine.orderId, orderId)));
       if (!line || line.status === "SUBSTITUTED") throw new Stop({ key: "NOT_FOUND" });
       if (line.pendingActualG) throw new Stop({ key: "AWAITING_CUSTOMER" });
+      if (approvedExtra(line)) throw new Stop({ key: "EXTRA_ALREADY_CHARGED" });
+      // Only a line given free carries goodwill to take back; its final price sits at the top of the range.
       if (line.actualG && line.estimatedG && line.toleranceMaxG && line.actualG > line.toleranceMaxG) {
         const price = agorot(line.pricePerKgAgorot!);
         const given = priceForWeight(price, grams(line.actualG)) - priceForWeight(price, grams(line.toleranceMaxG));
@@ -243,6 +288,7 @@ export function undoLine(db: Database, { orderId, lineId, expectedVersion, staff
         .update(orderLine)
         .set({ actualG: null, actualQuantity: null, finalAgorot: null, status: "PENDING", weighedAt: null, weighedByStaffId: null })
         .where(eq(orderLine.id, lineId));
+      await auditLine(tx, staff, line, "line.undo", { status: "PENDING" });
       return { version: await bumpVersion(tx, orderId) };
     }),
   );
@@ -260,6 +306,7 @@ export function confirmPackageLine(db: Database, { orderId, lineId, expectedVers
         .update(orderLine)
         .set({ actualQuantity: line.quantity, finalAgorot: line.estimateAgorot, status: "WEIGHED", weighedByStaffId: staff.id, weighedAt: new Date() })
         .where(eq(orderLine.id, lineId));
+      await auditLine(tx, staff, line, "line.package", { actualQuantity: line.quantity });
       return { version: await bumpVersion(tx, orderId) };
     }),
   );
@@ -274,11 +321,13 @@ export function markShort(db: Database, { orderId, lineId, expectedVersion, staf
       const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.id, lineId), eq(orderLine.orderId, orderId)));
       if (!line || !["PENDING", "WEIGHED"].includes(line.status)) throw new Stop({ key: "NOT_FOUND" });
       if (line.pendingActualG) throw new Stop({ key: "AWAITING_CUSTOMER" });
+      if (approvedExtra(line)) throw new Stop({ key: "EXTRA_ALREADY_CHARGED" });
       await tx
         .update(orderLine)
         .set({ status: "SHORT", actualG: null, actualQuantity: 0, finalAgorot: 0, weighedByStaffId: staff.id, weighedAt: new Date() })
         .where(eq(orderLine.id, lineId));
       await tx.update(order).set({ partiallyFulfilled: true }).where(eq(order.id, orderId));
+      await auditLine(tx, staff, line, "line.short", { status: "SHORT" });
       return { version: await bumpVersion(tx, orderId) };
     }),
   );
@@ -338,6 +387,7 @@ export function substituteLine(
       const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.id, lineId), eq(orderLine.orderId, orderId)));
       if (!line || line.pricingMode !== "WEIGHT" || !["PENDING", "WEIGHED"].includes(line.status)) throw new Stop({ key: "NOT_FOUND" });
       if (line.pendingActualG) throw new Stop({ key: "AWAITING_CUSTOMER" });
+      if (approvedExtra(line)) throw new Stop({ key: "EXTRA_ALREADY_CHARGED" });
       if (!line.allowSubstitute) throw new Stop({ key: "SUBSTITUTE_NOT_ALLOWED" });
       const [sub] = await tx
         .select({ variant: productVariant, product })
@@ -380,6 +430,7 @@ export function substituteLine(
         sortOrder: line.sortOrder,
       });
       await tx.update(order).set({ partiallyFulfilled: true }).where(eq(order.id, orderId));
+      await auditLine(tx, staff, line, "line.substitute", { substituteNameHe: sub.product.nameHe, substituteNameEn: sub.product.nameEn, pricePerKgAgorot: perKg });
       return { version: await bumpVersion(tx, orderId) };
     }),
   );
@@ -391,10 +442,13 @@ export function confirmHandling(db: Database, { orderId, lineId, expectedVersion
       requireFloor(staff);
       const o = await lockOrder(tx, orderId, expectedVersion);
       if (!EDITABLE.includes(o.status as (typeof EDITABLE)[number])) throw new Stop({ key: "WRONG_STATE", status: o.status });
-      await tx
+      const [line] = await tx
         .update(orderLine)
         .set({ handlingConfirmedAt: new Date() })
-        .where(and(eq(orderLine.id, lineId), eq(orderLine.orderId, orderId)));
+        .where(and(eq(orderLine.id, lineId), eq(orderLine.orderId, orderId)))
+        .returning();
+      if (!line) throw new Stop({ key: "NOT_FOUND" });
+      await auditLine(tx, staff, line, "line.handling", { handlingFlags: line.handlingFlags });
       return { version: await bumpVersion(tx, orderId) };
     }),
   );
@@ -459,6 +513,8 @@ export async function finishWeighing(
       await tx.update(order).set({ itemsFinalAgorot: itemsFinal, finalTotalAgorot: finalTotal }).where(eq(order.id, orderId));
       // Extra weight the customer approved was already charged on its own; the hold covers the rest.
       const onHold = finalTotal - o.extraChargedAgorot;
+      // Unreachable while approved lines are locked above; never let a negative charge reach the provider.
+      if (onHold < 0) throw new Stop({ key: "EXTRA_EXCEEDS_FINAL" });
       for (const [event] of [["LINES_COMPLETED"], ["REPRICED"]] as const) {
         const moved = await applyOrderEvent(tx, { orderId, event, ctx: { actor: staff.role as StaffRole }, actorId: staff.id, appUrl, now });
         if (!moved.ok) throw new Stop({ key: "WRONG_STATE", status: event });
@@ -621,6 +677,46 @@ export async function retryCapture(
     throw e;
   }
   return settleCapture(db, provider, { orderId, staff, appUrl, now, ...prepared });
+}
+
+/** How long a charge may sit in "charging" before staff can check it again. */
+export const CAPTURE_STUCK_AFTER_MS = 2 * 60_000;
+
+/**
+ * A charge that never finished (the server stopped, or recording it failed after the provider answered):
+ * run the same capture attempt again. Captures are idempotent per hold, so this finds the earlier charge
+ * or makes it once, then records the outcome — the order can't stay in "charging" forever.
+ */
+export async function reconcileCapture(
+  db: Database,
+  provider: PaymentProvider,
+  { orderId, staff, appUrl, now = new Date() }: { orderId: string; staff: Staff; appUrl: string; now?: Date },
+): Promise<FinishResult> {
+  if (!can(staff.role as StaffRole, "CAPTURE_PAYMENT")) return { ok: false, problem: { key: "NOT_PERMITTED" } };
+  const [o] = await db.select().from(order).where(eq(order.id, orderId));
+  if (!o) return { ok: false, problem: { key: "NOT_FOUND" } };
+  if (o.status !== "CAPTURE_PENDING") return { ok: false, problem: { key: "WRONG_STATE", status: o.status } };
+  const [intent] = await db
+    .select()
+    .from(paymentIntent)
+    .where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.status, "AUTHORIZED"), ne(paymentIntent.purpose, "EXTRA")));
+  if (!intent?.providerTransactionRef) return { ok: false, problem: { key: "NOT_FOUND" } };
+  const [latest] = await db.select().from(paymentCapture).where(eq(paymentCapture.paymentIntentId, intent.id)).orderBy(desc(paymentCapture.attempt)).limit(1);
+  if (!latest || latest.status !== "PENDING") return { ok: false, problem: { key: "WRONG_STATE", status: o.status } };
+  if (now.getTime() - latest.createdAt.getTime() < CAPTURE_STUCK_AFTER_MS) return { ok: false, problem: { key: "CAPTURE_IN_PROGRESS" } };
+  return settleCapture(db, provider, {
+    orderId,
+    staff,
+    appUrl,
+    now,
+    intentId: intent.id,
+    transactionRef: intent.providerTransactionRef,
+    purpose: intent.purpose,
+    charged: intent.amountAgorot,
+    finalTotal: o.finalTotalAgorot!,
+    onHold: latest.amountAgorot,
+    attempt: latest.attempt,
+  });
 }
 
 export function markPacked(db: Database, { orderId, staff, appUrl }: { orderId: string; staff: Staff; appUrl: string }) {

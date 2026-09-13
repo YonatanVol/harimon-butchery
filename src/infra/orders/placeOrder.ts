@@ -29,6 +29,7 @@ import {
   slotHold,
   stockItem,
 } from "../db/schema";
+import { expireIfAbandoned } from "./authorization";
 import { applyOrderEvent } from "./events";
 
 type Database = PostgresJsDatabase<typeof schema>;
@@ -66,6 +67,14 @@ export async function placeOrder(
   const now = input.now ?? new Date();
   const checked = validateDetails(input.details);
   if (!checked.ok) return { ok: false, problem: { key: "DETAILS_INVALID", errors: checked.errors } };
+
+  // A checkout left unpaid on the payment page is settled first: reused only while fresh and for the same cart,
+  // otherwise expired (after asking the provider), so its window and stock are free again and a new page is made.
+  const [existing] = await db.select({ convertedOrderId: cart.convertedOrderId }).from(cart).where(eq(cart.id, input.cartId));
+  if (existing?.convertedOrderId) {
+    const stale = !(await sameContents(db, input.cartId, existing.convertedOrderId));
+    await expireIfAbandoned(db, provider, { orderId: existing.convertedOrderId, appUrl: input.appUrl, force: stale, now });
+  }
 
   let placed: { orderId: string; orderNumber: string; accessToken: string; intentId: string; amount: number; mode: "AUTHORIZE" | "CHARGE" };
   try {
@@ -327,4 +336,14 @@ class AlreadyPending extends Error {
   ) {
     super("ALREADY_PENDING");
   }
+}
+
+/** Whether a pending order was placed from exactly what the cart holds now. */
+async function sameContents(db: Database, cartId: string, orderId: string) {
+  const [lines, ordered] = await Promise.all([
+    db.select({ variantId: cartLine.variantId, g: cartLine.requestedG, q: cartLine.quantity }).from(cartLine).where(eq(cartLine.cartId, cartId)),
+    db.select({ variantId: orderLine.variantId, g: orderLine.estimatedG, q: orderLine.quantity }).from(orderLine).where(eq(orderLine.orderId, orderId)),
+  ]);
+  const key = (rows: Array<{ variantId: string; g: number | null; q: number | null }>) => rows.map((r) => `${r.variantId}:${r.g ?? ""}:${r.q ?? ""}`).sort().join("|");
+  return key(lines) === key(ordered);
 }

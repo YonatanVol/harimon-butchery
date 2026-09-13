@@ -4,7 +4,7 @@ import { auditEvent, deliveryZone, order, orderLine, product, staffUser } from "
 
 export const AUDIT_GROUPS = {
   money: ["REFUND_REQUESTED", "FORCE_DISPATCHED", "SAVED_CARD_CHARGED", "CAPTURE_FAILED", "GIVE_EXTRA_FREE", "product.price"],
-  orders: ["CANCELLED_BY_SHOP", "REFUSED", "RETURNED_TO_SHOP", "order.change_window"],
+  orders: ["CANCELLED_BY_SHOP", "REFUSED", "RETURNED_TO_SHOP", "order.change_window", "line.%", "delivery.%"],
   catalog: ["product.price", "product.publish", "product.unpublish"],
   stock: ["stock.%"],
   delivery: ["zone.update", "blackout.add", "blackout.remove", "slots.generate"],

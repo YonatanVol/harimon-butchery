@@ -169,7 +169,7 @@ async function coldChainMaxHours(db: Database) {
  * within the cold-chain limit counted from then. Never the window it is in now.
  * `cutAt` null means nothing is cut yet, so any upcoming window will do.
  */
-export async function rescheduleOptions(db: Database, o: { zoneId: string; slotId: string | null; cutAt: Date | null }, now = new Date()) {
+export async function rescheduleOptions(db: Database, o: { zoneId: string; slotId: string | null; cutAt: Date | null; weightG?: number }, now = new Date()) {
   const maxHours = await coldChainMaxHours(db);
   const latestEnd = o.cutAt ? new Date(o.cutAt.getTime() + maxHours * 3_600_000) : null;
   return db
@@ -181,6 +181,7 @@ export async function rescheduleOptions(db: Database, o: { zoneId: string; slotI
         eq(deliverySlot.status, "OPEN"),
         gt(deliverySlot.cutoffAt, now),
         lt(deliverySlot.reservedOrders, deliverySlot.capacityOrders),
+        o.weightG ? sql`${deliverySlot.reservedWeightG} + ${o.weightG} <= ${deliverySlot.capacityWeightG}` : undefined,
         latestEnd ? lte(deliverySlot.endsAt, latestEnd) : undefined,
         o.slotId ? ne(deliverySlot.id, o.slotId) : undefined,
       ),
@@ -208,7 +209,15 @@ export async function changeWindow(
       if (!locked) throw new Error("NOT_FOUND");
       if (!BEFORE_DISPATCH.includes(locked.status)) throw new Error("NOT_ALLOWED_NOW");
       const [slot] = await tx.select().from(deliverySlot).where(eq(deliverySlot.id, input.slotId)).for("update");
-      if (!slot || slot.zoneId !== locked.zoneId || slot.id === locked.slotId || slot.status !== "OPEN" || slot.cutoffAt <= now || slot.reservedOrders >= slot.capacityOrders) {
+      if (
+        !slot ||
+        slot.zoneId !== locked.zoneId ||
+        slot.id === locked.slotId ||
+        slot.status !== "OPEN" ||
+        slot.cutoffAt <= now ||
+        slot.reservedOrders >= slot.capacityOrders ||
+        slot.reservedWeightG + locked.reservedWeightG > slot.capacityWeightG
+      ) {
         throw new Error("SLOT_UNAVAILABLE");
       }
       const cutAt = locked.weighedAt ?? locked.capturedAt;
@@ -266,6 +275,7 @@ export async function moveDelivery(
         Math.min(zone.leadTimeMinutes, 60),
       );
       if (state.kind !== "AVAILABLE") throw new Error("SLOT_UNAVAILABLE");
+      if (slot.reservedWeightG + locked.reservedWeightG > slot.capacityWeightG) throw new Error("SLOT_UNAVAILABLE");
 
       // Measured to the end of the new window: that is the latest the meat reaches the customer.
       const hoursSinceCapture = locked.capturedAt ? (slot.endsAt.getTime() - locked.capturedAt.getTime()) / 3_600_000 : null;

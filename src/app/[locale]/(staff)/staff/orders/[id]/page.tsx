@@ -16,6 +16,7 @@ import { requireStaff } from "@/infra/staff/session";
 import { Badge } from "@/ui/primitives/Badge";
 import { Button } from "@/ui/primitives/Button";
 import { DriverButtons } from "@/ui/staff/DriverButtons";
+import { StuckCapture } from "@/ui/staff/StuckCapture";
 import { type ManagerAction, ManagerActions } from "@/ui/staff/ManagerActions";
 import { Reschedule } from "@/ui/shop/tracking/OrderActions";
 
@@ -67,7 +68,7 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
   const beforeDispatch = ["AUTHORIZED", "PICKING", "AWAITING_CUSTOMER_APPROVAL", "WEIGHED", "REPRICED", "CAPTURE_PENDING", "CAPTURED", "CAPTURE_FAILED", "PACKED"].includes(o.status);
   const movable = can(role, "OVERRIDE") && (o.status === "DELIVERY_FAILED_NOT_HOME" || beforeDispatch);
   const windows = movable
-    ? await rescheduleOptions(db, { zoneId: o.zoneId, slotId: o.slotId, cutAt: o.status === "DELIVERY_FAILED_NOT_HOME" ? (o.capturedAt ?? o.weighedAt) : (o.weighedAt ?? o.capturedAt) })
+    ? await rescheduleOptions(db, { zoneId: o.zoneId, slotId: o.slotId, cutAt: o.status === "DELIVERY_FAILED_NOT_HOME" ? (o.capturedAt ?? o.weighedAt) : (o.weighedAt ?? o.capturedAt), weightG: o.reservedWeightG })
     : [];
 
   return (
@@ -186,6 +187,7 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
         </section>
       </div>
 
+      {o.status === "CAPTURE_PENDING" && <StuckCapture orderId={o.id} blockedReason={can(role, "CAPTURE_PAYMENT") ? null : t("orders.rejections.NOT_PERMITTED")} />}
       {movable && (
         <Reschedule target={{ by: "staff", orderId: o.id, reason: o.status === "DELIVERY_FAILED_NOT_HOME" ? "notHome" : "change" }} windows={windows.map((w) => ({ id: w.id, startsAt: w.startsAt.toISOString(), endsAt: w.endsAt.toISOString() }))} />
       )}

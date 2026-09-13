@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
+import { fromDecimalShekels, toDecimalShekels } from "@/domain/money/wire";
 import type { Locale } from "@/i18n/routing";
 import type { DeliveryProblem, DeliveryResult } from "@/infra/orders/delivery";
 import { staffRefund, staffShopDecision } from "@/infra/orders/staffActions";
@@ -70,13 +71,18 @@ function DecisionForm({
   const reasonId = useId();
   const amountId = useId();
   const [reason, setReason] = useState("");
-  const [amount, setAmount] = useState(() => (refundableAgorot / 100).toFixed(2));
+  const [amount, setAmount] = useState(() => toDecimalShekels(agorot(refundableAgorot)));
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   const missing = Math.max(0, MIN_REASON - reason.trim().length);
-  const amountAgorot = Math.round(Number(amount.replace(",", ".")) * 100);
-  const amountValid = kind !== "REFUND" || (/^\d+([.,]\d{1,2})?$/.test(amount.trim()) && amountAgorot > 0 && amountAgorot <= refundableAgorot);
+  let amountAgorot = 0;
+  try {
+    amountAgorot = fromDecimalShekels(amount.trim().replace(",", "."));
+  } catch {
+    amountAgorot = 0;
+  }
+  const amountValid = kind !== "REFUND" || (amountAgorot > 0 && amountAgorot <= refundableAgorot);
 
   const blocked = missing > 0 ? t("reasonMissing", { count: missing }) : !amountValid ? t("problems.INVALID_AMOUNT", { max: money(refundableAgorot) }) : null;
 

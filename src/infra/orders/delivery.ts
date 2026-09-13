@@ -6,7 +6,7 @@ import { formatAgorot } from "@/domain/money/format";
 import { type OrderEvent, type OrderStatus, transition } from "@/domain/order/machine";
 import type { PaymentProvider } from "@/domain/payments/provider";
 import type * as schema from "../db/schema";
-import { customer, deliverySlot, deliveryZone, order, paymentCapture, paymentIntent, paymentRefund } from "../db/schema";
+import { auditEvent, customer, deliverySlot, deliveryZone, order, paymentCapture, paymentIntent, paymentRefund } from "../db/schema";
 import { applyOrderEvent } from "./events";
 import { returnPayments } from "./returnPayments";
 
@@ -36,6 +36,7 @@ export async function driverAction(
   return db.transaction(async (tx): Promise<DeliveryResult> => {
     const moved = await applyOrderEvent(tx, { orderId, event, ctx: { actor: staff.role as StaffRole }, actorId: staff.id, appUrl, now });
     if (!moved.ok) return { ok: false, problem: moved.reason === "NOT_PERMITTED" ? { key: "NOT_PERMITTED" } : { key: "WRONG_STATE", reason: moved.reason } };
+    await tx.insert(auditEvent).values({ actorType: "STAFF", actorId: staff.id, entityType: "order", entityId: orderId, action: `delivery.${event.toLowerCase()}`, before: { status: moved.from }, after: { status: moved.to } });
     if (event === "DISPATCHED") {
       await tx.update(order).set({ assignedDriverId: staff.id, deliveryAttempts: sql`${order.deliveryAttempts} + 1` }).where(eq(order.id, orderId));
     }

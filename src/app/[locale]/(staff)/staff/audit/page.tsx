@@ -49,6 +49,8 @@ export default async function AuditPage({ params, searchParams }: PageProps<"/[l
       case e.action === "product.publish":
       case e.action === "product.unpublish":
         return t(e.action === "product.publish" ? "actions.publish" : "actions.unpublish", { product: productName });
+      case e.action === "stock.restock_date":
+        return t("actions.restockDate", { product: productName, date: a?.date ? day(a.date) : t("noDate") });
       case e.action.startsWith("stock."):
         return t(`actions.${e.action.replace("stock.", "stock_") as "stock_received" | "stock_spoilage" | "stock_count_correction"}`, { product: productName, before: qty(b?.onHand, b?.unit), after: qty(a?.onHand, a?.unit) });
       case e.action === "zone.update":
@@ -61,6 +63,10 @@ export default async function AuditPage({ params, searchParams }: PageProps<"/[l
         return t("actions.slots", { added: num(a?.added) ?? 0, closing: num(a?.closing) ?? 0 });
       case e.action === "order.change_window":
         return t("actions.changeWindow", { order: e.order?.number ?? "?" });
+      case e.action.startsWith("line."):
+        return t(`actions.${e.action.replace(".", "_") as "line_weigh"}`, { order: e.order?.number ?? "?", weight: num(a?.actualG) !== null ? qty(a?.actualG, "g") : "", name: String((locale === "he" ? a?.substituteNameHe : a?.substituteNameEn) ?? "") });
+      case e.action.startsWith("delivery."):
+        return t("actions.delivery", { order: e.order?.number ?? "?", event: t(`deliveryEvents.${e.action.replace("delivery.", "").toUpperCase() as "DELIVERED"}`) });
       case e.action === "GIVE_EXTRA_FREE":
         return t("actions.giveFree", { order: e.order?.number ?? "?", amount: money(a?.goodwillAgorot) });
       case e.entityType === "order":
