@@ -16,7 +16,8 @@ if (!process.env.DATABASE_URL && existsSync(".env.local")) process.loadEnvFile("
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is not set");
 
-const client = postgres(url, { max: 1, onnotice: () => {} });
+// More than one connection: money flows hold a transaction while the demo gateway records its side on another.
+const client = postgres(url, { max: 4, onnotice: () => {} });
 const db = drizzle(client, { schema: s, casing: "snake_case" });
 
 /** Shown on the staff login screen in demo mode. */

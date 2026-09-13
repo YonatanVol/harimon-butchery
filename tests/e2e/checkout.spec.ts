@@ -53,7 +53,7 @@ test("a weight order: hold on the card, approve on the gateway, tracking shows i
 
   await page.waitForURL(`**/${lang}/pay/demo/**`);
   await expect(page.getByText(m.pay.demoBanner)).toBeVisible();
-  await page.getByRole("button", { name: new RegExp(`^${m.pay.scenario.APPROVE}`) }).click();
+  await page.getByRole("button", { name: new RegExp(`^${m.pay.scenario.APPROVE}\\s+Visa`) }).click();
 
   await page.waitForURL(/\/orders\/\d{4}-\d{5}\?t=/);
   await expect(page.getByText(m.tracking.placedTitle)).toBeVisible();

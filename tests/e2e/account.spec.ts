@@ -13,7 +13,7 @@ test("a customer signs in with a code and sees their orders", async ({ page }) =
   const code = (await demo.textContent())!.match(/\d{6}/)![0];
 
   await page.getByLabel(m.login.code, { exact: true }).fill("000000" === code ? "111111" : "000000");
-  await expect(page.getByRole("alert")).toContainText(lead(m.login.problems.WRONG_CODE));
+  await expect(page.getByRole("alert").filter({ hasText: lead(m.login.problems.WRONG_CODE) })).toBeVisible();
   await page.getByLabel(m.login.code, { exact: true }).fill(code);
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(new RegExp(`^${lead(m.hello)}`));

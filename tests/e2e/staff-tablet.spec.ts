@@ -23,7 +23,7 @@ test("weigh an order on the tablet, ask the customer about an overweight cut, an
 
   let asked = false;
   for (const line of lines) {
-    await page.getByRole("button", { name: new RegExp(line.product_name_he) }).first().click();
+    await page.getByRole("button", { name: new RegExp(line.product_name_he.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) }).first().click();
     if (line.pricing_mode === "PACKAGE") {
       await page.getByRole("button", { name: new RegExp(`^${lead(p.packagePicked)}`) }).click();
       continue;
@@ -87,7 +87,7 @@ test("driver marks nobody home; the manager returns it to the shop and refunds p
   await manager.getByRole("button", { name: he.staff.manager.REFUND.open }).click();
   await manager.getByLabel(he.staff.manager.amount).fill("50");
   await manager.getByLabel(he.staff.manager.reason).fill("המשלוח חזר, חלק נמכר מחדש");
-  await manager.getByRole("button", { name: new RegExp(`^${lead(he.staff.manager.REFUND.confirm)}`) }).click();
+  await manager.getByRole("button", { name: new RegExp(`^${lead(he.staff.manager.REFUND.confirm)}.*₪`) }).click();
   await expect(manager.getByText(he.tracking.status.PARTIALLY_REFUNDED).first()).toBeVisible();
   const [after] = await sql<{ refunded_agorot: number }[]>`select refunded_agorot from orders where id = ${order.id}`;
   expect(after.refunded_agorot).toBe(5_000);
