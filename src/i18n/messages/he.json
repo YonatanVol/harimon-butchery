@@ -483,5 +483,90 @@
     "notFoundBody": "בדקו שהקישור מההודעה הועתק במלואו.",
     "deliveryFree": "חינם",
     "packagePrice": "מחיר קבוע"
+  },
+  "staff": {
+    "area": "צוות",
+    "login": {
+      "title": "כניסת צוות",
+      "choose": "מי נכנס למשמרת?",
+      "pinFor": "קוד אישי — {name}",
+      "pinLabel": "קוד אישי",
+      "demoPin": "מצב הדגמה: הקוד של כל אנשי הצוות הוא 1234",
+      "enter": "כניסה",
+      "entering": "נכנס…",
+      "back": "החלפת משתמש",
+      "clear": "נקה",
+      "delete": "מחק ספרה",
+      "WRONG_PIN": "קוד שגוי. {attemptsLeft, plural, one {נשאר ניסיון אחד} other {נשארו # ניסיונות}} לפני נעילה",
+      "LOCKED": "נעול ל-{minutes} דקות אחרי יותר מדי ניסיונות",
+      "UNKNOWN": "לא ניתן להיכנס. פנו למנהל המשמרת",
+      "needDigits": "הקלידו 4 ספרות"
+    },
+    "role": {
+      "OWNER": "בעלים",
+      "MANAGER": "מנהל/ת משמרת",
+      "BUTCHER": "קצב",
+      "PACKER": "אורז/ת",
+      "DRIVER": "שליח",
+      "VIEWER": "צפייה"
+    },
+    "nav": {
+      "board": "לוח היום",
+      "messages": "הודעות",
+      "logout": "יציאה"
+    },
+    "board": {
+      "title": "לוח היום",
+      "today": "היום",
+      "tomorrow": "מחר",
+      "columns": {
+        "toPrepare": "להכנה",
+        "inProgress": "בהכנה",
+        "ready": "מוכן",
+        "onTheWay": "במשלוח"
+      },
+      "emptyColumn": "אין הזמנות",
+      "emptyDay": "אין הזמנות למועדים של יום זה",
+      "slotUse": "{used}/{capacity} הזמנות · {kg} ק״ג",
+      "lines": "{count, plural, one {פריט אחד} other {# פריטים}}",
+      "hold": "הוקפא {amount}",
+      "alertsTitle": "דורש טיפול",
+      "alerts": {
+        "CAPTURE_FAILED": "הזמנה {number}: החיוב נכשל — ההזמנה לא תצא עד שיוחלט",
+        "HOLD_EXPIRING": "הזמנה {number}: תוקף ההקפאה מסתיים {when} — צריך לשקול ולחייב לפני כן",
+        "AUTH_EXPIRED": "הזמנה {number}: תוקף ההקפאה פג — נדרש אישור תשלום מחדש מהלקוח",
+        "AWAITING_CUSTOMER": "הזמנה {number}: ממתינה לאישור הלקוח על תוספת משקל",
+        "SLOT_SOON": "הזמנה {number}: המשלוח מתחיל {when} והיא עוד לא ארוזה",
+        "CERT_EXPIRING": "תעודת הכשרות של {authority} מסתיימת {when}"
+      },
+      "open": "פתח",
+      "denied": "אין לך הרשאה לפעולה הזו ({capability})"
+    },
+    "order": {
+      "back": "חזרה ללוח",
+      "customer": "לקוח",
+      "address": "כתובת",
+      "slot": "מועד",
+      "money": "כסף",
+      "estimate": "משוער",
+      "hold": "הוקפא",
+      "final": "סופי",
+      "captured": "חויב",
+      "card": "כרטיס",
+      "lines": "פריטים",
+      "requested": "מבוקש",
+      "range": "טווח",
+      "actual": "בפועל",
+      "cut": "חיתוך",
+      "note": "הערה",
+      "substitute": "תחליף מותר",
+      "noSubstitute": "בלי תחליף",
+      "timeline": "היסטוריה",
+      "messages": "הודעות ללקוח",
+      "demoMessages": "מצב הדגמה — ההודעות נרשמות ולא נשלחות בפועל",
+      "startPicking": "התחל הכנה ושקילה",
+      "openWeighing": "המשך שקילה",
+      "actions": "פעולות"
+    }
   }
 }

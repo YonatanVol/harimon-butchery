@@ -8,6 +8,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as s from "../src/infra/db/schema";
 import { generateSlots } from "../src/infra/delivery/generateSlots";
+import { hashPin } from "../src/infra/staff/pin";
 import { authorities, categories, products, slotTemplates, staff, variantPresets, zones } from "./seed-data/catalog";
 
 if (!process.env.DATABASE_URL && existsSync(".env.local")) process.loadEnvFile(".env.local");
@@ -16,6 +17,9 @@ if (!url) throw new Error("DATABASE_URL is not set");
 
 const client = postgres(url, { max: 1, onnotice: () => {} });
 const db = drizzle(client, { schema: s, casing: "snake_case" });
+
+/** Shown on the staff login screen in demo mode. */
+const DEMO_STAFF_PIN = "1234";
 
 const today = new Date();
 /** Only reference photos that actually exist, so the storefront never shows a broken image. */
@@ -181,7 +185,7 @@ async function main() {
     }
 
     await tx.insert(s.staffUser).values(
-      staff.map((m) => ({ phoneE164: m.phone, fullNameHe: m.nameHe, fullNameEn: m.nameEn, role: m.role })),
+      staff.map((m) => ({ phoneE164: m.phone, fullNameHe: m.nameHe, fullNameEn: m.nameEn, role: m.role, pinHash: hashPin(DEMO_STAFF_PIN) })),
     );
 
     await tx.insert(s.setting).values([

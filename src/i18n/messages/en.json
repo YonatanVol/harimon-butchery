@@ -483,5 +483,90 @@
     "notFoundBody": "Check that the link from the message was copied in full.",
     "deliveryFree": "Free",
     "packagePrice": "Fixed price"
+  },
+  "staff": {
+    "area": "Staff",
+    "login": {
+      "title": "Staff sign-in",
+      "choose": "Who's starting a shift?",
+      "pinFor": "Personal code — {name}",
+      "pinLabel": "Personal code",
+      "demoPin": "Demo mode: every staff member's code is 1234",
+      "enter": "Sign in",
+      "entering": "Signing in…",
+      "back": "Switch user",
+      "clear": "Clear",
+      "delete": "Delete digit",
+      "WRONG_PIN": "Wrong code. {attemptsLeft, plural, one {1 attempt} other {# attempts}} left before lock",
+      "LOCKED": "Locked for {minutes} minutes after too many attempts",
+      "UNKNOWN": "Can't sign in. Ask the shift manager",
+      "needDigits": "Enter 4 digits"
+    },
+    "role": {
+      "OWNER": "Owner",
+      "MANAGER": "Shift manager",
+      "BUTCHER": "Butcher",
+      "PACKER": "Packer",
+      "DRIVER": "Driver",
+      "VIEWER": "View only"
+    },
+    "nav": {
+      "board": "Today's board",
+      "messages": "Messages",
+      "logout": "Sign out"
+    },
+    "board": {
+      "title": "Today's board",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "columns": {
+        "toPrepare": "To prepare",
+        "inProgress": "In progress",
+        "ready": "Ready",
+        "onTheWay": "Out for delivery"
+      },
+      "emptyColumn": "No orders",
+      "emptyDay": "No orders for this day's delivery windows",
+      "slotUse": "{used}/{capacity} orders · {kg} kg",
+      "lines": "{count, plural, one {1 item} other {# items}}",
+      "hold": "Held {amount}",
+      "alertsTitle": "Needs attention",
+      "alerts": {
+        "CAPTURE_FAILED": "Order {number}: the charge failed — it won't go out until someone decides",
+        "HOLD_EXPIRING": "Order {number}: the card hold expires {when} — weigh and charge before then",
+        "AUTH_EXPIRED": "Order {number}: the card hold expired — the customer must re-approve payment",
+        "AWAITING_CUSTOMER": "Order {number}: waiting for the customer to approve extra weight",
+        "SLOT_SOON": "Order {number}: delivery starts {when} and it isn't packed yet",
+        "CERT_EXPIRING": "{authority}'s kashrut certificate expires {when}"
+      },
+      "open": "Open",
+      "denied": "You don't have permission for that ({capability})"
+    },
+    "order": {
+      "back": "Back to board",
+      "customer": "Customer",
+      "address": "Address",
+      "slot": "Delivery",
+      "money": "Money",
+      "estimate": "Estimated",
+      "hold": "Held",
+      "final": "Final",
+      "captured": "Charged",
+      "card": "Card",
+      "lines": "Items",
+      "requested": "Requested",
+      "range": "Range",
+      "actual": "Actual",
+      "cut": "Cut",
+      "note": "Note",
+      "substitute": "Substitute allowed",
+      "noSubstitute": "No substitute",
+      "timeline": "History",
+      "messages": "Messages to customer",
+      "demoMessages": "Demo mode — messages are recorded, not actually sent",
+      "startPicking": "Start preparing and weighing",
+      "openWeighing": "Continue weighing",
+      "actions": "Actions"
+    }
   }
 }
