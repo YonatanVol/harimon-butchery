@@ -1,1 +1,43 @@
 @import "tailwindcss";
+
+/*
+ * Design tokens. Charcoal and bone ground, a single burgundy accent.
+ * Layout rule for the whole codebase: logical properties only (start/end, inline/block) —
+ * never left/right — so Hebrew is the default and English is the mirror.
+ */
+@theme {
+  --font-sans: var(--font-heebo), ui-sans-serif, system-ui, sans-serif;
+  --font-reading: var(--font-assistant), ui-sans-serif, system-ui, sans-serif;
+
+  --color-bone-50: #fbf9f5;
+  --color-bone-100: #f5f1ea;
+  --color-bone-200: #e9e2d6;
+  --color-bone-300: #d8cdbb;
+
+  --color-char-500: #6b6560;
+  --color-char-700: #3a3633;
+  --color-char-800: #2a2725;
+  --color-char-900: #1c1a19;
+
+  --color-wine-500: #9b2335;
+  --color-wine-600: #82192b;
+  --color-wine-700: #6a1222;
+
+  --color-ok-600: #2f6b3f;
+  --color-warn-600: #9a6a00;
+  --color-bad-600: #b3261e;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  background: var(--color-bone-50);
+  color: var(--color-char-900);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}

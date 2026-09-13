@@ -6,21 +6,37 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:setup": "bash scripts/db-setup.sh"
   },
   "dependencies": {
+    "@hebcal/core": "^6.9.2",
+    "better-auth": "^1.7.4",
+    "drizzle-orm": "^0.45.2",
+    "libphonenumber-js": "^1.13.13",
     "next": "16.3.5",
+    "next-intl": "^4.14.4",
+    "postgres": "^3.4.9",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.6.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24.13.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "fast-check": "^4.10.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.13",
+    "typescript": "^5",
+    "vitest": "^5.0.0"
   }
 }
