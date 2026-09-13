@@ -10,5 +10,58 @@
     "comingSoon": "החנות בבנייה",
     "pricePerKg": "{price} / ק״ג",
     "sampleCut": "אנטריקוט"
+  },
+  "ui": {
+    "stepper": {
+      "decrease": "הפחת {step}",
+      "increase": "הוסף {step}",
+      "atMin": "זו הכמות המינימלית להזמנה ({min})",
+      "atMax": "זו הכמות המקסימלית להזמנה ({max})"
+    },
+    "tolerance": {
+      "min": "מינימום",
+      "requested": "מבוקש",
+      "max": "מקסימום",
+      "waiting": "ממתין לשקילה",
+      "within": "בתוך הטווח ({deviation})",
+      "nearEdge": "קרוב לגבול העליון ({deviation})",
+      "over": "מעל הטווח ב-{amount}",
+      "under": "מתחת לטווח ב-{amount}"
+    }
+  },
+  "kitchenSink": {
+    "title": "ערכת הרכיבים",
+    "intro": "כל רכיב מוצג בשני הכיוונים. כל שינוי בממשק נבדק כאן קודם.",
+    "layout": "תצוגה",
+    "both": "שני הכיוונים",
+    "rtlOnly": "עברית בלבד",
+    "ltrOnly": "אנגלית בלבד",
+    "buttons": "כפתורים",
+    "primary": "הוסף לסל",
+    "secondary": "המשך בקניות",
+    "ghost": "ביטול",
+    "danger": "בטל הזמנה",
+    "disabledExample": "הוסף לסל",
+    "disabledReason": "אזל מהמלאי — חוזר ביום ג׳",
+    "pending": "שומר…",
+    "tablet": "סיים ושלח לחיוב",
+    "badges": "תגיות",
+    "badgeGlatt": "חלק",
+    "badgeInStock": "במלאי",
+    "badgeLow": "מלאי מוגבל",
+    "badgeOut": "אזל",
+    "badgeBassari": "בשרי",
+    "stepper": "בורר משקל",
+    "stepperLabel": "כמות אנטריקוט",
+    "estimate": "משוער",
+    "hold": "נקפיא {hold} (עד +{tolerance}) ונחייב לפי המשקל בפועל.",
+    "toleranceTitle": "טווח שקילה — 2.5 ק״ג, ±10%",
+    "vectorsTitle": "בדיקות חישוב כסף (חיות)",
+    "colWeight": "משקל",
+    "colPrice": "מחיר לק״ג",
+    "colExpected": "צפוי",
+    "colActual": "בפועל",
+    "colOk": "תקין",
+    "skeleton": "טעינה"
   }
 }
