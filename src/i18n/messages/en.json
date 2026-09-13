@@ -681,7 +681,13 @@
       "openWeighing": "Continue weighing",
       "actions": "Actions",
       "unpaid": "Unpaid",
-      "refunded": "Refunded"
+      "refunded": "Refunded",
+      "printouts": "Printouts",
+      "print": {
+        "pick": "Pick sheet",
+        "label": "Package label",
+        "note": "Delivery note"
+      }
     },
     "pack": {
       "title": "Weighing & packing",
@@ -1150,6 +1156,53 @@
         "RETURNED_TO_SHOP": "returned to shop",
         "SAVED_CARD_CHARGED": "saved card charged"
       }
+    },
+    "print": {
+      "back": "Back to order",
+      "print": "Print",
+      "pickTitle": "Pick sheet",
+      "pickHint": "A4 · weigh in grams, write in the empty box",
+      "labelTitle": "Package label",
+      "labelHint": "100×150 mm label",
+      "noteTitle": "Delivery note",
+      "noteNotWeighed": "Not weighed yet — amounts are estimates",
+      "orderNote": "Customer note for the order",
+      "item": "Item",
+      "requested": "Requested",
+      "range": "Allowed range",
+      "actual": "Actual",
+      "substituteOk": "Substitute OK",
+      "noSubstitute": "No substitute",
+      "pickedBy": "Picked by",
+      "checkedBy": "Checked by",
+      "items": "{count, plural, one {1 item} other {# items}}",
+      "intercom": "Intercom",
+      "keepCold": "KEEP REFRIGERATED 0–4°C",
+      "bagOf": "Bag ___ of ___",
+      "order": "Order {number}",
+      "invoiceNumber": "Invoice {number}",
+      "noInvoice": "No invoice issued yet",
+      "to": "To",
+      "delivery": "Delivery",
+      "unitPrice": "Price",
+      "lineTotal": "Amount",
+      "kg": "kg",
+      "short": "Short",
+      "substituted": "Substituted",
+      "deliveryFee": "Delivery fee",
+      "totalFinal": "Total by weight",
+      "totalEstimate": "Estimated total",
+      "vatIncluded": "Incl. VAT {rate}%",
+      "beforeVat": "Before VAT",
+      "goodwill": "Given free",
+      "charged": "Charged to card",
+      "notCharged": "Not charged yet",
+      "refunded": "Refunded",
+      "kashrutTitle": "Kashrut",
+      "kashrutStatement": "All products in this delivery are under the supervision of: {authorities}.",
+      "fictionalNotice": "The kashrut authorities shown are fictional, for demonstration, and are not a real authority.",
+      "keepColdLong": "Refrigerate immediately on arrival. Fresh meat: up to 3 days refrigerated, or freeze.",
+      "demoNotice": "Demo shop — this document is not a tax invoice and no real sale took place."
     }
   }
 }

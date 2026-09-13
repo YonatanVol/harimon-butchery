@@ -681,7 +681,13 @@
       "openWeighing": "המשך שקילה",
       "actions": "פעולות",
       "unpaid": "לא שולם",
-      "refunded": "הוחזר"
+      "refunded": "הוחזר",
+      "printouts": "הדפסות",
+      "print": {
+        "pick": "דף ליקוט",
+        "label": "מדבקת אריזה",
+        "note": "תעודת משלוח"
+      }
     },
     "pack": {
       "title": "שקילה ואריזה",
@@ -1150,6 +1156,53 @@
         "RETURNED_TO_SHOP": "הוחזרה לחנות",
         "SAVED_CARD_CHARGED": "חיוב בכרטיס השמור"
       }
+    },
+    "print": {
+      "back": "חזרה להזמנה",
+      "print": "הדפסה",
+      "pickTitle": "דף ליקוט",
+      "pickHint": "A4 · שקילה בגרמים בתיבה הריקה",
+      "labelTitle": "מדבקת אריזה",
+      "labelHint": "מדבקה 100×150 מ״מ",
+      "noteTitle": "תעודת משלוח",
+      "noteNotWeighed": "ההזמנה עוד לא נשקלה — הסכומים משוערים",
+      "orderNote": "הערת לקוח להזמנה",
+      "item": "פריט",
+      "requested": "מבוקש",
+      "range": "טווח מותר",
+      "actual": "בפועל",
+      "substituteOk": "מותר תחליף",
+      "noSubstitute": "בלי תחליף",
+      "pickedBy": "לוקט על ידי",
+      "checkedBy": "נבדק על ידי",
+      "items": "{count, plural, one {פריט אחד} other {# פריטים}}",
+      "intercom": "אינטרקום",
+      "keepCold": "לשמור בקירור 0–4°C",
+      "bagOf": "שקית ___ מתוך ___",
+      "order": "הזמנה {number}",
+      "invoiceNumber": "חשבונית {number}",
+      "noInvoice": "טרם הופקה חשבונית",
+      "to": "אל",
+      "delivery": "משלוח",
+      "unitPrice": "מחיר",
+      "lineTotal": "סכום",
+      "kg": "ק״ג",
+      "short": "חסר",
+      "substituted": "הוחלף",
+      "deliveryFee": "דמי משלוח",
+      "totalFinal": "סה״כ לפי משקל",
+      "totalEstimate": "סה״כ משוער",
+      "vatIncluded": "מתוכו מע״מ {rate}%",
+      "beforeVat": "לפני מע״מ",
+      "goodwill": "ניתן ללא תשלום",
+      "charged": "חויב בכרטיס",
+      "notCharged": "טרם חויב",
+      "refunded": "הוחזר",
+      "kashrutTitle": "כשרות",
+      "kashrutStatement": "כל המוצרים במשלוח זה בהשגחת: {authorities}.",
+      "fictionalNotice": "גופי הכשרות המופיעים כאן בדויים לצורך הדגמה ואינם גוף כשרות אמיתי.",
+      "keepColdLong": "יש להכניס למקרר מיד עם הקבלה. בשר טרי: עד 3 ימים במקרר, או להקפיא.",
+      "demoNotice": "חנות הדגמה — מסמך זה אינו חשבונית מס ולא בוצעה מכירה אמיתית."
     }
   }
 }

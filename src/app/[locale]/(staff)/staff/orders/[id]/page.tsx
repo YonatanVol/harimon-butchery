@@ -101,6 +101,15 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
         </div>
       </header>
 
+      <nav aria-label={t("staff.order.printouts")} className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-char-500">{t("staff.order.printouts")}:</span>
+        {(["pick", "label", "delivery-note"] as const).map((kind) => (
+          <Link key={kind} href={`/staff/print/${kind}/${o.id}`} className="bg-bone-50 ring-bone-300 hover:ring-char-900 inline-flex min-h-11 items-center rounded-lg px-3 font-medium ring-1">
+            {t(`staff.order.print.${kind === "delivery-note" ? "note" : kind}`)}
+          </Link>
+        ))}
+      </nav>
+
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="bg-bone-50 ring-bone-300 rounded-2xl p-5 ring-1">
           <h2 className="text-char-500 text-sm">{t("staff.order.slot")}</h2>
