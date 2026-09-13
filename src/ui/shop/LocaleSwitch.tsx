@@ -5,7 +5,7 @@ import { useLocale } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 
 /** Switches language on the same page, keeping the query string (e.g. a search). */
-export function LocaleSwitch({ label, ariaLabel }: { label: string; ariaLabel: string }) {
+export function LocaleSwitch({ label, shortLabel, ariaLabel }: { label: string; shortLabel: string; ariaLabel: string }) {
   const locale = useLocale();
   const pathname = usePathname();
   const search = useSearchParams().toString();
@@ -19,7 +19,8 @@ export function LocaleSwitch({ label, ariaLabel }: { label: string; ariaLabel: s
       aria-label={ariaLabel}
       className="hover:bg-bone-200 inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium"
     >
-      {label}
+      <span className="sm:hidden">{shortLabel}</span>
+      <span className="hidden sm:inline">{label}</span>
     </Link>
   );
 }

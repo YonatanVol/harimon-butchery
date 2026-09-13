@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { listCategories, listProducts } from "@/infra/db/queries/catalog";
 import { AnimalGlyph } from "@/ui/shop/AnimalGlyph";
+import { DeliverySentence } from "@/ui/shop/DeliverySentence";
 import { ProductCard } from "@/ui/shop/ProductCard";
 
 export const revalidate = 60;
@@ -43,6 +44,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
               {t("home.headline")}
             </h1>
             <p className="font-reading text-bone-200 max-w-xl text-lg md:text-xl">{t("home.lead")}</p>
+            <DeliverySentence />
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/c/beef"

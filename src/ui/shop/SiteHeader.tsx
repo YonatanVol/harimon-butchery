@@ -4,6 +4,7 @@ import { brand } from "@/config/brand";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { listCategories } from "@/infra/db/queries/catalog";
+import { CartButton } from "./CartButton";
 import { LocaleSwitch } from "./LocaleSwitch";
 
 export async function SiteHeader() {
@@ -15,15 +16,15 @@ export async function SiteHeader() {
     <header className="bg-bone-50/90 sticky top-0 z-30 border-b border-bone-300 backdrop-blur">
       <a
         href="#main"
-        className="bg-char-900 text-bone-50 sr-only z-50 rounded-md px-3 py-2 focus:not-sr-only focus:absolute focus:start-3 focus:top-3"
+        className="bg-char-900 text-bone-50 sr-only start-0 top-0 z-50 rounded-md focus:not-sr-only focus:absolute focus:start-3 focus:top-3 focus:px-3 focus:py-2"
       >
         {t("skipToContent")}
       </a>
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2" aria-label={`${brand.name[locale]} — ${t("home")}`}>
           {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG mark */}
           <img src="/icon.svg" alt="" width={32} height={32} className="size-8" />
-          <span className="text-lg font-bold tracking-tight whitespace-nowrap">{brand.name[locale]}</span>
+          <span className="text-base font-bold tracking-tight whitespace-nowrap sm:text-lg">{brand.name[locale]}</span>
         </Link>
 
         <form action={`/${locale}/search`} role="search" className="ms-auto hidden max-w-sm flex-1 md:block">
@@ -39,7 +40,7 @@ export async function SiteHeader() {
           />
         </form>
 
-        <div className="ms-auto flex items-center gap-2 md:ms-0">
+        <div className="ms-auto flex items-center gap-1 sm:gap-2 md:ms-0">
           <Link
             href="/search"
             className="hover:bg-bone-200 grid size-11 place-items-center rounded-full md:hidden"
@@ -54,14 +55,17 @@ export async function SiteHeader() {
             fallback={
               <a
                 href={`/${locale === "he" ? "en" : "he"}`}
+                aria-label={t("switchLocaleLabel")}
                 className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium"
               >
-                {t("switchLocale")}
+                <span className="sm:hidden">{t("switchLocaleShort")}</span>
+                <span className="hidden sm:inline">{t("switchLocale")}</span>
               </a>
             }
           >
-            <LocaleSwitch label={t("switchLocale")} ariaLabel={t("switchLocaleLabel")} />
+            <LocaleSwitch label={t("switchLocale")} shortLabel={t("switchLocaleShort")} ariaLabel={t("switchLocaleLabel")} />
           </Suspense>
+          <CartButton />
         </div>
       </div>
 

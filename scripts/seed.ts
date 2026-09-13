@@ -7,7 +7,8 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as s from "../src/infra/db/schema";
-import { authorities, categories, products, staff, variantPresets, zones } from "./seed-data/catalog";
+import { generateSlots } from "../src/infra/delivery/generateSlots";
+import { authorities, categories, products, slotTemplates, staff, variantPresets, zones } from "./seed-data/catalog";
 
 if (!process.env.DATABASE_URL && existsSync(".env.local")) process.loadEnvFile(".env.local");
 const url = process.env.DATABASE_URL;
@@ -147,7 +148,7 @@ async function main() {
       });
     }
 
-    await tx.insert(s.deliveryZone).values(
+    const zoneRows = await tx.insert(s.deliveryZone).values(
       zones.map((z, i) => ({
         slug: z.slug,
         nameHe: z.nameHe,
@@ -161,7 +162,23 @@ async function main() {
         active: z.active ?? true,
         sortOrder: i,
       })),
-    );
+    ).returning({ id: s.deliveryZone.id, slug: s.deliveryZone.slug });
+
+    for (const zone of zoneRows) {
+      const templates = slotTemplates[zone.slug] ?? [];
+      if (templates.length === 0) continue;
+      await tx.insert(s.deliverySlotTemplate).values(
+        templates.map((t) => ({
+          zoneId: zone.id,
+          weekday: t.weekday,
+          startTime: t.start,
+          endTime: t.end,
+          capacityOrders: t.capacity,
+          capacityWeightG: t.capacity * 15_000,
+          cutoffLeadMinutes: t.cutoffHours * 60,
+        })),
+      );
+    }
 
     await tx.insert(s.staffUser).values(
       staff.map((m) => ({ phoneE164: m.phone, fullNameHe: m.nameHe, fullNameEn: m.nameEn, role: m.role })),
@@ -179,8 +196,9 @@ async function main() {
     ]);
   });
 
+  const slots = await generateSlots(db, { days: 84 });
   const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(s.product);
-  console.log(`✓ Seeded ${count} products, ${categories.length} categories, ${zones.length} zones in ${Date.now() - started} ms`);
+  console.log(`✓ Seeded ${count} products, ${categories.length} categories, ${zones.length} zones, ${slots.planned} delivery windows (${slots.open} open) in ${Date.now() - started} ms`);
 }
 
 main()

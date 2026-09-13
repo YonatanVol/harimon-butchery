@@ -11,7 +11,7 @@ import { AvailabilityChip, formatRestock } from "@/ui/shop/AvailabilityChip";
 import { KashrutPanel } from "@/ui/shop/KashrutPanel";
 import { ProductCard } from "@/ui/shop/ProductCard";
 import { ProductImage } from "@/ui/shop/ProductImage";
-import { PurchasePanel } from "@/ui/shop/PurchasePanel";
+import { ProductPurchase } from "@/ui/shop/ProductPurchase";
 
 export const revalidate = 60;
 
@@ -112,7 +112,7 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
             </div>
           )}
 
-          <PurchasePanel
+          <ProductPurchase
             outOfStockLabel={outLabel}
             product={{
               id: p.id,
