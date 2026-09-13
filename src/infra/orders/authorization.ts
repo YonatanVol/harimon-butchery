@@ -1,9 +1,9 @@
 import { and, desc, eq, lt } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import type { DeclineReason, PaymentProvider } from "@/domain/payments/provider";
+import type { DeclineReason, PaymentLookup, PaymentProvider } from "@/domain/payments/provider";
 import { holdSlotForCart } from "../cart/holds";
 import type * as schema from "../db/schema";
-import { order, paymentIntent } from "../db/schema";
+import { auditEvent, order, paymentIntent, paymentRefund } from "../db/schema";
 import { applyOrderEvent } from "./events";
 
 type Database = PostgresJsDatabase<typeof schema>;
@@ -13,7 +13,7 @@ export const HOLD_VALID_DAYS = 5;
 
 export type AuthorizationOutcome =
   | { kind: "APPROVED"; orderNumber: string; accessToken: string; locale: string }
-  | { kind: "DECLINED"; reason: DeclineReason | "AMOUNT_MISMATCH" | "PAGE_EXPIRED"; locale: string }
+  | { kind: "DECLINED"; reason: DeclineReason | "AMOUNT_MISMATCH" | "PAGE_EXPIRED" | "PAGE_EXPIRED_NOT_RETURNED"; locale: string }
   | { kind: "PENDING"; hostedPageUrl: string | null; locale: string }
   | { kind: "NOT_FOUND" };
 
@@ -41,13 +41,7 @@ export async function resolveAuthorization(
   const result = await provider.lookup(intent.hostedPageRef);
 
   // The page was abandoned and its order expired, but the customer paid it anyway: give the money straight back.
-  if (intent.status === "EXPIRED") {
-    if (result.kind === "APPROVED") {
-      if (intent.purpose === "AUTHORIZE") await provider.voidAuthorization({ transactionRef: result.transactionRef });
-      else await provider.refund({ transactionRef: result.transactionRef, amountAgorot: result.amountAgorot, idempotencyKey: `intent:${intent.id}:late-payment` });
-    }
-    return { kind: "DECLINED", reason: "PAGE_EXPIRED", locale: o.locale };
-  }
+  if (intent.status === "EXPIRED") return returnLatePayment(db, provider, { intent, result, locale: o.locale, orderId: o.id });
   if (result.kind === "PENDING" || result.kind === "NOT_FOUND") {
     return { kind: "PENDING", hostedPageUrl: intent.hostedPageUrl, locale: o.locale };
   }
@@ -61,9 +55,12 @@ export async function resolveAuthorization(
   }
 
   if (result.kind === "APPROVED") {
+    try {
     await db.transaction(async (tx) => {
       const [locked] = await tx.select().from(paymentIntent).where(eq(paymentIntent.id, intent.id)).for("update");
       if (locked.status === "AUTHORIZED") return;
+      // The sweep expired this page between our read and this lock: the payment is late, not an approval.
+      if (locked.status === "EXPIRED") throw new ExpiredMeanwhile();
       await tx
         .update(paymentIntent)
         .set({
@@ -80,6 +77,11 @@ export async function resolveAuthorization(
       const moved = await applyOrderEvent(tx, { orderId: o.id, event: "AUTH_APPROVED", ctx: { actor: "PSP" }, appUrl, now });
       if (!moved.ok) throw new Error(`AUTH_APPROVED rejected for ${o.orderNumber}: ${moved.reason}`);
     });
+    } catch (e) {
+      if (!(e instanceof ExpiredMeanwhile)) throw e;
+      const [expired] = await db.select().from(paymentIntent).where(eq(paymentIntent.id, intent.id));
+      return returnLatePayment(db, provider, { intent: expired, result, locale: o.locale, orderId: o.id });
+    }
     return { kind: "APPROVED", orderNumber: o.orderNumber, accessToken: o.accessToken, locale: o.locale };
   }
 
@@ -136,4 +138,45 @@ export async function expireAbandonedCheckouts(db: Database, provider: PaymentPr
   let expired = 0;
   for (const o of pending) if ((await expireIfAbandoned(db, provider, { orderId: o.id, appUrl, now })) === "EXPIRED") expired++;
   return expired;
+}
+
+class ExpiredMeanwhile extends Error {}
+
+/**
+ * The customer paid a page whose order had already expired. Their money goes straight back — the hold released
+ * or the charge refunded — and the outcome is recorded. If the provider refuses, the customer is told plainly and
+ * the board shows it to staff; nothing is kept silently.
+ */
+async function returnLatePayment(
+  db: Database,
+  provider: PaymentProvider,
+  { intent, result, locale, orderId }: { intent: typeof paymentIntent.$inferSelect; result: Extract<PaymentLookup, { kind: "APPROVED" }> | Exclude<PaymentLookup, { kind: "APPROVED" }>; locale: string; orderId: string },
+): Promise<AuthorizationOutcome> {
+  if (result.kind !== "APPROVED") return { kind: "DECLINED", reason: "PAGE_EXPIRED", locale };
+  if (intent.providerTransactionRef === result.transactionRef && intent.declineCode === "LATE_PAYMENT_RETURNED") return { kind: "DECLINED", reason: "PAGE_EXPIRED", locale };
+
+  let ok: boolean;
+  if (intent.purpose === "AUTHORIZE") {
+    ok = (await provider.voidAuthorization({ transactionRef: result.transactionRef })).ok;
+  } else {
+    const idempotencyKey = `intent:${intent.id}:late-payment`;
+    const r = await provider.refund({ transactionRef: result.transactionRef, amountAgorot: result.amountAgorot, idempotencyKey });
+    ok = r.ok;
+    await db
+      .insert(paymentRefund)
+      .values({ paymentIntentId: intent.id, amountAgorot: result.amountAgorot, reasonKey: "LATE_PAYMENT_ON_EXPIRED_PAGE", status: r.ok ? "SUCCEEDED" : "FAILED", idempotencyKey, providerRefundRef: r.ok ? r.refundRef : null })
+      .onConflictDoUpdate({ target: paymentRefund.idempotencyKey, set: { status: r.ok ? "SUCCEEDED" : "FAILED", providerRefundRef: r.ok ? r.refundRef : null } });
+  }
+  await db
+    .update(paymentIntent)
+    .set({ providerTransactionRef: result.transactionRef, cardBrand: result.cardBrand, cardLast4: result.cardLast4, declineCode: ok ? "LATE_PAYMENT_RETURNED" : "LATE_PAYMENT_NOT_RETURNED" })
+    .where(eq(paymentIntent.id, intent.id));
+  await db.insert(auditEvent).values({
+    actorType: "SYSTEM",
+    entityType: "order",
+    entityId: orderId,
+    action: ok ? "payment.late_payment_returned" : "payment.late_payment_not_returned",
+    after: { amountAgorot: result.amountAgorot, transactionRef: result.transactionRef, purpose: intent.purpose },
+  });
+  return { kind: "DECLINED", reason: ok ? "PAGE_EXPIRED" : "PAGE_EXPIRED_NOT_RETURNED", locale };
 }

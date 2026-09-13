@@ -123,7 +123,8 @@ export function createPayPlusProvider(config: PayPlusConfig): PaymentProvider & 
         refURL_cancel: req.returnUrl,
         refURL_callback: config.callbackUrl,
         send_failure_callback: true,
-        expiry_datetime: 30,
+        // Shorter than the 25 minutes after which an unpaid checkout is expired, so a page can't be paid after that.
+        expiry_datetime: 20,
         customer: { customer_name: req.customer.name, email: req.customer.email ?? "", phone: req.customer.phoneE164.replace(/^\+972/, "0") },
         more_info: req.intentId,
         more_info_2: req.orderNumber,

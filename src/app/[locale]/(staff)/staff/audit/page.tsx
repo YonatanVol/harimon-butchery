@@ -63,6 +63,8 @@ export default async function AuditPage({ params, searchParams }: PageProps<"/[l
         return t("actions.slots", { added: num(a?.added) ?? 0, closing: num(a?.closing) ?? 0 });
       case e.action === "order.change_window":
         return t("actions.changeWindow", { order: e.order?.number ?? "?" });
+      case ["order.start_picking", "order.ask_customer", "order.packed", "capture.succeeded", "capture.retry", "capture.reconcile", "payment.late_payment_returned", "payment.late_payment_not_returned"].includes(e.action):
+        return t(`actions.${e.action.replace(/\./g, "_") as "order_packed"}`, { order: e.order?.number ?? "?", amount: num(a?.amountAgorot) !== null ? money(a?.amountAgorot) : "" });
       case e.action.startsWith("line."):
         return t(`actions.${e.action.replace(".", "_") as "line_weigh"}`, { order: e.order?.number ?? "?", weight: num(a?.actualG) !== null ? qty(a?.actualG, "g") : "", name: String((locale === "he" ? a?.substituteNameHe : a?.substituteNameEn) ?? "") });
       case e.action.startsWith("delivery."):

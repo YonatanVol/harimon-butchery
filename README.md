@@ -59,6 +59,12 @@ Staff area: http://localhost:3000/he/staff/login — every demo staff member's P
 - Code 128 barcodes are structurally tested but not yet checked with a physical scanner.
 - A 404 page's first HTML (before JavaScript) is Next.js's bare error shell; the localized page renders on load.
 - Cold-chain and handling rules are sensible defaults and deserve a domain expert's review before real use.
+- Staff sign in on a shared kiosk screen that lists staff names; five wrong PINs lock that member for five
+  minutes, which someone could repeat to keep a member locked out. A real deployment should put the staff area
+  behind the shop's network or single sign-on.
+- A line the customer paid extra for can't be corrected on the weighing screen; the manager's only option is to
+  cancel the order (which refunds everything).
+- Money actions hold a lock while the payment provider answers; see `docs/adr/0003-payplus.md` for the trade-offs.
 
 ## Docs
 

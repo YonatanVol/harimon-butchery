@@ -13,7 +13,7 @@ import type * as schema from "../db/schema";
 import { auditEvent, deliverySlot, deliveryZone, order, orderLine, paymentIntent, setting } from "../db/schema";
 import { type OrderStatus, transition } from "@/domain/order/machine";
 import { applyOrderEvent, notifyAboutOrder } from "./events";
-import { returnPayments } from "./returnPayments";
+import { PaymentReturnFailed, returnPayments } from "./returnPayments";
 
 type Database = PostgresJsDatabase<typeof schema>;
 
@@ -138,12 +138,12 @@ export async function cancelByCustomer(
 ): Promise<CustomerResult> {
   const o = await findByToken(db, input.orderNumber, input.token);
   if (!o) return { ok: false, problem: { key: "NOT_FOUND" } };
-  return db.transaction(async (tx): Promise<CustomerResult> => {
+  return db
+    .transaction(async (tx): Promise<CustomerResult> => {
     // Locked first: the butcher can't start picking, nor a second click cancel again, while money is returned.
     const [locked] = await tx.select().from(order).where(eq(order.id, o.id)).for("update");
     if (!transition(locked.status as OrderStatus, "CANCELLED_BY_CUSTOMER", { actor: "CUSTOMER" }).ok) return { ok: false, problem: { key: "NOT_ALLOWED_NOW" } };
     const returned = await returnPayments(tx, provider, { orderId: o.id, reasonKey: "CANCELLED_BY_CUSTOMER", staffId: null });
-    if (!returned.ok) return { ok: false, problem: { key: "REFUND_FAILED" } };
     const moved = await applyOrderEvent(tx, {
       orderId: o.id,
       event: "CANCELLED_BY_CUSTOMER",
@@ -156,7 +156,11 @@ export async function cancelByCustomer(
       },
     });
     return moved.ok ? { ok: true } : { ok: false, problem: { key: "NOT_ALLOWED_NOW" } };
-  });
+  })
+    .catch((e) => {
+      if (e instanceof PaymentReturnFailed) return { ok: false as const, problem: { key: "REFUND_FAILED" as const } };
+      throw e;
+    });
 }
 
 async function coldChainMaxHours(db: Database) {

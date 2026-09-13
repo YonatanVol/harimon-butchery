@@ -58,7 +58,7 @@ export async function loadBoard(serviceDate: string) {
 }
 
 export type BoardAlert =
-  | { key: "CAPTURE_FAILED" | "AUTH_EXPIRED" | "AWAITING_CUSTOMER" | "NOT_HOME" | "NEEDS_REFUND" | "CAPTURE_STUCK"; orderId: string; orderNumber: string }
+  | { key: "CAPTURE_FAILED" | "AUTH_EXPIRED" | "AWAITING_CUSTOMER" | "NOT_HOME" | "NEEDS_REFUND" | "CAPTURE_STUCK" | "LATE_PAYMENT_NOT_RETURNED"; orderId: string; orderNumber: string }
   | { key: "HOLD_EXPIRING" | "SLOT_SOON" | "WINDOW_CLOSED"; orderId: string; orderNumber: string; when: Date }
   | { key: "CERT_EXPIRING"; authorityHe: string; authorityEn: string; when: Date };
 
@@ -104,6 +104,14 @@ export async function loadAlerts(now = new Date()): Promise<BoardAlert[]> {
       ),
     );
   for (const o of soon) alerts.push({ key: "SLOT_SOON", orderId: o.id, orderNumber: o.orderNumber, when: o.startsAt });
+
+  // A customer paid an expired page and the automatic return failed: staff must refund it by hand.
+  const unreturned = await db
+    .select({ id: order.id, orderNumber: order.orderNumber })
+    .from(paymentIntent)
+    .innerJoin(order, eq(order.id, paymentIntent.orderId))
+    .where(eq(paymentIntent.declineCode, "LATE_PAYMENT_NOT_RETURNED"));
+  for (const o of unreturned) alerts.push({ key: "LATE_PAYMENT_NOT_RETURNED", orderId: o.id, orderNumber: o.orderNumber });
 
   // A charge that never came back: the order page offers to check it again.
   const stuck2 = await db

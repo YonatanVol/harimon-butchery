@@ -8,7 +8,7 @@ import type { PaymentProvider } from "@/domain/payments/provider";
 import type * as schema from "../db/schema";
 import { auditEvent, customer, deliverySlot, deliveryZone, order, paymentCapture, paymentIntent, paymentRefund } from "../db/schema";
 import { applyOrderEvent } from "./events";
-import { returnPayments } from "./returnPayments";
+import { PaymentReturnFailed, returnPayments } from "./returnPayments";
 
 type Database = PostgresJsDatabase<typeof schema>;
 type Staff = { id: string; role: string };
@@ -186,9 +186,7 @@ export async function shopDecision(
     // Everything the card paid comes back before the order is cancelled; if a refund fails, nothing is cancelled.
     let refunded = 0;
     if (decision === "CANCEL") {
-      const returned = await returnPayments(tx, provider, { orderId, reasonKey: reason.trim(), staffId: staff.id });
-      if (!returned.ok) return { ok: false, problem: { key: "REFUND_FAILED" } };
-      refunded = returned.refundedAgorot;
+      refunded = (await returnPayments(tx, provider, { orderId, reasonKey: reason.trim(), staffId: staff.id })).refundedAgorot;
     }
 
     const moved = await applyOrderEvent(tx, {
@@ -206,6 +204,9 @@ export async function shopDecision(
     if (!moved.ok) return { ok: false, problem: rejection(moved.reason) };
     if (decision === "FORCE_DISPATCH") await tx.update(order).set({ unpaidDispatch: true }).where(eq(order.id, orderId));
     return { ok: true };
+  }).catch((e) => {
+    if (e instanceof PaymentReturnFailed) return { ok: false as const, problem: { key: "REFUND_FAILED" as const } };
+    throw e;
   });
 }
 

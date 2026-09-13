@@ -474,7 +474,8 @@
       "EXPIRED_CARD": "תוקף הכרטיס פג.",
       "GENERIC_DECLINE": "חברת האשראי לא אישרה את העסקה.",
       "AMOUNT_MISMATCH": "הסכום שאושר לא תאם להזמנה, ולכן ביטלנו אותו.",
-      "PAGE_EXPIRED": "דף התשלום הזה פג תוקף. אם חויבתם בו — הסכום הוחזר לכרטיס. אפשר להמשיך לתשלום מחדש."
+      "PAGE_EXPIRED": "דף התשלום הזה פג תוקף. אם חויבתם בו — הסכום הוחזר לכרטיס. אפשר להמשיך לתשלום מחדש.",
+      "PAGE_EXPIRED_NOT_RETURNED": "דף התשלום הזה פג תוקף, והתשלום שבוצע בו לא הוחזר אוטומטית. הצוות שלנו קיבל התראה ויחזיר את הסכום. אפשר להמשיך לתשלום מחדש."
     },
     "declinedBody": "לא בוצע חיוב. הסל ומועד המשלוח שמורים לכם — אפשר לנסות כרטיס אחר.",
     "pendingTitle": "התשלום עוד לא הושלם",
@@ -661,7 +662,8 @@
         "NOT_HOME": "הזמנה {number}: הלקוח לא היה בבית — להתקשר ולתאם, או להחזיר לחנות",
         "NEEDS_REFUND": "הזמנה {number}: חזרה לחנות — צריך להחליט על החזר כספי",
         "WINDOW_CLOSED": "הזמנה {number}: המועד שלה ({when}) נסגר — להתקשר ולקבוע מועד חדש",
-        "CAPTURE_STUCK": "הזמנה {number}: החיוב לא הסתיים — לבדוק מחדש בדף ההזמנה"
+        "CAPTURE_STUCK": "הזמנה {number}: החיוב לא הסתיים — לבדוק מחדש בדף ההזמנה",
+        "LATE_PAYMENT_NOT_RETURNED": "הזמנה {number}: לקוח שילם דף תשלום שפג תוקפו וההחזר האוטומטי נכשל — להחזיר ידנית"
       },
       "open": "פתח",
       "denied": "אין לך הרשאה לפעולה הזו ({capability})"
@@ -1172,7 +1174,15 @@
         "line_handling": "הזמנה {order}: אושר טיפול (צלייה/מליחה)",
         "line_package": "הזמנה {order}: מארז נאסף",
         "delivery": "הזמנה {order}: {event}",
-        "restockDate": "{product}: צפי חזרה למלאי — {date}"
+        "restockDate": "{product}: צפי חזרה למלאי — {date}",
+        "order_start_picking": "הזמנה {order}: התחילה הכנה",
+        "order_ask_customer": "הזמנה {order}: נשלחה שאלה ללקוח על תוספת",
+        "order_packed": "הזמנה {order}: נארזה",
+        "capture_succeeded": "הזמנה {order}: חויבו {amount}",
+        "capture_retry": "הזמנה {order}: ניסיון חיוב חוזר",
+        "capture_reconcile": "הזמנה {order}: בדיקת חיוב שלא הסתיים",
+        "payment_late_payment_returned": "הזמנה {order}: תשלום מאוחר על דף שפג הוחזר ({amount})",
+        "payment_late_payment_not_returned": "הזמנה {order}: תשלום מאוחר על דף שפג לא הוחזר ({amount}) — לטיפול ידני"
       },
       "events": {
         "CANCELLED_BY_SHOP": "בוטלה על ידי החנות",

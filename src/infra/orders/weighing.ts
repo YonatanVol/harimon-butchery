@@ -104,6 +104,11 @@ async function auditLine(tx: Tx, staff: Staff, line: typeof orderLine.$inferSele
   });
 }
 
+/** Order-level steps on the weighing screen, for the activity log. */
+async function auditOrder(exec: Database | Tx, staff: Staff, orderId: string, action: string, after: Record<string, unknown> = {}) {
+  await exec.insert(auditEvent).values({ actorType: "STAFF", actorId: staff.id, entityType: "order", entityId: orderId, action, after });
+}
+
 function requireFloor(staff: Staff) {
   if (!can(staff.role as StaffRole, "PICK_AND_WEIGH")) throw new Stop({ key: "NOT_PERMITTED" });
 }
@@ -135,6 +140,7 @@ export function startPicking(db: Database, { orderId, staff, appUrl }: { orderId
       const moved = await applyOrderEvent(tx, { orderId, event: "PICKING_STARTED", ctx: { actor: staff.role as StaffRole }, actorId: staff.id, appUrl });
       if (!moved.ok) throw new Stop({ key: "WRONG_STATE", status: o.status });
       await tx.update(order).set({ assignedButcherId: staff.id }).where(eq(order.id, orderId));
+      await auditOrder(tx, staff, orderId, "order.start_picking");
       return { version: moved.order.version };
     }),
   );
@@ -263,6 +269,7 @@ export function askCustomer(
         },
       });
       if (!moved.ok) throw new Stop({ key: "WRONG_STATE", status: o.status });
+      await auditOrder(tx, input.staff, o.id, "order.ask_customer", { lineId: line.id, actualG: input.actualG, extraAgorot: extra });
       return { version: moved.order.version, extraAgorot: extra, deadline: deadline.toISOString() };
     }),
   );
@@ -641,6 +648,7 @@ async function settleCapture(
 
     const moved = await applyOrderEvent(tx, { orderId: p.orderId, event: "CAPTURE_SUCCEEDED", ctx: { actor: "PSP" }, appUrl: p.appUrl, now: p.now });
     if (!moved.ok) throw new Error(`CAPTURE_SUCCEEDED rejected: ${moved.reason}`);
+    await auditOrder(tx, p.staff, p.orderId, "capture.succeeded", { amountAgorot: p.onHold, attempt: p.attempt, finalTotalAgorot: p.finalTotal });
     return { ok: true, finalTotalAgorot: p.finalTotal, capturedAgorot: p.finalTotal, invoiceNumber: number };
   });
 }
@@ -661,6 +669,7 @@ export async function retryCapture(
         .where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.status, "AUTHORIZED"), ne(paymentIntent.purpose, "EXTRA")));
       const [{ attempts }] = await tx.select({ attempts: sql<number>`count(*)::int` }).from(paymentCapture).where(eq(paymentCapture.paymentIntentId, intent.id));
       const moved = await applyOrderEvent(tx, { orderId, event: "CAPTURE_RETRIED", ctx: { actor: staff.role as StaffRole, captureAttempts: attempts }, actorId: staff.id, appUrl, now });
+      await auditOrder(tx, staff, orderId, "capture.retry", { attempt: attempts + 1 });
       if (!moved.ok) throw new Stop(moved.reason === "TOO_MANY_CAPTURE_ATTEMPTS" ? { key: "TOO_MANY_CAPTURE_ATTEMPTS" } : { key: "WRONG_STATE", status: o.status });
       const onHold = o.finalTotalAgorot! - o.extraChargedAgorot;
       await tx.insert(paymentCapture).values({
@@ -704,7 +713,8 @@ export async function reconcileCapture(
   const [latest] = await db.select().from(paymentCapture).where(eq(paymentCapture.paymentIntentId, intent.id)).orderBy(desc(paymentCapture.attempt)).limit(1);
   if (!latest || latest.status !== "PENDING") return { ok: false, problem: { key: "WRONG_STATE", status: o.status } };
   if (now.getTime() - latest.createdAt.getTime() < CAPTURE_STUCK_AFTER_MS) return { ok: false, problem: { key: "CAPTURE_IN_PROGRESS" } };
-  return settleCapture(db, provider, {
+  await auditOrder(db, staff, orderId, "capture.reconcile", { attempt: latest.attempt });
+  const settle = settleCapture(db, provider, {
     orderId,
     staff,
     appUrl,
@@ -717,6 +727,12 @@ export async function reconcileCapture(
     onHold: latest.amountAgorot,
     attempt: latest.attempt,
   });
+  // Two clicks at once: the capture itself is idempotent; the second record attempt finds the order settled.
+  return settle.catch(async (e) => {
+    const [after] = await db.select({ status: order.status }).from(order).where(eq(order.id, orderId));
+    if (after && after.status !== "CAPTURE_PENDING") return { ok: false as const, problem: { key: "WRONG_STATE" as const, status: after.status } };
+    throw e;
+  });
 }
 
 export function markPacked(db: Database, { orderId, staff, appUrl }: { orderId: string; staff: Staff; appUrl: string }) {
@@ -726,6 +742,7 @@ export function markPacked(db: Database, { orderId, staff, appUrl }: { orderId: 
       const o = await lockOrder(tx, orderId);
       const moved = await applyOrderEvent(tx, { orderId, event: "PACKED", ctx: { actor: staff.role as StaffRole }, actorId: staff.id, appUrl });
       if (!moved.ok) throw new Stop({ key: "WRONG_STATE", status: o.status });
+      await auditOrder(tx, staff, orderId, "order.packed");
       return { version: moved.order.version };
     }),
   );

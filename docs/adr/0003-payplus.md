@@ -54,3 +54,20 @@ Sources: docs.payplus.co.il (endpoint reference pages) and PayPlus's own WooComm
 - `npm run payplus:check` is the end-to-end check: it creates a ₪465 hold page, a person pays it with the
   sandbox test card, and the script captures ₪387, retries the capture, refunds ₪50 and charges ₪1 on the
   token, printing each result to compare with the PayPlus dashboard.
+
+## Money flows and locking (after the independent review)
+
+Cancellations, approved extras and refunds hold the order row lock from the state check through the provider
+call to the record. That closed real double-charge and lost-record races (see
+`tests/integration/review-money.test.ts`). The cost, accepted for now:
+
+- **Lock and connection held during a provider call.** With PayPlus a call can take up to its 20-second timeout
+  (twice when an idempotency check runs first), during which the tablet can't change that order. With the demo
+  gateway each call uses a second pool connection, so about ten money actions at the same instant in one
+  process could wait on each other (pool: `DB_POOL_MAX`, default 10 — kept small because builds and serverless
+  instances share Postgres's connection limit).
+- **If the server dies after money moved but before the record commits**, the record is rolled back. Every call
+  has a stable key, so repeating the action finds the earlier result instead of moving money again — but someone
+  has to repeat it. A durable "payment in flight" record written before the provider call would remove that gap.
+- **Abandoned checkouts** are expired when staff open the board and when customers open the cart or checkout; there
+  is no scheduled job (Vercel's hobby plan allows daily crons only).

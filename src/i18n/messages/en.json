@@ -474,7 +474,8 @@
       "EXPIRED_CARD": "The card has expired.",
       "GENERIC_DECLINE": "The card issuer didn't approve the transaction.",
       "AMOUNT_MISMATCH": "The approved amount didn't match the order, so we cancelled it.",
-      "PAGE_EXPIRED": "That payment page expired. If you were charged on it, the amount was returned to your card. You can continue to payment again."
+      "PAGE_EXPIRED": "That payment page expired. If you were charged on it, the amount was returned to your card. You can continue to payment again.",
+      "PAGE_EXPIRED_NOT_RETURNED": "That payment page had expired, and the payment made on it couldn't be returned automatically. Our team has been alerted and will return it. You can continue to payment again."
     },
     "declinedBody": "Nothing was charged. Your cart and delivery time are still saved — you can try another card.",
     "pendingTitle": "Payment isn't finished yet",
@@ -661,7 +662,8 @@
         "NOT_HOME": "Order {number}: nobody was home — call to arrange, or return it to the shop",
         "NEEDS_REFUND": "Order {number}: back at the shop — a refund decision is needed",
         "WINDOW_CLOSED": "Order {number}: its window ({when}) was closed — call to book a new one",
-        "CAPTURE_STUCK": "Order {number}: the charge never finished — check it again on the order page"
+        "CAPTURE_STUCK": "Order {number}: the charge never finished — check it again on the order page",
+        "LATE_PAYMENT_NOT_RETURNED": "Order {number}: a customer paid an expired payment page and the automatic return failed — refund it by hand"
       },
       "open": "Open",
       "denied": "You don't have permission for that ({capability})"
@@ -1172,7 +1174,15 @@
         "line_handling": "Order {order}: handling confirmed (broiling/salting)",
         "line_package": "Order {order}: package picked",
         "delivery": "Order {order}: {event}",
-        "restockDate": "{product}: expected back — {date}"
+        "restockDate": "{product}: expected back — {date}",
+        "order_start_picking": "Order {order}: preparation started",
+        "order_ask_customer": "Order {order}: customer asked about an extra",
+        "order_packed": "Order {order}: packed",
+        "capture_succeeded": "Order {order}: charged {amount}",
+        "capture_retry": "Order {order}: charge retried",
+        "capture_reconcile": "Order {order}: unfinished charge checked",
+        "payment_late_payment_returned": "Order {order}: late payment on an expired page returned ({amount})",
+        "payment_late_payment_not_returned": "Order {order}: late payment on an expired page NOT returned ({amount}) — handle by hand"
       },
       "events": {
         "CANCELLED_BY_SHOP": "cancelled by the shop",

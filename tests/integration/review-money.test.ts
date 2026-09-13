@@ -307,3 +307,58 @@ describe("weighing-screen guards and the log", () => {
     expect(await changeWindow(db, { orderId: f.orderId, slotId: heavy.id, staff: manager, appUrl: APP })).toEqual({ ok: false, problem: { key: "SLOT_UNAVAILABLE" } });
   });
 });
+
+describe("second review pass", () => {
+  it("a cancel whose refund fails rolls back completely: the hold is not released, and the order can still be charged", async () => {
+    const f = await authorizedOrder(db, provider);
+    const butcher = await makeStaff(db, "BUTCHER");
+    const manager = await makeStaff(db, "MANAGER");
+    await startPicking(db, { orderId: f.orderId, staff: butcher, appUrl: APP });
+    await askCustomer(db, { orderId: f.orderId, lineId: f.line.id, actualG: 3400, expectedVersion: await versionOf(db, f.orderId), staff: butcher, appUrl: APP, locale: "he" });
+    await decideExtra(db, provider, { orderNumber: f.order.orderNumber, token: f.order.accessToken, decision: "APPROVE", appUrl: APP });
+
+    const failingRefunds: PaymentProvider = { ...provider, refund: async () => ({ ok: false, code: "DOWN" }) };
+    expect(await shopDecision(db, failingRefunds, { orderId: f.orderId, decision: "CANCEL", reason: "בדיקת כשל בהחזר", staff: manager, appUrl: APP })).toEqual({ ok: false, problem: { key: "REFUND_FAILED" } });
+    expect((await orderRow(f.orderId)).status).toBe("PICKING");
+    const intents = await db.select().from(paymentIntent).where(eq(paymentIntent.orderId, f.orderId));
+    expect(intents.map((i) => i.status)).toEqual(["AUTHORIZED", "AUTHORIZED"]);
+    // Still chargeable.
+    expect((await finishWeighing(db, provider, { orderId: f.orderId, expectedVersion: await versionOf(db, f.orderId), staff: butcher, appUrl: APP })).ok).toBe(true);
+  });
+
+  it("a late payment whose automatic return fails is recorded, alerted on the board, and not described as returned", async () => {
+    const { placeOrder } = await import("@/infra/orders/placeOrder");
+    const { resolveAuthorization, expireIfAbandoned } = await import("@/infra/orders/authorization");
+    const { decideMockPayment } = await import("@/infra/payments/mock");
+    const { loadAlerts } = await import("@/infra/staff/board");
+    const { cartLine } = await import("@/infra/db/schema");
+    const { validDetails } = await import("./support/db");
+    const f = await authorizedOrder(db, provider);
+    const c = await makeCart(db, f.zone.id);
+    await db.insert(cartLine).values({ cartId: c.id, variantId: f.cheaper.variant.id, requestedG: 2000 });
+    await holdSlotForCart(db, { cartId: c.id, zoneId: f.zone.id, slotId: f.slot.id });
+    const placed = await placeOrder(db, provider, { cartId: c.id, details: validDetails, locale: "he", appUrl: APP });
+    if (!placed.ok) throw new Error(placed.problem.key);
+    expect(await expireIfAbandoned(db, provider, { orderId: placed.orderId, appUrl: APP, force: true })).toBe("EXPIRED");
+
+    const [intent] = await db.select().from(paymentIntent).where(eq(paymentIntent.orderId, placed.orderId));
+    await decideMockPayment(db, intent.hostedPageRef!, "APPROVE");
+    const cannotVoid: PaymentProvider = { ...provider, voidAuthorization: async () => ({ ok: false }) };
+    expect(await resolveAuthorization(db, cannotVoid, { intentId: intent.id, appUrl: APP })).toMatchObject({ kind: "DECLINED", reason: "PAGE_EXPIRED_NOT_RETURNED" });
+    expect((await loadAlerts()).filter((a) => a.key === "LATE_PAYMENT_NOT_RETURNED")).toHaveLength(1);
+  });
+
+  it("two clicks on 'check the charge again' settle it once and don't crash", async () => {
+    const { reconcileCapture } = await import("@/infra/orders/weighing");
+    const f = await authorizedOrder(db, provider);
+    const butcher = await makeStaff(db, "BUTCHER");
+    await startPicking(db, { orderId: f.orderId, staff: butcher, appUrl: APP });
+    await recordWeight(db, { orderId: f.orderId, lineId: f.line.id, actualG: 2500, expectedVersion: await versionOf(db, f.orderId), staff: butcher });
+    const dying: PaymentProvider = { ...provider, capture: async (req) => { await provider.capture(req); throw new Error("process killed"); } };
+    await expect(finishWeighing(db, dying, { orderId: f.orderId, expectedVersion: await versionOf(db, f.orderId), staff: butcher, appUrl: APP })).rejects.toThrow();
+    const later = new Date(Date.now() + 3 * 60_000);
+    const results = await Promise.all([1, 2].map(() => reconcileCapture(db, provider, { orderId: f.orderId, staff: butcher, appUrl: APP, now: later })));
+    expect(results.filter((r) => r.ok)).toHaveLength(1);
+    expect((await orderRow(f.orderId)).status).toBe("CAPTURED");
+  });
+});
