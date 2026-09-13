@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { deliverySlot, mockPspTransaction, notification, order, orderLine, paymentIntent, stockItem } from "@/infra/db/schema";
 import { cancelByCustomer, decideExtra, expireApprovals, moveDelivery, rescheduleDelivery, rescheduleOptions } from "@/infra/orders/customer";
-import { driverAction, refundOrder } from "@/infra/orders/delivery";
+import { driverAction, refundOrder, shopDecision } from "@/infra/orders/delivery";
 import { askCustomer, finishWeighing, markPacked, markShort, recordWeight, startPicking, undoLine } from "@/infra/orders/weighing";
 import { createMockProvider } from "@/infra/payments/mock";
 import { connectTestDb, makeSlot, makeStaff, truncateAll } from "./support/db";
@@ -64,6 +64,21 @@ describe("asking the customer about extra weight", () => {
     expect(await undoLine(db, { orderId: f.orderId, lineId: f.line.id, expectedVersion: await v(), staff: f.butcher })).toEqual({ ok: false, problem: { key: "AWAITING_CUSTOMER" } });
     const done = await finishWeighing(db, provider, { orderId: f.orderId, expectedVersion: await v(), staff: f.butcher, appUrl: APP });
     expect(done).toMatchObject({ ok: false, problem: { key: "WRONG_STATE", status: "AWAITING_CUSTOMER_APPROVAL" } });
+  });
+
+  it("if the shop cancels after the customer approved an extra, the extra is refunded and the message says so", async () => {
+    const f = await askedAbout(3400);
+    await decideExtra(db, provider, { orderNumber: f.order.orderNumber, token: f.order.accessToken, decision: "APPROVE", appUrl: APP });
+    const manager = await makeStaff(db, "MANAGER");
+    expect(await shopDecision(db, provider, { orderId: f.orderId, decision: "CANCEL", reason: "הבשר לא עמד בבדיקת איכות", staff: manager, appUrl: APP })).toEqual({ ok: true });
+    expect((await orderRow(f.orderId)).status).toBe("CANCELLED_BY_SHOP");
+    const extra = (await db.select().from(paymentIntent).where(and(eq(paymentIntent.orderId, f.orderId), eq(paymentIntent.purpose, "EXTRA"))))[0];
+    expect(extra.status).toBe("VOIDED");
+    const tokenTx = (await db.select().from(mockPspTransaction)).find((t) => t.scenario === "TOKEN_CHARGE")!;
+    expect(tokenTx.refundedAgorot).toBe(10_985);
+    const [msg] = await db.select().from(notification).where(and(eq(notification.orderId, f.orderId), eq(notification.templateKey, "order.cancelled_by_shop_refunded")));
+    expect(msg.renderedBody).toContain("109.85");
+    expect(await db.select().from(notification).where(and(eq(notification.orderId, f.orderId), eq(notification.templateKey, "order.cancelled_by_shop")))).toHaveLength(0);
   });
 
   it("choosing to trim sends the order back to the butcher to weigh again within range", async () => {
@@ -193,7 +208,7 @@ describe("manager decisions", () => {
     expect((await orderRow(f.orderId)).status).toBe("CAPTURE_FAILED");
     expect((await db.select().from(stockItem).where(eq(stockItem.productId, f.beef.product.id)))[0].onHandG).toBe(40_000 - 2600);
 
-    const { shopDecision } = await import("@/infra/orders/delivery");
+
     expect(await shopDecision(db, provider, { orderId: f.orderId, decision: "CANCEL", reason: "short", staff: manager, appUrl: APP })).toEqual({ ok: false, problem: { key: "REASON_REQUIRED" } });
     expect(await shopDecision(db, provider, { orderId: f.orderId, decision: "CANCEL", reason: "Card keeps failing, customer unreachable", staff: butcher, appUrl: APP })).toEqual({
       ok: false,
@@ -213,7 +228,7 @@ describe("manager decisions", () => {
     await startPicking(db, { orderId: f.orderId, staff: butcher, appUrl: APP });
     await recordWeight(db, { orderId: f.orderId, lineId: f.line.id, actualG: 2500, expectedVersion: await versionOf(db, f.orderId), staff: butcher });
     await finishWeighing(db, provider, { orderId: f.orderId, expectedVersion: await versionOf(db, f.orderId), staff: butcher, appUrl: APP });
-    const { shopDecision } = await import("@/infra/orders/delivery");
+
     expect(await shopDecision(db, provider, { orderId: f.orderId, decision: "FORCE_DISPATCH", reason: "Regular customer, will pay cash on delivery", staff: manager, appUrl: APP })).toEqual({ ok: true });
     expect(await orderRow(f.orderId)).toMatchObject({ status: "PACKED", unpaidDispatch: true });
   });

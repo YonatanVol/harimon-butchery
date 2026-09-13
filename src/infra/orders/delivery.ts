@@ -3,7 +3,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { can, type StaffRole } from "@/domain/auth/permissions";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
-import type { OrderEvent } from "@/domain/order/machine";
+import { type OrderEvent, type OrderStatus, transition } from "@/domain/order/machine";
 import type { PaymentProvider } from "@/domain/payments/provider";
 import type * as schema from "../db/schema";
 import { customer, deliverySlot, deliveryZone, order, paymentIntent, paymentRefund } from "../db/schema";
@@ -143,15 +143,48 @@ export async function shopDecision(
 ): Promise<DeliveryResult> {
   if (!can(staff.role as StaffRole, decision === "CANCEL" ? "CANCEL_ORDER" : "OVERRIDE")) return { ok: false, problem: { key: "NOT_PERMITTED" } };
   const event = decision === "CANCEL" ? "CANCELLED_BY_SHOP" : "FORCE_DISPATCHED";
+  const [o] = await db.select().from(order).where(eq(order.id, orderId));
+  if (!o) return { ok: false, problem: { key: "NOT_FOUND" } };
+  const check = transition(o.status as OrderStatus, event, { actor: staff.role as StaffRole, reason });
+  if (!check.ok) return { ok: false, problem: rejection(check.reason) };
+
+  // An extra the customer approved was charged on its own. Cancelling must give it back first:
+  // if the refund fails, the order is not cancelled and the manager sees why.
+  let refundedExtra = 0;
+  if (decision === "CANCEL") {
+    const extras = await db.select().from(paymentIntent).where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.purpose, "EXTRA"), eq(paymentIntent.status, "AUTHORIZED")));
+    for (const extra of extras) {
+      if (!extra.providerTransactionRef) continue;
+      const idempotencyKey = `order:${orderId}:cancel-extra:${extra.id}`;
+      const r = await provider.refund({ transactionRef: extra.providerTransactionRef, amountAgorot: extra.amountAgorot, idempotencyKey });
+      await db
+        .insert(paymentRefund)
+        .values({ paymentIntentId: extra.id, amountAgorot: extra.amountAgorot, reasonKey: reason.trim().slice(0, 200), requestedByStaffId: staff.id, status: r.ok ? "SUCCEEDED" : "FAILED", idempotencyKey, providerRefundRef: r.ok ? r.refundRef : null })
+        .onConflictDoUpdate({ target: paymentRefund.idempotencyKey, set: { status: r.ok ? "SUCCEEDED" : "FAILED", providerRefundRef: r.ok ? r.refundRef : null } });
+      if (!r.ok) return { ok: false, problem: { key: "REFUND_FAILED" } };
+      await db.update(paymentIntent).set({ status: "VOIDED" }).where(eq(paymentIntent.id, extra.id));
+      refundedExtra += extra.amountAgorot;
+    }
+  }
+
   const result = await db.transaction(async (tx) => {
-    const moved = await applyOrderEvent(tx, { orderId, event, ctx: { actor: staff.role as StaffRole, reason }, actorId: staff.id, appUrl, now, payload: { templateVars: { reason } } });
+    const moved = await applyOrderEvent(tx, {
+      orderId,
+      event,
+      ctx: { actor: staff.role as StaffRole, reason },
+      actorId: staff.id,
+      appUrl,
+      now,
+      payload: {
+        templateVars: { reason, refundAmount: formatAgorot(agorot(refundedExtra), o.locale === "en" ? "en" : "he") },
+        ...(refundedExtra > 0 && { templateOverrides: { "order.cancelled_by_shop": "order.cancelled_by_shop_refunded" } }),
+      },
+    });
     if (!moved.ok) return moved;
     if (decision === "FORCE_DISPATCH") await tx.update(order).set({ unpaidDispatch: true }).where(eq(order.id, orderId));
     return moved;
   });
-  if (!result.ok) {
-    return { ok: false, problem: result.reason === "REASON_REQUIRED" ? { key: "REASON_REQUIRED" } : result.reason === "NOT_PERMITTED" ? { key: "NOT_PERMITTED" } : { key: "WRONG_STATE", reason: result.reason } };
-  }
+  if (!result.ok) return { ok: false, problem: rejection(result.reason) };
   if (result.effects.includes("VOID_AUTHORIZATION")) {
     const [intent] = await db.select().from(paymentIntent).where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.status, "AUTHORIZED"), ne(paymentIntent.purpose, "EXTRA")));
     if (intent?.providerTransactionRef) {
@@ -160,4 +193,8 @@ export async function shopDecision(
     }
   }
   return { ok: true };
+}
+
+function rejection(reason: string): DeliveryProblem {
+  return reason === "REASON_REQUIRED" ? { key: "REASON_REQUIRED" } : reason === "NOT_PERMITTED" ? { key: "NOT_PERMITTED" } : { key: "WRONG_STATE", reason };
 }

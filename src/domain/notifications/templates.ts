@@ -21,6 +21,7 @@ export type TemplateKey =
   | "order.refunded"
   | "order.cancelled"
   | "order.cancelled_by_shop"
+  | "order.cancelled_by_shop_refunded"
   | "order.reauth_required"
   | "auth.otp";
 
@@ -76,6 +77,8 @@ const he: Record<TemplateKey, Body> = {
   "order.refunded": (v) => `${v.firstName}, זיכינו ${v.refundAmount} על ההזמנה ${v.orderNumber}. הזיכוי יופיע בכרטיס בתוך מספר ימי עסקים.`,
   "order.cancelled": (v) => `ההזמנה ${v.orderNumber} בוטלה. לא בוצע חיוב, וההקפאה תשוחרר.`,
   "order.cancelled_by_shop": (v) => `${v.firstName}, מצטערים — נאלצנו לבטל את ההזמנה ${v.orderNumber}: ${v.reason}. לא בוצע חיוב.`,
+  "order.cancelled_by_shop_refunded": (v) =>
+    `${v.firstName}, מצטערים — נאלצנו לבטל את ההזמנה ${v.orderNumber}: ${v.reason}. ההקפאה בכרטיס שוחררה, והתוספת שחויבה (${v.refundAmount}) הוחזרה לכרטיס.`,
   "order.reauth_required": (v) =>
     `${v.firstName}, תוקף ההקפאה בכרטיס להזמנה ${v.orderNumber} פג לפני שהספקנו לשקול. כדי שנמשיך — אשרו תשלום מחדש:\n${v.trackingUrl}`,
   "auth.otp": (v) => `קוד הכניסה שלך לקצביית הרימון: ${v.code}\nהקוד בתוקף ל-5 דקות. לא לשתף עם אף אחד.`,
@@ -105,6 +108,8 @@ const en: Record<TemplateKey, Body> = {
   "order.refunded": (v) => `${v.firstName}, we've refunded ${v.refundAmount} for order ${v.orderNumber}. It will appear on your card within a few business days.`,
   "order.cancelled": (v) => `Order ${v.orderNumber} has been cancelled. Nothing was charged and the hold will be released.`,
   "order.cancelled_by_shop": (v) => `${v.firstName}, we're sorry — we had to cancel order ${v.orderNumber}: ${v.reason}. Nothing was charged.`,
+  "order.cancelled_by_shop_refunded": (v) =>
+    `${v.firstName}, we're sorry — we had to cancel order ${v.orderNumber}: ${v.reason}. The card hold was released and the extra you approved (${v.refundAmount}) was refunded.`,
   "order.reauth_required": (v) =>
     `${v.firstName}, the hold on your card for order ${v.orderNumber} expired before we could weigh it. To continue, please approve payment again:\n${v.trackingUrl}`,
   "auth.otp": (v) => `Your Harimon Butchery login code: ${v.code}\nValid for 5 minutes. Don't share it with anyone.`,
@@ -140,6 +145,7 @@ export const TEMPLATE_PARAM_ORDER: Record<TemplateKey, Array<keyof TemplateVars>
   "order.refunded": ["firstName", "refundAmount", "orderNumber"],
   "order.cancelled": ["orderNumber"],
   "order.cancelled_by_shop": ["firstName", "orderNumber", "reason"],
+  "order.cancelled_by_shop_refunded": ["firstName", "orderNumber", "reason", "refundAmount"],
   "order.reauth_required": ["firstName", "orderNumber", "trackingUrl"],
   "auth.otp": ["code"],
 };

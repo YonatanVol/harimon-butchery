@@ -107,7 +107,10 @@ export async function applyOrderEvent(tx: Tx, input: ApplyEventInput): Promise<A
         createdAt: now,
       });
     } else if (effect.startsWith("NOTIFY:")) {
-      await enqueueNotification(tx, updated, effect.slice("NOTIFY:".length) as TemplateKey, input.appUrl, now, input.payload);
+      const key = effect.slice("NOTIFY:".length) as TemplateKey;
+      // A caller that knows more (e.g. an extra charge was refunded) can send a truer variant of the same message.
+      const override = (input.payload?.templateOverrides as Partial<Record<TemplateKey, TemplateKey>> | undefined)?.[key];
+      await enqueueNotification(tx, updated, override ?? key, input.appUrl, now, input.payload);
     }
   }
 

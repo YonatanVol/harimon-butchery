@@ -788,7 +788,7 @@
       "nothingToRefund": "Everything charged has already been refunded",
       "CANCEL": {
         "open": "Cancel by shop",
-        "help": "The card hold is released, the delivery window is freed, and any meat already cut goes back into stock.",
+        "help": "The card hold is released, any extra the customer approved is refunded, the delivery window is freed, and meat already cut goes back into stock.",
         "reasonAudience": "The reason is sent to the customer and kept in the log — write it for the customer.",
         "confirm": "Cancel the order"
       },
