@@ -1,6 +1,6 @@
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { customer, deliverySlot, order, orderLine } from "../db/schema";
+import { customer, deliverySlot, order } from "../db/schema";
 
 /** Every order placed with this phone, newest first. */
 export async function loadOrderHistory(phoneE164: string) {
@@ -17,7 +17,7 @@ export async function loadOrderHistory(phoneE164: string) {
       startsAt: deliverySlot.startsAt,
       endsAt: deliverySlot.endsAt,
       firstName: customer.firstName,
-      lineCount: sql<number>`(select count(*)::int from ${orderLine} where ${orderLine.orderId} = ${order.id})`,
+      lineCount: sql<number>`(select count(*)::int from order_line ol where ol.order_id = orders.id)`,
     })
     .from(order)
     .innerJoin(customer, eq(customer.id, order.customerId))

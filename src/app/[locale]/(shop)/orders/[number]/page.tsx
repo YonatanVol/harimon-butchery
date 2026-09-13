@@ -100,7 +100,9 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
         {o.status === "DELIVERY_FAILED_NOT_HOME" && (
           <Reschedule target={{ by: "customer", orderNumber: o.orderNumber, token }} windows={windows.map((w) => ({ id: w.id, startsAt: w.startsAt.toISOString(), endsAt: w.endsAt.toISOString() }))} />
         )}
-        {o.status === "AUTHORIZED" && <CancelOrder orderNumber={o.orderNumber} token={token} />}
+        {o.status === "AUTHORIZED" && (
+          <CancelOrder orderNumber={o.orderNumber} token={token} paidAmount={intent?.purpose === "CHARGE" ? money(intent.amountAgorot) : null} />
+        )}
       </div>
 
       <ol className="mt-8 grid grid-cols-5 gap-2" aria-label={t("timeline")}>

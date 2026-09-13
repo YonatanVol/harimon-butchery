@@ -43,7 +43,7 @@ export async function loadStockView(db: Database) {
       minOrderG: product.minOrderG,
       published: product.published,
       stock: stockItem,
-      waiting: sql<number>`(select count(*)::int from interest_signup where kind = 'RESTOCK' and subject = ${product.id}::text and notified_at is null)`,
+      waiting: sql<number>`(select count(*)::int from interest_signup i where i.kind = 'RESTOCK' and i.subject = product.id::text and i.notified_at is null)`,
     })
     .from(product)
     .innerJoin(stockItem, eq(stockItem.productId, product.id))

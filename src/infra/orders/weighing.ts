@@ -520,10 +520,16 @@ async function settleCapture(
     // Already charged in full at checkout: settle by refunding whatever was not supplied.
     const difference = p.charged - p.onHold;
     if (difference > 0) {
-      const r = await provider.refund({ transactionRef: p.transactionRef, amountAgorot: difference, idempotencyKey: `${idempotencyKey}:refund` });
-      outcome = r.ok ? { ok: true, ref: r.refundRef } : { ok: false, code: r.code, reason: "PROVIDER_ERROR" };
+      // One key per order, not per attempt: a retry after a timeout must not refund the difference twice.
+      const refundKey = `order:${p.orderId}:settle-refund`;
+      const r = await provider.refund({ transactionRef: p.transactionRef, amountAgorot: difference, idempotencyKey: refundKey });
+      // The money stays on the original charge: later refunds go against that transaction, never against this refund.
+      outcome = r.ok ? { ok: true, ref: p.transactionRef } : { ok: false, code: r.code, reason: "PROVIDER_ERROR" };
       if (r.ok) {
-        await db.insert(paymentRefund).values({ paymentIntentId: p.intentId, amountAgorot: difference, reasonKey: "NOT_SUPPLIED", requestedByStaffId: p.staff.id, status: "SUCCEEDED", idempotencyKey: `${idempotencyKey}:refund`, providerRefundRef: r.refundRef });
+        await db
+          .insert(paymentRefund)
+          .values({ paymentIntentId: p.intentId, amountAgorot: difference, reasonKey: "NOT_SUPPLIED", requestedByStaffId: p.staff.id, status: "SUCCEEDED", idempotencyKey: refundKey, providerRefundRef: r.refundRef })
+          .onConflictDoNothing({ target: paymentRefund.idempotencyKey });
       }
     } else {
       outcome = { ok: true, ref: p.transactionRef };

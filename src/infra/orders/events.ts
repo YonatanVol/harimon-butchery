@@ -134,7 +134,7 @@ async function releaseSlotAndStock(tx: Tx, o: typeof order.$inferSelect) {
       .where(eq(deliverySlot.id, o.slotId));
   }
   for (const l of lines) {
-    const productId = sql`(select product_id from product_variant where id = ${l.variantId})`;
+    const productId = sql`(select pv.product_id from product_variant pv where pv.id = ${l.variantId})`;
     await tx
       .update(stockItem)
       .set({
@@ -161,7 +161,7 @@ async function notifyRestockFor(tx: Tx, orderId: string, appUrl: string, now: Da
 
 async function restock(tx: Tx, o: typeof order.$inferSelect, staffId: string | null) {
   const lines = await tx
-    .select({ line: orderLine, productId: sql<string>`(select product_id from product_variant where id = ${orderLine.variantId})` })
+    .select({ line: orderLine, productId: sql<string>`(select pv.product_id from product_variant pv where pv.id = order_line.variant_id)` })
     .from(orderLine)
     .where(eq(orderLine.orderId, o.id));
   const committed = o.weighedAt !== null;

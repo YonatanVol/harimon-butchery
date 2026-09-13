@@ -562,7 +562,7 @@
       "trimTo": "Trim to {weight}",
       "working": "Updating…",
       "cancelTitle": "Need to cancel?",
-      "cancelBody": "You can cancel here until the butcher starts preparing your order. Nothing is charged and the hold is released.",
+      "cancelBody": "You can cancel here until the butcher starts preparing your order. Any hold on your card is released.",
       "cancelOrder": "Cancel order",
       "cancelConfirm": "Cancel this order?",
       "cancelYes": "Yes, cancel",
@@ -578,7 +578,8 @@
         "SLOT_UNAVAILABLE": "That time is no longer available — pick another",
         "COLD_CHAIN_EXCEEDED": "Too much time has passed since packing — we can't send the meat again. Someone will contact you about a refund",
         "NETWORK": "Can't reach the server. Try again",
-        "NOT_PERMITTED": "You don't have permission to do this"
+        "NOT_PERMITTED": "You don't have permission to do this",
+        "REFUND_FAILED": "We couldn't refund the payment just now, so the order isn't cancelled yet. Please try again in a moment."
       },
       "rescheduleTitleStaff": "Rebook with the customer",
       "rescheduleBodyStaff": "Nobody was home. Call and choose a window together — only windows that keep the cold chain are shown. The customer gets a message with the new time.",
@@ -586,7 +587,8 @@
       "rescheduleTitleChange": "Change the delivery window",
       "rescheduleBodyChange": "To arrange with the customer (e.g. when their window was closed). Only free windows are shown; if the meat is already cut, only ones that keep the cold chain. The customer gets a message with the new time.",
       "rescheduleNoneChange": "No suitable free window. You can cancel the order under manager decisions.",
-      "rescheduleDone": "Window updated and the customer was messaged."
+      "rescheduleDone": "Window updated and the customer was messaged.",
+      "cancelBodyPaid": "You can cancel here until the butcher starts preparing your order. The amount paid ({amount}) will be refunded to your card."
     }
   },
   "staff": {

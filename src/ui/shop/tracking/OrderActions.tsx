@@ -73,7 +73,7 @@ export function ExtraApproval({
   );
 }
 
-export function CancelOrder({ orderNumber, token }: { orderNumber: string; token: string }) {
+export function CancelOrder({ orderNumber, token, paidAmount }: { orderNumber: string; token: string; paidAmount: string | null }) {
   const t = useTranslations("tracking.actions");
   const problemText = useProblem();
   const [confirming, setConfirming] = useState(false);
@@ -83,7 +83,7 @@ export function CancelOrder({ orderNumber, token }: { orderNumber: string; token
   return (
     <section className="bg-bone-100 rounded-2xl p-5">
       <h2 className="font-semibold">{t("cancelTitle")}</h2>
-      <p className="text-char-700 text-sm">{t("cancelBody")}</p>
+      <p className="text-char-700 text-sm">{paidAmount ? t("cancelBodyPaid", { amount: paidAmount }) : t("cancelBody")}</p>
       {confirming ? (
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <span className="font-medium">{t("cancelConfirm")}</span>

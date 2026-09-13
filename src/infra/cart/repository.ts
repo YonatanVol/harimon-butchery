@@ -58,7 +58,7 @@ export async function loadCartLines(cartId: string) {
         published: product.published,
       },
       stock: stockItem,
-      variantCount: sql<number>`(select count(*)::int from product_variant pv where pv.product_id = ${product.id} and pv.published)`,
+      variantCount: sql<number>`(select count(*)::int from product_variant pv where pv.product_id = product.id and pv.published)`,
     })
     .from(cartLine)
     .innerJoin(productVariant, eq(productVariant.id, cartLine.variantId))
@@ -154,12 +154,14 @@ export async function loadSlotDays(zoneId: string, cartId: string | null, now = 
   const slots = await db
     .select({
       slot: deliverySlot,
+      // Written with explicit aliases: in a single-table select Drizzle renders bare column names, which inside
+      // a subquery silently bind to the inner table ("id" = slot_hold.id) and count nothing.
       holds: sql<number>`(
-        select count(*)::int from ${slotHold}
-        where ${slotHold.slotId} = ${deliverySlot.id}
-          and ${slotHold.releasedAt} is null
-          and ${slotHold.expiresAt} > ${now.toISOString()}
-          ${cartId ? sql`and ${slotHold.cartId} <> ${cartId}` : sql``}
+        select count(*)::int from slot_hold h
+        where h.slot_id = delivery_slot.id
+          and h.released_at is null
+          and h.expires_at > ${now.toISOString()}::timestamptz
+          ${cartId ? sql`and h.cart_id <> ${cartId}` : sql``}
       )`,
     })
     .from(deliverySlot)

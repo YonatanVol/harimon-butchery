@@ -19,6 +19,7 @@
     "db:seed:empty": "tsx scripts/seed.ts --empty",
     "db:reset": "bash scripts/db-reset.sh",
     "test:integration": "TZ=UTC vitest run --config vitest.integration.config.mts",
+    "test:e2e": "playwright test",
     "payplus:check": "tsx scripts/payplus-check.ts"
   },
   "dependencies": {

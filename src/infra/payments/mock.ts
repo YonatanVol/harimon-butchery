@@ -11,7 +11,7 @@ import type {
   RefundResult,
 } from "@/domain/payments/provider";
 import type * as schema from "../db/schema";
-import { mockPspTransaction } from "../db/schema";
+import { mockPspOperation, mockPspTransaction } from "../db/schema";
 
 type Database = PostgresJsDatabase<typeof schema>;
 
@@ -34,6 +34,16 @@ const declineFor: Partial<Record<MockScenario, { code: string; reason: DeclineRe
 const ref = (prefix: string) => `${prefix}_${randomBytes(12).toString("base64url")}`;
 
 export function createMockProvider(db: Database, appUrl: string): PaymentProvider {
+  /** Runs a money operation once per key; a repeat returns the stored result without touching money again. */
+  async function once<T>(idempotencyKey: string, run: () => Promise<T>): Promise<T> {
+    const [done] = await db.select().from(mockPspOperation).where(eq(mockPspOperation.idempotencyKey, idempotencyKey));
+    if (done) return done.result as T;
+    const result = await run();
+    // Only successes are remembered: a failed attempt may be retried with the same key, as with PayPlus.
+    if ((result as { ok?: boolean }).ok) await db.insert(mockPspOperation).values({ idempotencyKey, result }).onConflictDoNothing();
+    return result;
+  }
+
   return {
     name: "MOCK",
     sandbox: true,
@@ -91,7 +101,8 @@ export function createMockProvider(db: Database, appUrl: string): PaymentProvide
       return { ok: r.length === 1 };
     },
 
-    async chargeToken({ tokenRef, amountAgorot, orderNumber }) {
+    async chargeToken({ tokenRef, amountAgorot, orderNumber, idempotencyKey }) {
+      return once(idempotencyKey, async () => {
       const [original] = await db.select().from(mockPspTransaction).where(eq(mockPspTransaction.tokenRef, tokenRef));
       if (!original) return { ok: false as const, code: "TOKEN" };
       if (original.scenario === "APPROVE_CAPTURE_FAILS") return { ok: false as const, code: "J4-DECLINED" };
@@ -111,9 +122,11 @@ export function createMockProvider(db: Database, appUrl: string): PaymentProvide
         decidedAt: new Date(),
       });
       return { ok: true as const, transactionRef: txRef };
+      });
     },
 
-    async refund({ transactionRef, amountAgorot }): Promise<RefundResult> {
+    async refund({ transactionRef, amountAgorot, idempotencyKey }): Promise<RefundResult> {
+      return once(idempotencyKey, async (): Promise<RefundResult> => {
       const r = await db
         .update(mockPspTransaction)
         .set({ refundedAgorot: sql`${mockPspTransaction.refundedAgorot} + ${amountAgorot}` })
@@ -122,6 +135,7 @@ export function createMockProvider(db: Database, appUrl: string): PaymentProvide
         )
         .returning({ ref: mockPspTransaction.ref });
       return r.length === 1 ? { ok: true, refundRef: ref("ref") } : { ok: false, code: "OVER" };
+      });
     },
   };
 }

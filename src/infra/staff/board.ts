@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, eq, gt, inArray, isNotNull, lt, lte, ne, sql } from "drizzle-orm";
 import type { OrderStatus } from "@/domain/order/machine";
 import { db } from "../db/client";
-import { customer, deliverySlot, deliveryZone, kashrutAuthority, order, orderLine, paymentIntent } from "../db/schema";
+import { customer, deliverySlot, deliveryZone, kashrutAuthority, order, paymentIntent } from "../db/schema";
 
 export const BOARD_COLUMNS: Record<"toPrepare" | "inProgress" | "ready" | "onTheWay", OrderStatus[]> = {
   toPrepare: ["AUTHORIZED"],
@@ -28,7 +28,7 @@ export async function loadBoard(serviceDate: string) {
       hold: order.authorizationCeilingAgorot,
       captured: order.capturedAgorot,
       unpaidDispatch: order.unpaidDispatch,
-      lineCount: sql<number>`(select count(*)::int from ${orderLine} where ${orderLine.orderId} = ${order.id})`,
+      lineCount: sql<number>`(select count(*)::int from order_line ol where ol.order_id = orders.id)`,
       weightG: order.reservedWeightG,
     })
     .from(order)

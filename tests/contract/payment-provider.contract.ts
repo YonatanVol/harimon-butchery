@@ -83,6 +83,8 @@ export function paymentProviderContract(label: string, makeHarness: () => Promis
         expect((await h.provider.refund({ transactionRef: from, amountAgorot: 5_000, idempotencyKey: `${page.pageRef}:r1` })).ok).toBe(true);
         expect((await h.provider.refund({ transactionRef: from, amountAgorot: 13_001, idempotencyKey: `${page.pageRef}:r2` })).ok).toBe(false);
         expect((await h.provider.refund({ transactionRef: from, amountAgorot: 13_000, idempotencyKey: `${page.pageRef}:r3` })).ok).toBe(true);
+        // Retrying a refund that went through (our side timed out) must not refund twice: nothing is left, yet it succeeds.
+        expect((await h.provider.refund({ transactionRef: from, amountAgorot: 13_000, idempotencyKey: `${page.pageRef}:r3` })).ok).toBe(true);
       });
 
       it("releases a hold that was never captured", async (ctx) => {
@@ -103,6 +105,8 @@ export function paymentProviderContract(label: string, makeHarness: () => Promis
         if (r.kind !== "APPROVED" || !r.tokenRef) throw new Error("expected approval with a token");
         const extra = await h.provider.chargeToken({ tokenRef: r.tokenRef, amountAgorot: 7_160, idempotencyKey: `${page.pageRef}:extra`, orderNumber: "2026-00011" });
         expect(extra.ok).toBe(true);
+        const again = await h.provider.chargeToken({ tokenRef: r.tokenRef, amountAgorot: 7_160, idempotencyKey: `${page.pageRef}:extra`, orderNumber: "2026-00011" });
+        expect(again).toEqual(extra);
         expect((await h.provider.chargeToken({ tokenRef: "not-a-real-token", amountAgorot: 100, idempotencyKey: `${page.pageRef}:bad`, orderNumber: "2026-00011" })).ok).toBe(false);
       });
 

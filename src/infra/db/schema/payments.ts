@@ -138,3 +138,10 @@ export const mockPspTransaction = pgTable("mock_psp_transaction", {
   createdAt: createdAt(),
   decidedAt: timestamp("decided_at", { withTimezone: true }),
 });
+
+/** Idempotency for the demo gateway: a repeated money call with the same key returns the first result, like a real processor. */
+export const mockPspOperation = pgTable("mock_psp_operation", {
+  idempotencyKey: text("idempotency_key").primaryKey(),
+  result: jsonb("result").notNull(),
+  createdAt: createdAt(),
+});
