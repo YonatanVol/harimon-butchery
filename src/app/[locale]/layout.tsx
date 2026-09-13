@@ -28,7 +28,8 @@ export async function generateMetadata({
 }: LayoutProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta" });
-  return { title: t("title"), description: t("description") };
+  const name = hasLocale(routing.locales, locale) ? brand.name[locale] : brand.name.he;
+  return { title: { default: t("title"), template: `%s · ${name}` }, description: t("description") };
 }
 
 export default async function LocaleLayout({

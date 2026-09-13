@@ -14,10 +14,12 @@ interface WeightStepperProps {
   onChange: (value: Grams) => void;
   size?: "md" | "lg";
   label: string;
+  /** Overrides the default "maximum per order" sentence, e.g. when stock is the limit. */
+  maxReason?: string;
 }
 
 /** − value + for a requested weight. At a limit, the blocked button says why in visible text. */
-export function WeightStepper({ value, min, max, step, onChange, size = "md", label }: WeightStepperProps) {
+export function WeightStepper({ value, min, max, step, onChange, size = "md", label, maxReason }: WeightStepperProps) {
   const t = useTranslations("ui.stepper");
   const locale = useLocale() as Locale;
   const reasonId = useId();
@@ -28,7 +30,7 @@ export function WeightStepper({ value, min, max, step, onChange, size = "md", la
   const reason = atMin
     ? t("atMin", { min: formatGrams(min, locale) })
     : atMax
-      ? t("atMax", { max: formatGrams(max, locale) })
+      ? (maxReason ?? t("atMax", { max: formatGrams(max, locale) }))
       : null;
 
   const buttonClass = cx(

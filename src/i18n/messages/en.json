@@ -6,11 +6,6 @@
   "demo": {
     "ribbon": "Demo shop — no real sales"
   },
-  "home": {
-    "comingSoon": "The shop is being built",
-    "pricePerKg": "{price} / kg",
-    "sampleCut": "Entrecôte"
-  },
   "ui": {
     "stepper": {
       "decrease": "Remove {step}",
@@ -27,6 +22,11 @@
       "nearEdge": "Close to the upper limit ({deviation})",
       "over": "Over range by {amount}",
       "under": "Under range by {amount}"
+    },
+    "quantity": {
+      "decrease": "Remove one",
+      "increase": "Add one",
+      "atMin": "Minimum quantity: 1"
     }
   },
   "kitchenSink": {
@@ -63,5 +63,181 @@
     "colActual": "Actual",
     "colOk": "OK",
     "skeleton": "Loading"
+  },
+  "shop": {
+    "nav": {
+      "menu": "Menu",
+      "categories": "Categories",
+      "search": "Search",
+      "searchPlaceholder": "Search a cut, e.g. entrecôte",
+      "searchSubmit": "Search",
+      "switchLocale": "עברית",
+      "switchLocaleLabel": "עברו לעברית",
+      "home": "Home",
+      "skipToContent": "Skip to content"
+    },
+    "footer": {
+      "demoTitle": "Demo shop",
+      "demoBody": "This is a demo project. Products, prices and orders are not real, the kashrut authorities shown are fictional, no card is charged and no messages are sent.",
+      "kashrut": "Kashrut & certificates",
+      "shop": "Shop",
+      "hours": "Sun–Thu 7:00–19:00 · Fri until two hours before Shabbat",
+      "rights": "Harimon Butchery · demo project"
+    },
+    "home": {
+      "eyebrow": "Kosher boutique butcher · home delivery",
+      "headline": "Fresh meat, honestly weighed.",
+      "lead": "We cut to order, weigh every piece and charge the real weight — never more than we promised.",
+      "ctaShop": "Shop all cuts",
+      "ctaHow": "How weight pricing works",
+      "occasionsTitle": "What are you cooking?",
+      "categoriesTitle": "The butcher's counter",
+      "bestSellersTitle": "Loved this week",
+      "trustTitle": "Why us",
+      "trust1Title": "Charged by real weight",
+      "trust1Body": "We hold slightly more than the estimate and charge only what we weighed. The difference is released.",
+      "trust2Title": "Kashrut on every product",
+      "trust2Body": "Authority, glatt, nikur, salting and Passover status — on the product itself, not in a footer.",
+      "trust3Title": "We know when Shabbat is",
+      "trust3Body": "Delivery windows follow candle-lighting times and holidays. We won't promise a delivery that can't arrive.",
+      "productsCount": "{count, plural, one {1 product} other {# products}}",
+      "weighExplainTitle": "How does weight pricing work?",
+      "weighExplain1": "Choose an amount, say 2.5 kg of entrecôte, and see an estimated price.",
+      "weighExplain2": "At checkout we hold slightly more — up to 10% above the estimate. This is not a charge.",
+      "weighExplain3": "The butcher weighs every piece. You get a message with the final weight and price.",
+      "weighExplain4": "We charge only the final amount. The rest is released back to your card."
+    },
+    "occasion": {
+      "SHABBAT": "for Shabbat",
+      "GRILL": "for the grill",
+      "HOLIDAY": "for the holidays",
+      "SLOW_COOK": "for slow cooking",
+      "WEEKNIGHT": "for a quick dinner",
+      "SHABBAT_desc": "Soup, cholent and roast chicken",
+      "GRILL_desc": "Steaks, pargiyot and skewers",
+      "HOLIDAY_desc": "Festive cuts for a big table",
+      "SLOW_COOK_desc": "Cuts that turn tender slowly",
+      "WEEKNIGHT_desc": "Ready in under half an hour",
+      "title": "Meat {occasion}",
+      "lead": "Every cut that works {occasion}."
+    },
+    "card": {
+      "perKg": "{price} / kg",
+      "perPackage": "{price} per bundle",
+      "piece": "Piece ≈ {weight}",
+      "aged": "Aged {days} days",
+      "bestSeller": "Favourite",
+      "viewProduct": "View {name}"
+    },
+    "availability": {
+      "IN_STOCK": "In stock",
+      "LOW": "Low stock",
+      "OUT": "Out of stock",
+      "OUT_restock": "Out — back {date}"
+    },
+    "kashrut": {
+      "GLATT_CHALAK": "Chalak",
+      "GLATT": "Glatt",
+      "REGULAR": "Kosher",
+      "KOSHER_LEPESACH": "Kosher for Passover",
+      "NOT_FOR_PESACH": "Not for Passover",
+      "BEIT_YOSEF": "Beit Yosef shechita",
+      "ASHKENAZI": "Ashkenazi shechita",
+      "CHABAD": "Chabad shechita",
+      "MENUKAR": "Deveined (menukar)",
+      "NOT_MENUKAR": "Not deveined",
+      "SALTED": "Salted and kashered",
+      "REQUIRES_SALTING": "Requires salting",
+      "panelTitle": "Kashrut",
+      "authority": "Authority",
+      "shechita": "Shechita",
+      "glattLabel": "Standard",
+      "nikur": "Nikur",
+      "salting": "Salting",
+      "passover": "Passover",
+      "certificate": "Certificate",
+      "validUntil": "Valid until {date}",
+      "expiresSoon": "Renewal due soon — valid until {date}",
+      "expired": "Certificate expired on {date}",
+      "fictional": "Fictional authority for demo purposes",
+      "notApplicable": "Not applicable",
+      "pageTitle": "Kashrut & certificates",
+      "pageLead": "Every product shows its kashrut authority and supervision details. The certificates are collected here.",
+      "pageDemo": "Please note: this is a demo shop. The authorities below are fictional and do not represent any real body.",
+      "productsUnder": "{count, plural, one {1 product} other {# products}} under this supervision"
+    },
+    "flags": {
+      "REQUIRES_BROILING_TZLIYA": "Liver must be broiled over an open flame before cooking",
+      "REQUIRES_SALTING": "Must be salted before cooking",
+      "FROZEN": "Frozen product",
+      "BONE_IN": "Bone-in",
+      "VACUUM_PACKED": "Vacuum packed"
+    },
+    "animal": {
+      "BEEF": "Beef",
+      "VEAL": "Veal",
+      "LAMB": "Lamb",
+      "CHICKEN": "Chicken",
+      "TURKEY": "Turkey",
+      "MIXED": "Mixed"
+    },
+    "category": {
+      "filters": "Filters",
+      "filterAuthority": "Authority",
+      "filterGlatt": "Chalak only",
+      "filterPassover": "Kosher for Passover",
+      "filterInStock": "In stock only",
+      "clear": "Clear filters",
+      "resultCount": "{count, plural, =0 {No products} one {1 product} other {# products}}",
+      "noResults": "No products match these filters",
+      "nearest": "You might like",
+      "sort": "Sort",
+      "sortRecommended": "Recommended",
+      "sortPriceAsc": "Price: low to high",
+      "sortPriceDesc": "Price: high to low",
+      "sortName": "Name (A–Z)"
+    },
+    "product": {
+      "breadcrumbHome": "The counter",
+      "origin": "Cut origin",
+      "cooking": "How to cook it",
+      "cut": "Cut",
+      "quantity": "Quantity",
+      "quantityLabel": "{name} quantity",
+      "estimate": "Estimated price",
+      "exact": "Price",
+      "holdSentence": "We weigh it for real and charge the real weight. We'll hold {hold} (up to +{tolerance}) and charge the final amount.",
+      "packageSentence": "Fixed price per bundle.",
+      "pieces": "≈ {count, plural, one {1 piece} other {# pieces}}",
+      "notes": "Notes for the butcher",
+      "notesPlaceholder": "e.g. trim the outer fat",
+      "contents": "What's inside",
+      "packages": "Bundles",
+      "addToCart": "Add to cart",
+      "outOfStock": "Out of stock",
+      "outOfStockRestock": "Out of stock — back {date}",
+      "notifyMe": "Notify me when it's back",
+      "aging": "Dry-aged for {days} days",
+      "handling": "Good to know",
+      "more": "More {category}",
+      "priceDelta": "+{price}/kg",
+      "priceDeltaPkg": "+{price}",
+      "maxAvailable": "That's all we have in stock right now ({max})",
+      "maxPerOrder": "Up to {max} per order",
+      "agingLabel": "Ageing"
+    },
+    "search": {
+      "title": "Search",
+      "resultsFor": "Results for “{query}”",
+      "empty": "We couldn't find “{query}”",
+      "emptyHint": "Try a shorter word, like “entre” or “chicken”.",
+      "prompt": "What are you looking for?",
+      "browse": "Or browse a category"
+    },
+    "notFound": {
+      "title": "Page not found",
+      "body": "The product may have been removed, or the link is wrong.",
+      "back": "Back to the counter"
+    }
   }
 }
