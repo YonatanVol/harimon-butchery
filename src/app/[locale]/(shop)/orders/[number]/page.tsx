@@ -121,14 +121,18 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
 
       <section className="mt-10">
         <h2 className="text-xl font-bold">{t("lines")}</h2>
+        {o.goodwillAgorot > 0 && (
+          <p className="bg-ok-600/10 text-ok-600 mt-3 rounded-xl p-3 font-medium">{t("goodwill", { amount: money(o.goodwillAgorot) })}</p>
+        )}
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[520px] text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="text-char-500 text-xs">
               <tr className="border-bone-300 border-b">
                 <th className="py-2 text-start font-medium" />
                 <th className="py-2 text-start font-medium">{t("requested")}</th>
                 <th className="py-2 text-start font-medium">{t("actual")}</th>
                 <th className="py-2 text-end font-medium">{t("estimate")}</th>
+                <th className="py-2 text-end font-medium">{t("final")}</th>
               </tr>
             </thead>
             <tbody>
@@ -144,8 +148,11 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
                   <td className="py-3 tabular-nums">
                     <bdi>{l.actualG ? formatGrams(grams(l.actualG), locale) : "—"}</bdi>
                   </td>
-                  <td className="py-3 text-end tabular-nums">
-                    <bdi>{money(l.finalAgorot ?? l.estimateAgorot)}</bdi>
+                  <td className="text-char-500 py-3 text-end tabular-nums">
+                    <bdi>{money(l.estimateAgorot)}</bdi>
+                  </td>
+                  <td className="py-3 text-end font-medium tabular-nums">
+                    <bdi>{l.status === "SHORT" ? t("short") : l.status === "SUBSTITUTED" ? t("substituted") : l.finalAgorot != null ? money(l.finalAgorot) : "—"}</bdi>
                   </td>
                 </tr>
               ))}

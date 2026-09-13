@@ -110,6 +110,8 @@ export async function decideMockPayment(db: Database, pageRef: string, scenario:
   const [tx] = await db
     .update(mockPspTransaction)
     .set({
+      // An immediate charge (package-only orders) is captured at approval; a J5 hold is not.
+      capturedAgorot: decline ? 0 : sql`case when ${mockPspTransaction.mode} = 'CHARGE' then ${mockPspTransaction.amountAgorot} else 0 end`,
       status: decline ? "DECLINED" : "APPROVED",
       scenario,
       cardBrand: card.brand,
