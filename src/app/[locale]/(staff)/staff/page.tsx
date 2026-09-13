@@ -5,6 +5,7 @@ import { addDays, israelDateOf, toIsoDate } from "@/domain/delivery/israelTime";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
 import { Link } from "@/i18n/navigation";
+import { tidyRelative } from "@/i18n/relativeTime";
 import type { Locale } from "@/i18n/routing";
 import { BOARD_COLUMNS, loadAlerts, loadBoard } from "@/infra/staff/board";
 import { requireStaff } from "@/infra/staff/session";
@@ -34,7 +35,7 @@ export default async function BoardPage({ params, searchParams }: PageProps<"/[l
   const date = typeof sp.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : today;
   const [{ rows, slots }, alerts] = await Promise.all([loadBoard(date), loadAlerts(now)]);
   const time = (d: Date) => format.dateTime(d, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-  const when = (d: Date) => format.relativeTime(d, now);
+  const when = (d: Date) => tidyRelative(format.relativeTime(d, now));
 
   return (
     <div className="flex flex-col gap-6">

@@ -16,6 +16,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:test": "DATABASE_URL=$(grep DATABASE_URL_TEST .env.local | cut -d= -f2-) drizzle-kit migrate",
     "db:seed": "tsx scripts/seed.ts",
+    "db:seed:empty": "tsx scripts/seed.ts --empty",
     "db:reset": "bash scripts/db-reset.sh",
     "test:integration": "TZ=UTC vitest run --config vitest.integration.config.mts"
   },

@@ -4,6 +4,7 @@ import { useFormatter, useNow, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { customerCancel, customerDecideExtra, customerReschedule } from "@/infra/orders/customerActions";
 import { staffMoveDelivery } from "@/infra/orders/staffActions";
+import { tidyRelative } from "@/i18n/relativeTime";
 import { cx } from "../../cx";
 import { Button } from "../../primitives/Button";
 
@@ -56,7 +57,7 @@ export function ExtraApproval({
       <h2 className="text-xl font-bold">{t("extraTitle", { product: productName })}</h2>
       <p className="font-reading mt-1 text-lg">{t("extraBody", { actual: actualWeight, requested: requestedWeight, extra: extraAmount })}</p>
       <p className="text-char-700 mt-1 text-sm">
-        {t("extraDeadline", { time: format.dateTime(deadlineDate, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }), relative: format.relativeTime(deadlineDate, now), trimmed: trimmedWeight })}
+        {t("extraDeadline", { time: format.dateTime(deadlineDate, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }), relative: tidyRelative(format.relativeTime(deadlineDate, now)), trimmed: trimmedWeight })}
       </p>
       <p className="text-char-700 mt-1 text-sm">{t("extraSeparate")}</p>
       <div id="trim" className="mt-4 flex flex-wrap gap-3">

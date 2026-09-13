@@ -5,6 +5,7 @@ import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
 import { formatGrams, grams } from "@/domain/weight/grams";
 import { Link } from "@/i18n/navigation";
+import { tidyRelative } from "@/i18n/relativeTime";
 import type { Locale } from "@/i18n/routing";
 import { toleranceBounds } from "@/domain/weight/tolerance";
 import { priceForWeight } from "@/domain/weight/reprice";
@@ -199,7 +200,7 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
             <li key={e.id} className="relative">
               <span aria-hidden className="bg-wine-600 absolute -start-[27px] top-1.5 size-3 rounded-full ring-4 ring-bone-50" />
               <p className="font-medium">{t(`status.${e.toStatus}`)}</p>
-              <p className="text-char-500 text-sm">{format.relativeTime(e.createdAt)} · <bdi dir="ltr">{time(e.createdAt)}</bdi></p>
+              <p className="text-char-500 text-sm">{tidyRelative(format.relativeTime(e.createdAt))} · <bdi dir="ltr">{time(e.createdAt)}</bdi></p>
             </li>
           ))}
         </ol>

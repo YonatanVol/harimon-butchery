@@ -42,6 +42,7 @@ export async function loadPackView(orderId: string) {
     authorizationCeilingAgorot: o.authorizationCeilingAgorot,
     finalTotalAgorot: o.finalTotalAgorot,
     capturedAgorot: o.capturedAgorot,
+    extraChargedAgorot: o.extraChargedAgorot,
     captureAttempts: captures.length,
     lastCaptureFailure: captures.find((c) => c.status === "FAILED")?.failureReasonKey ?? null,
     invoiceNumber: inv?.number ?? null,

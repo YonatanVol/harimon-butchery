@@ -679,7 +679,7 @@
       "reviewEstimate": "Estimated",
       "reviewActual": "Actual",
       "reviewDelivery": "Delivery",
-      "reviewFinal": "Total to charge",
+      "reviewFinal": "Final total",
       "reviewHold": "Held",
       "finishCharge": "Finish and charge {amount}",
       "charging": "Charging {amount}…",
@@ -729,7 +729,8 @@
       "finishReasonWaiting": "Waiting for the customer about {name}",
       "waitingTitle": "Waiting for the customer: {name} weighed {weight} — until {time}.",
       "waitingBody": "Keep weighing the other items. If they don't answer, we trim to the limit.",
-      "waitingLine": "Weighed {weight}. When the customer answers, this line updates by itself."
+      "waitingLine": "Weighed {weight}. When the customer answers, this line updates by itself.",
+      "reviewSplit": "Already charged separately: {extra} (the extra the customer approved). Now charging {now} from the hold."
     },
     "messages": {
       "title": "Customer messages",

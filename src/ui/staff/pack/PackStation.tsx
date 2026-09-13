@@ -173,6 +173,8 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
         ? t("finishReasonHandling", { name: name(unhandled) })
         : null;
   const finalTotal = view.lines.reduce((s, l) => s + (l.finalAgorot ?? 0), 0) + view.deliveryFeeAgorot;
+  // An extra the customer approved was already charged on its own; finishing charges only the rest, on the hold.
+  const chargeNow = finalTotal - view.extraChargedAgorot;
 
   // ── Outcome screens once picking is over ─────────────────────────────────
   if (view.status === "AUTHORIZED") {
@@ -218,7 +220,7 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
         <Button
           size="xl"
           disabledReason={left > 0 ? null : t("noAttempts")}
-          pendingLabel={pending ? t("charging", { amount: money(view.finalTotalAgorot ?? 0) }) : null}
+          pendingLabel={pending ? t("charging", { amount: money((view.finalTotalAgorot ?? 0) - view.extraChargedAgorot) }) : null}
           onClick={() => call(null, () => act.packRetryCapture(view.id))}
         >
           {t("retry")}
@@ -527,17 +529,20 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
               </span>
             </span>
           </div>
+          {view.extraChargedAgorot > 0 && (
+            <p className="text-lg">{t("reviewSplit", { extra: money(view.extraChargedAgorot), now: money(chargeNow) })}</p>
+          )}
           {captureError && <ProblemLine text={captureError} />}
           <div className="flex flex-wrap gap-3">
             <Button
               size="xl"
-              pendingLabel={pending ? t("charging", { amount: money(finalTotal) }) : null}
+              pendingLabel={pending ? t("charging", { amount: money(chargeNow) }) : null}
               onClick={() => {
                 setCaptureError(null);
                 call(null, () => act.packFinish({ orderId: view.id, expectedVersion: view.version }), () => setSheet(null));
               }}
             >
-              {t("finishCharge", { amount: money(finalTotal) })}
+              {t("finishCharge", { amount: money(chargeNow) })}
             </Button>
             <Button size="xl" variant="ghost" onClick={() => setSheet(null)}>
               {t("back2")}

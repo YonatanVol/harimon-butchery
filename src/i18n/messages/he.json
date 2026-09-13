@@ -679,7 +679,7 @@
       "reviewEstimate": "משוער",
       "reviewActual": "בפועל",
       "reviewDelivery": "משלוח",
-      "reviewFinal": "סה״כ לחיוב",
+      "reviewFinal": "סה״כ סופי",
       "reviewHold": "הוקפא",
       "finishCharge": "סיים ושלח לחיוב {amount}",
       "charging": "מחייב {amount}…",
@@ -729,7 +729,8 @@
       "finishReasonWaiting": "ממתינים לתשובת הלקוח על {name}",
       "waitingTitle": "ממתינים לתשובת הלקוח: {name} נשקל {weight} — עד {time}.",
       "waitingBody": "אפשר להמשיך לשקול את שאר הפריטים. אם לא יענה — נחתוך לגבול.",
-      "waitingLine": "נשקל {weight}. כשהלקוח יענה — השורה תתעדכן לבד."
+      "waitingLine": "נשקל {weight}. כשהלקוח יענה — השורה תתעדכן לבד.",
+      "reviewSplit": "כבר חויב בנפרד: {extra} (התוספת שהלקוח אישר). עכשיו יחויבו {now} מתוך ההקפאה."
     },
     "messages": {
       "title": "הודעות ללקוחות",

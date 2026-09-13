@@ -1,6 +1,6 @@
 /**
- * Deterministic demo data: catalog, kashrut authorities, delivery zones, staff.
- * Wipes the business tables first. Usage: npm run db:seed
+ * Deterministic demo data: catalog, kashrut authorities, delivery zones, staff, and demo orders in every state.
+ * Wipes the business tables first. Usage: npm run db:seed  ·  npm run db:seed:empty (no orders, to see every empty state)
  */
 import { existsSync } from "node:fs";
 import { sql } from "drizzle-orm";
@@ -9,6 +9,7 @@ import postgres from "postgres";
 import * as s from "../src/infra/db/schema";
 import { generateSlots } from "../src/infra/delivery/generateSlots";
 import { hashPin } from "../src/infra/staff/pin";
+import { seedDemoOrders } from "./seed-orders";
 import { authorities, categories, products, slotTemplates, staff, variantPresets, zones } from "./seed-data/catalog";
 
 if (!process.env.DATABASE_URL && existsSync(".env.local")) process.loadEnvFile(".env.local");
@@ -202,7 +203,9 @@ async function main() {
 
   const slots = await generateSlots(db, { days: 84 });
   const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(s.product);
-  console.log(`✓ Seeded ${count} products, ${categories.length} categories, ${zones.length} zones, ${slots.planned} delivery windows (${slots.open} open) in ${Date.now() - started} ms`);
+  const withOrders = !process.argv.includes("--empty");
+  const orders = withOrders ? await seedDemoOrders(db, process.env.APP_URL ?? "http://localhost:3000") : null;
+  console.log(`✓ Seeded ${count} products, ${categories.length} categories, ${zones.length} zones, ${slots.planned} delivery windows (${slots.open} open)${orders ? `, ${Object.values(orders.counts).reduce((a, b) => a + b, 0)} demo orders and ${orders.sent} customer messages` : ", no orders (--empty)"} in ${Date.now() - started} ms`);
 }
 
 main()
