@@ -23,11 +23,16 @@ messaging providers active by default. The full plan lives in `docs/PLAN.md`.
 - Middleware is `src/proxy.ts`. `params`/`searchParams`/`cookies()`/`headers()` are async only.
 - `LayoutProps<'/route'>` / `PageProps<'/route'>` are generated globals — run `npx next typegen`.
 - Read `node_modules/next/dist/docs/` before using an unfamiliar API.
+- Caching uses the classic model (`export const revalidate`, `generateStaticParams`), not
+  `cacheComponents`, to stay on next-intl's proven path. Catalog pages revalidate every 60 s;
+  anything that commits stock or money re-reads the database.
 
 ## Commands
 
 - `npm run dev` — dev server on :3000 (Hebrew at `/he`, English at `/en`)
 - `npm run db:setup` — create local `meatstore_dev` / `meatstore_test` (Homebrew Postgres 17)
+- `npm run db:migrate` (+ `db:migrate:test`) · `npm run db:generate` after schema changes
+- `npm run db:seed` — wipe and load the deterministic demo catalog
 - `npm test` — unit tests (Vitest) · `npm run typecheck` · `npm run lint`
 
 Postgres binaries are keg-only: `export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"`.

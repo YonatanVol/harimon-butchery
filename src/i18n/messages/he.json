@@ -6,11 +6,6 @@
   "demo": {
     "ribbon": "חנות הדגמה — אין מכירה אמיתית"
   },
-  "home": {
-    "comingSoon": "החנות בבנייה",
-    "pricePerKg": "{price} / ק״ג",
-    "sampleCut": "אנטריקוט"
-  },
   "ui": {
     "stepper": {
       "decrease": "הפחת {step}",
@@ -27,6 +22,11 @@
       "nearEdge": "קרוב לגבול העליון ({deviation})",
       "over": "מעל הטווח ב-{amount}",
       "under": "מתחת לטווח ב-{amount}"
+    },
+    "quantity": {
+      "decrease": "הפחת אחד",
+      "increase": "הוסף אחד",
+      "atMin": "כמות מינימלית: 1"
     }
   },
   "kitchenSink": {
@@ -63,5 +63,181 @@
     "colActual": "בפועל",
     "colOk": "תקין",
     "skeleton": "טעינה"
+  },
+  "shop": {
+    "nav": {
+      "menu": "תפריט",
+      "categories": "קטגוריות",
+      "search": "חיפוש",
+      "searchPlaceholder": "חפשו נתח, למשל: אנטריקוט",
+      "searchSubmit": "חפש",
+      "switchLocale": "English",
+      "switchLocaleLabel": "Switch to English",
+      "home": "דף הבית",
+      "skipToContent": "דלגו לתוכן"
+    },
+    "footer": {
+      "demoTitle": "חנות הדגמה",
+      "demoBody": "זהו פרויקט הדגמה. המוצרים, המחירים וההזמנות אינם אמיתיים, גופי הכשרות המוצגים בדויים, לא מתבצע חיוב ולא נשלחות הודעות.",
+      "kashrut": "כשרות ותעודות",
+      "shop": "החנות",
+      "hours": "א׳–ה׳ 7:00–19:00 · ו׳ עד שעתיים לפני כניסת שבת",
+      "rights": "קצביית הרימון · פרויקט הדגמה"
+    },
+    "home": {
+      "eyebrow": "קצביית בוטיק כשרה · משלוחים עד הבית",
+      "headline": "בשר טרי, נשקל באמת.",
+      "lead": "אנחנו חותכים לפי ההזמנה, שוקלים כל נתח ומחייבים לפי המשקל האמיתי — אף פעם לא יותר ממה שהבטחנו.",
+      "ctaShop": "לכל הנתחים",
+      "ctaHow": "איך עובד החיוב לפי משקל",
+      "occasionsTitle": "מה מבשלים?",
+      "categoriesTitle": "הקצבייה",
+      "bestSellersTitle": "הכי אהובים השבוע",
+      "trustTitle": "למה אצלנו",
+      "trust1Title": "חיוב לפי משקל אמיתי",
+      "trust1Body": "נקפיא סכום מעט גבוה מההערכה ונחייב רק את מה ששקלנו. ההפרש משתחרר.",
+      "trust2Title": "כשרות על כל מוצר",
+      "trust2Body": "גוף הכשרות, חלק, ניקור, המלחה וכשרות לפסח — כתוב על המוצר עצמו, לא בתחתית העמוד.",
+      "trust3Title": "יודעים מתי שבת",
+      "trust3Body": "מועדי המשלוח מחושבים לפי זמני הדלקת נרות וחגים. לא נבטיח משלוח שלא יגיע.",
+      "productsCount": "{count, plural, one {מוצר אחד} other {# מוצרים}}",
+      "weighExplainTitle": "איך עובד החיוב לפי משקל?",
+      "weighExplain1": "בוחרים כמות, למשל 2.5 ק״ג אנטריקוט, ורואים מחיר משוער.",
+      "weighExplain2": "בתשלום נקפיא סכום מעט גבוה יותר — עד 10% מעל ההערכה. זה לא חיוב.",
+      "weighExplain3": "הקצב שוקל כל נתח. אתם מקבלים הודעה עם המשקל והמחיר הסופיים.",
+      "weighExplain4": "נחייב רק את הסכום הסופי. ההפרש משתחרר חזרה לכרטיס."
+    },
+    "occasion": {
+      "SHABBAT": "לשבת",
+      "GRILL": "למנגל",
+      "HOLIDAY": "לחג",
+      "SLOW_COOK": "לבישול ארוך",
+      "WEEKNIGHT": "לארוחת ערב מהירה",
+      "SHABBAT_desc": "מרק, חמין ועוף בתנור",
+      "GRILL_desc": "סטייקים, פרגיות ושיפודים",
+      "HOLIDAY_desc": "נתחים חגיגיים לשולחן גדול",
+      "SLOW_COOK_desc": "נתחים שמתרככים לאט",
+      "WEEKNIGHT_desc": "מוכן בפחות מחצי שעה",
+      "title": "בשר {occasion}",
+      "lead": "כל הנתחים שמתאימים {occasion}."
+    },
+    "card": {
+      "perKg": "{price} / ק״ג",
+      "perPackage": "{price} למארז",
+      "piece": "יחידה ≈ {weight}",
+      "aged": "יושן {days} יום",
+      "bestSeller": "אהוב",
+      "viewProduct": "לפרטי {name}"
+    },
+    "availability": {
+      "IN_STOCK": "במלאי",
+      "LOW": "מלאי מוגבל",
+      "OUT": "אזל מהמלאי",
+      "OUT_restock": "אזל — חוזר {date}"
+    },
+    "kashrut": {
+      "GLATT_CHALAK": "חלק",
+      "GLATT": "גלאט",
+      "REGULAR": "כשר",
+      "KOSHER_LEPESACH": "כשר לפסח",
+      "NOT_FOR_PESACH": "לא לפסח",
+      "BEIT_YOSEF": "שחיטת בית יוסף",
+      "ASHKENAZI": "שחיטה אשכנזית",
+      "CHABAD": "שחיטת חב״ד",
+      "MENUKAR": "מנוקר",
+      "NOT_MENUKAR": "לא מנוקר",
+      "SALTED": "מומלח ומוכשר",
+      "REQUIRES_SALTING": "דורש מליחה",
+      "panelTitle": "כשרות",
+      "authority": "גוף כשרות",
+      "shechita": "שחיטה",
+      "glattLabel": "רמת כשרות",
+      "nikur": "ניקור",
+      "salting": "המלחה",
+      "passover": "פסח",
+      "certificate": "תעודה",
+      "validUntil": "בתוקף עד {date}",
+      "expiresSoon": "התעודה מתחדשת בקרוב — בתוקף עד {date}",
+      "expired": "תוקף התעודה פג ב-{date}",
+      "fictional": "גוף כשרות בדוי לצורך הדגמה",
+      "notApplicable": "לא רלוונטי",
+      "pageTitle": "כשרות ותעודות",
+      "pageLead": "כל מוצר בחנות מציג את גוף הכשרות שלו ואת פרטי ההשגחה. כאן מרוכזות התעודות.",
+      "pageDemo": "שימו לב: זו חנות הדגמה. גופי הכשרות שלהלן בדויים ואינם מייצגים גוף אמיתי.",
+      "productsUnder": "{count, plural, one {מוצר אחד} other {# מוצרים}} בהשגחה זו"
+    },
+    "flags": {
+      "REQUIRES_BROILING_TZLIYA": "כבד טעון צלייה על אש גלויה לפני בישול",
+      "REQUIRES_SALTING": "יש למלוח לפני בישול",
+      "FROZEN": "מוצר קפוא",
+      "BONE_IN": "עם עצם",
+      "VACUUM_PACKED": "ארוז בוואקום"
+    },
+    "animal": {
+      "BEEF": "בקר",
+      "VEAL": "עגל",
+      "LAMB": "טלה",
+      "CHICKEN": "עוף",
+      "TURKEY": "הודו",
+      "MIXED": "מעורב"
+    },
+    "category": {
+      "filters": "סינון",
+      "filterAuthority": "גוף כשרות",
+      "filterGlatt": "חלק בלבד",
+      "filterPassover": "כשר לפסח",
+      "filterInStock": "במלאי בלבד",
+      "clear": "נקה סינון",
+      "resultCount": "{count, plural, =0 {אין מוצרים} one {מוצר אחד} other {# מוצרים}}",
+      "noResults": "לא נמצאו מוצרים עם הסינון הזה",
+      "nearest": "אולי יתאים לכם",
+      "sort": "מיון",
+      "sortRecommended": "מומלץ",
+      "sortPriceAsc": "מחיר: מהנמוך",
+      "sortPriceDesc": "מחיר: מהגבוה",
+      "sortName": "שם (א–ת)"
+    },
+    "product": {
+      "breadcrumbHome": "הקצבייה",
+      "origin": "מקור הנתח",
+      "cooking": "איך מכינים",
+      "cut": "חיתוך",
+      "quantity": "כמות",
+      "quantityLabel": "כמות {name}",
+      "estimate": "מחיר משוער",
+      "exact": "מחיר",
+      "holdSentence": "נשקול בפועל ונחייב לפי המשקל האמיתי. נקפיא {hold} (עד +{tolerance}) ונחייב את הסכום הסופי.",
+      "packageSentence": "מחיר קבוע למארז.",
+      "pieces": "≈ {count, plural, one {יחידה אחת} other {# יחידות}}",
+      "notes": "הערות לקצב",
+      "notesPlaceholder": "למשל: להוריד שומן חיצוני",
+      "contents": "מה במארז",
+      "packages": "מארזים",
+      "addToCart": "הוסף לסל",
+      "outOfStock": "אזל מהמלאי",
+      "outOfStockRestock": "אזל מהמלאי — חוזר {date}",
+      "notifyMe": "עדכנו אותי כשחוזר",
+      "aging": "יושן {days} יום בתא יישון יבש",
+      "handling": "חשוב לדעת",
+      "more": "עוד מ{category}",
+      "priceDelta": "+{price} לק״ג",
+      "priceDeltaPkg": "+{price}",
+      "maxAvailable": "זה כל מה שיש כרגע במלאי ({max})",
+      "maxPerOrder": "עד {max} בהזמנה אחת",
+      "agingLabel": "יישון"
+    },
+    "search": {
+      "title": "חיפוש",
+      "resultsFor": "תוצאות עבור „{query}”",
+      "empty": "לא מצאנו „{query}”",
+      "emptyHint": "נסו מילה קצרה יותר, למשל „אנטרי” או „עוף”.",
+      "prompt": "מה מחפשים?",
+      "browse": "או עברו לקטגוריה"
+    },
+    "notFound": {
+      "title": "הדף לא נמצא",
+      "body": "ייתכן שהמוצר הוסר או שהקישור שגוי.",
+      "back": "חזרה לקצבייה"
+    }
   }
 }
