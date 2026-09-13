@@ -582,7 +582,11 @@
       },
       "rescheduleTitleStaff": "Rebook with the customer",
       "rescheduleBodyStaff": "Nobody was home. Call and choose a window together — only windows that keep the cold chain are shown. The customer gets a message with the new time.",
-      "rescheduleNoneStaff": "No window keeps the cold chain. Return it to the shop and decide on a refund."
+      "rescheduleNoneStaff": "No window keeps the cold chain. Return it to the shop and decide on a refund.",
+      "rescheduleTitleChange": "Change the delivery window",
+      "rescheduleBodyChange": "To arrange with the customer (e.g. when their window was closed). Only free windows are shown; if the meat is already cut, only ones that keep the cold chain. The customer gets a message with the new time.",
+      "rescheduleNoneChange": "No suitable free window. You can cancel the order under manager decisions.",
+      "rescheduleDone": "Window updated and the customer was messaged."
     }
   },
   "staff": {
@@ -616,7 +620,8 @@
       "messages": "Messages",
       "logout": "Sign out",
       "deliveries": "Deliveries",
-      "stock": "Stock"
+      "stock": "Stock",
+      "zones": "Zones & windows"
     },
     "board": {
       "title": "Today's board",
@@ -642,7 +647,8 @@
         "SLOT_SOON": "Order {number}: delivery starts {when} and it isn't packed yet",
         "CERT_EXPIRING": "{authority}'s kashrut certificate expires {when}",
         "NOT_HOME": "Order {number}: nobody was home — call to arrange, or return it to the shop",
-        "NEEDS_REFUND": "Order {number}: back at the shop — a refund decision is needed"
+        "NEEDS_REFUND": "Order {number}: back at the shop — a refund decision is needed",
+        "WINDOW_CLOSED": "Order {number}: its window ({when}) was closed — call to book a new one"
       },
       "open": "Open",
       "denied": "You don't have permission for that ({capability})"
@@ -982,6 +988,74 @@
         "INVALID_DATE": "That date isn't valid",
         "NETWORK": "Can't reach the server. Try again.",
         "TOO_LARGE": "More than {max} in one update — probably a typo. Check the number"
+      }
+    },
+    "zones": {
+      "title": "Delivery zones & windows",
+      "zones": "Zones",
+      "noZones": "No delivery zones set up",
+      "paused": "Paused",
+      "active": "Active",
+      "pendingTitle": "There are changes not yet applied to the windows",
+      "pendingSummary": "In the next 4 weeks: {added, plural, =0 {} one {1 new window · } other {# new windows · }}{opening, plural, =0 {} one {1 window opens · } other {# windows open · }}{closing, plural, =0 {no window closes} one {1 window closes} other {# windows close}}",
+      "affectedTitle": "{count, plural, one {1 order is} other {# orders are}} already booked in windows that will close — call to arrange a new time:",
+      "confirmAffected": "Understood — {count, plural, one {the order won't} other {the orders won't}} be moved automatically, and I'll arrange it with the customers",
+      "confirmFirst": "Tick that you understand what happens to booked orders",
+      "apply": "Apply changes",
+      "applying": "Applying…",
+      "applied": "Windows updated.",
+      "week": "Week {from} – {to}",
+      "prevWeek": "Previous week",
+      "thisWeek": "This week",
+      "nextWeek": "Next week",
+      "noWindows": "No deliveries",
+      "orders": "{used}/{capacity} orders",
+      "kg": "{used}/{capacity} kg",
+      "closed": "Closed",
+      "bookedInClosed": "{count, plural, one {1 order booked here} other {# orders booked here}}",
+      "closures": "Manual closures",
+      "noClosures": "No manual closures this week. Shabbat and holidays close on their own.",
+      "allDay": "All day",
+      "thisZoneOnly": "This zone",
+      "allZones": "All zones",
+      "remove": "Remove",
+      "removing": "Removing…",
+      "addClosure": "Close a day or hours",
+      "date": "Date",
+      "from": "From",
+      "to": "Until",
+      "scope": "Which zones",
+      "onlyZone": "Only {zone}",
+      "reasonHe": "Reason in Hebrew (shown to customers)",
+      "reasonEn": "Reason in English (optional)",
+      "closureHelp": "The closure takes effect after \"Apply changes\" above, where you'll see which orders are affected.",
+      "addClosureButton": "Add closure",
+      "closureAdded": "Closure saved. Apply the changes above to close the windows.",
+      "summary": "Delivery {fee} · minimum {min} · order up to {lead} h before",
+      "citiesHe": "Cities (Hebrew, one per line)",
+      "citiesEn": "Cities in English",
+      "citiesHelp": "Spelling variants (Tel-Aviv / Tel Aviv) are matched automatically. A city can be in one zone only.",
+      "fee": "Delivery fee ₪",
+      "minOrder": "Minimum ₪",
+      "freeOver": "Free over ₪",
+      "freeOverHelp": "Leave empty if this zone has no free delivery.",
+      "activeLabel": "Zone is active and takes orders",
+      "pauseWarning": "Pausing hides all of this zone's windows from customers. Existing orders are not cancelled.",
+      "addingCities": "New cities: {cities}. Customers who asked about them will get a message. Delivery fee there: {fee}.",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Zone saved.",
+      "savedNotified": "Zone saved, and {count, plural, one {1 waiting customer was} other {# waiting customers were}} messaged.",
+      "problems": {
+        "NOT_PERMITTED": "You don't have permission to manage zones and windows",
+        "NOT_FOUND": "Not found — refresh the page",
+        "INVALID_DATE": "Choose a date",
+        "INVALID_TIMES": "The end time must be after the start time",
+        "REASON_REQUIRED": "Write a reason — customers see it",
+        "CITIES_REQUIRED": "At least one city is needed",
+        "CITY_IN_OTHER_ZONE": "{city} already belongs to {zone}",
+        "INVALID_MONEY": "Not a valid amount — e.g. 35 or 35.50",
+        "NETWORK": "Can't reach the server. Try again."
       }
     }
   }

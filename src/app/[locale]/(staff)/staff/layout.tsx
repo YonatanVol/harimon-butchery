@@ -10,6 +10,7 @@ const navItems: Array<{ href: string; key: string; needs: Capability }> = [
   { href: "/staff", key: "board", needs: "VIEW_BOARD" },
   { href: "/staff/deliveries", key: "deliveries", needs: "VIEW_BOARD" },
   { href: "/staff/stock", key: "stock", needs: "MANAGE_STOCK" },
+  { href: "/staff/zones", key: "zones", needs: "MANAGE_SLOTS" },
   { href: "/staff/messages", key: "messages", needs: "VIEW_MESSAGES" },
 ];
 

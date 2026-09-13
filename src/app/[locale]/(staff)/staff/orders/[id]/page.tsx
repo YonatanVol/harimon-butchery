@@ -64,7 +64,11 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
     possible.includes("CANCELLED_BY_SHOP") && { kind: "CANCEL" as const, blockedReason: can(role, "CANCEL_ORDER") ? null : notPermitted },
   ].filter((a): a is ManagerAction => Boolean(a));
 
-  const windows = o.status === "DELIVERY_FAILED_NOT_HOME" && can(role, "OVERRIDE") ? await rescheduleOptions(db, o) : [];
+  const beforeDispatch = ["AUTHORIZED", "PICKING", "AWAITING_CUSTOMER_APPROVAL", "WEIGHED", "REPRICED", "CAPTURE_PENDING", "CAPTURED", "CAPTURE_FAILED", "PACKED"].includes(o.status);
+  const movable = can(role, "OVERRIDE") && (o.status === "DELIVERY_FAILED_NOT_HOME" || beforeDispatch);
+  const windows = movable
+    ? await rescheduleOptions(db, { zoneId: o.zoneId, slotId: o.slotId, cutAt: o.status === "DELIVERY_FAILED_NOT_HOME" ? (o.capturedAt ?? o.weighedAt) : (o.weighedAt ?? o.capturedAt) })
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -173,8 +177,8 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
         </section>
       </div>
 
-      {o.status === "DELIVERY_FAILED_NOT_HOME" && can(role, "OVERRIDE") && (
-        <Reschedule target={{ by: "staff", orderId: o.id }} windows={windows.map((w) => ({ id: w.id, startsAt: w.startsAt.toISOString(), endsAt: w.endsAt.toISOString() }))} />
+      {movable && (
+        <Reschedule target={{ by: "staff", orderId: o.id, reason: o.status === "DELIVERY_FAILED_NOT_HOME" ? "notHome" : "change" }} windows={windows.map((w) => ({ id: w.id, startsAt: w.startsAt.toISOString(), endsAt: w.endsAt.toISOString() }))} />
       )}
       {managerActions.length > 0 && <ManagerActions orderId={o.id} actions={managerActions} refundableAgorot={refundableAgorot} />}
 

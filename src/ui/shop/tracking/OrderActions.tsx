@@ -113,7 +113,7 @@ export function CancelOrder({ orderNumber, token }: { orderNumber: string; token
   );
 }
 
-type RescheduleTarget = { by: "customer"; orderNumber: string; token: string } | { by: "staff"; orderId: string };
+type RescheduleTarget = { by: "customer"; orderNumber: string; token: string } | { by: "staff"; orderId: string; reason: "notHome" | "change" };
 
 export function Reschedule({ target, windows }: { target: RescheduleTarget; windows: Array<{ id: string; startsAt: string; endsAt: string }> }) {
   const t = useTranslations("tracking.actions");
@@ -121,15 +121,17 @@ export function Reschedule({ target, windows }: { target: RescheduleTarget; wind
   const problemText = useProblem();
   const [pending, start] = useTransition();
   const [picked, setPicked] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const copy = target.by === "customer" ? "" : target.reason === "change" ? "Change" : "Staff";
   const [error, setError] = useState<string | null>(null);
   const time = (iso: string) => format.dateTime(new Date(iso), { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 
   return (
     <section id="reschedule" className="border-wine-600 bg-wine-600/5 scroll-mt-32 rounded-2xl border-s-8 p-5">
-      <h2 className="text-xl font-bold">{t(target.by === "staff" ? "rescheduleTitleStaff" : "rescheduleTitle")}</h2>
-      <p className="font-reading text-char-700 mt-1">{t(target.by === "staff" ? "rescheduleBodyStaff" : "rescheduleBody")}</p>
+      <h2 className="text-xl font-bold">{t(`rescheduleTitle${copy}` as never)}</h2>
+      <p className="font-reading text-char-700 mt-1">{t(`rescheduleBody${copy}` as never)}</p>
       {windows.length === 0 ? (
-        <p className="mt-3 font-medium">{t(target.by === "staff" ? "rescheduleNoneStaff" : "rescheduleNone")}</p>
+        <p className="mt-3 font-medium">{t(`rescheduleNone${copy}` as never)}</p>
       ) : (
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
           {windows.map((w) => (
@@ -146,6 +148,7 @@ export function Reschedule({ target, windows }: { target: RescheduleTarget; wind
                       : staffMoveDelivery(target.orderId, w.id)
                     ).catch(() => null);
                     if (!r?.ok) setError(problemText(r && !r.ok ? r.problem : null));
+                    else setDone(true);
                   });
                 }}
                 className={cx(
@@ -164,6 +167,7 @@ export function Reschedule({ target, windows }: { target: RescheduleTarget; wind
         </ul>
       )}
       {error && <p role="alert" className="text-bad-600 mt-3 font-medium">{error}</p>}
+      {done && !error && <p role="status" className="text-ok-600 mt-3 font-medium">{t("rescheduleDone")}</p>}
     </section>
   );
 }

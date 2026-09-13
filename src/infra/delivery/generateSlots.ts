@@ -1,7 +1,7 @@
 import { and, eq, gte, sql } from "drizzle-orm";
 import { israelDateOf, toIsoDate } from "@/domain/delivery/israelTime";
 import type { ShopLocation } from "@/domain/delivery/jewishCalendar";
-import { planSlots } from "@/domain/delivery/slots";
+import { type PlannedSlot, planSlots } from "@/domain/delivery/slots";
 import type * as schema from "../db/schema";
 import { calendarBlackout, deliverySlot, deliverySlotTemplate, deliveryZone, setting } from "../db/schema";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -18,11 +18,8 @@ export async function shopSettings(db: Database) {
   };
 }
 
-/**
- * Materializes delivery windows for the next `days` days. Idempotent: existing slots keep their
- * reservations and capacity; only their open/closed state and reason are refreshed.
- */
-export async function generateSlots(db: Database, { days = 84, now = new Date() } = {}) {
+/** Which windows the templates, the Jewish calendar and manual blackouts call for over the next `days` days. Writes nothing. */
+export async function planWindows(db: Database, { days = 84, now = new Date() } = {}) {
   const { shop, erevBufferMinutes } = await shopSettings(db);
   const from = israelDateOf(now);
 
@@ -46,7 +43,7 @@ export async function generateSlots(db: Database, { days = 84, now = new Date() 
     .from(calendarBlackout)
     .where(and(eq(calendarBlackout.source, "MANUAL"), gte(calendarBlackout.date, toIsoDate(from))));
 
-  const planned = planSlots({
+  return planSlots({
     templates,
     from,
     days,
@@ -61,7 +58,13 @@ export async function generateSlots(db: Database, { days = 84, now = new Date() 
       reasonEn: b.reasonEn,
     })),
   });
+}
 
+/**
+ * Writes planned windows. Idempotent: existing windows keep their reservations and capacity; only their
+ * open/closed state and reason are refreshed.
+ */
+export async function applyWindows(db: Database, planned: PlannedSlot[]) {
   const chunk = 500;
   for (let i = 0; i < planned.length; i += chunk) {
     const rows = planned.slice(i, i + chunk).map((s) => ({
@@ -92,6 +95,10 @@ export async function generateSlots(db: Database, { days = 84, now = new Date() 
         },
       });
   }
-
   return { planned: planned.length, open: planned.filter((s) => s.status === "OPEN").length };
+}
+
+/** Materializes delivery windows for the next `days` days. */
+export async function generateSlots(db: Database, { days = 84, now = new Date() } = {}) {
+  return applyWindows(db, await planWindows(db, { days, now }));
 }
