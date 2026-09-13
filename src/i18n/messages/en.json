@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "title": "Harimon Butchery — fresh kosher meat and poultry",
+    "description": "Fresh kosher meat and poultry, weighed for real and delivered to your door."
+  },
+  "demo": {
+    "ribbon": "Demo shop — no real sales"
+  },
+  "home": {
+    "comingSoon": "The shop is being built",
+    "pricePerKg": "{price} / kg",
+    "sampleCut": "Entrecôte"
+  }
+}
