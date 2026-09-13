@@ -10,5 +10,58 @@
     "comingSoon": "The shop is being built",
     "pricePerKg": "{price} / kg",
     "sampleCut": "Entrecôte"
+  },
+  "ui": {
+    "stepper": {
+      "decrease": "Remove {step}",
+      "increase": "Add {step}",
+      "atMin": "This is the minimum you can order ({min})",
+      "atMax": "This is the maximum you can order ({max})"
+    },
+    "tolerance": {
+      "min": "Min",
+      "requested": "Requested",
+      "max": "Max",
+      "waiting": "Waiting to be weighed",
+      "within": "Within range ({deviation})",
+      "nearEdge": "Close to the upper limit ({deviation})",
+      "over": "Over range by {amount}",
+      "under": "Under range by {amount}"
+    }
+  },
+  "kitchenSink": {
+    "title": "Component kit",
+    "intro": "Every component in both directions. Every interface change is checked here first.",
+    "layout": "View",
+    "both": "Both directions",
+    "rtlOnly": "Hebrew only",
+    "ltrOnly": "English only",
+    "buttons": "Buttons",
+    "primary": "Add to cart",
+    "secondary": "Keep shopping",
+    "ghost": "Cancel",
+    "danger": "Cancel order",
+    "disabledExample": "Add to cart",
+    "disabledReason": "Out of stock — back on Tuesday",
+    "pending": "Saving…",
+    "tablet": "Finish and charge",
+    "badges": "Badges",
+    "badgeGlatt": "Glatt",
+    "badgeInStock": "In stock",
+    "badgeLow": "Low stock",
+    "badgeOut": "Out of stock",
+    "badgeBassari": "Meat (basari)",
+    "stepper": "Weight picker",
+    "stepperLabel": "Entrecôte quantity",
+    "estimate": "Estimated",
+    "hold": "We'll hold {hold} (up to +{tolerance}) and charge the real weight.",
+    "toleranceTitle": "Weighing range — 2.5 kg, ±10%",
+    "vectorsTitle": "Money calculation checks (live)",
+    "colWeight": "Weight",
+    "colPrice": "Price / kg",
+    "colExpected": "Expected",
+    "colActual": "Actual",
+    "colOk": "OK",
+    "skeleton": "Loading"
   }
 }
