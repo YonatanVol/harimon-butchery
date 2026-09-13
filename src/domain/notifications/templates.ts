@@ -21,8 +21,11 @@ export type TemplateKey =
   | "order.refunded"
   | "order.cancelled"
   | "order.cancelled_by_shop"
+  | "order.cancelled_by_shop_refunded"
   | "order.reauth_required"
-  | "auth.otp";
+  | "auth.otp"
+  | "interest.restocked"
+  | "interest.area_opened";
 
 export type TemplateVars = Partial<{
   firstName: string;
@@ -41,6 +44,9 @@ export type TemplateVars = Partial<{
   refundAmount: string;
   reason: string;
   code: string;
+  productUrl: string;
+  city: string;
+  shopUrl: string;
 }>;
 
 export interface TemplateAction {
@@ -76,9 +82,13 @@ const he: Record<TemplateKey, Body> = {
   "order.refunded": (v) => `${v.firstName}, זיכינו ${v.refundAmount} על ההזמנה ${v.orderNumber}. הזיכוי יופיע בכרטיס בתוך מספר ימי עסקים.`,
   "order.cancelled": (v) => `ההזמנה ${v.orderNumber} בוטלה. לא בוצע חיוב, וההקפאה תשוחרר.`,
   "order.cancelled_by_shop": (v) => `${v.firstName}, מצטערים — נאלצנו לבטל את ההזמנה ${v.orderNumber}: ${v.reason}. לא בוצע חיוב.`,
+  "order.cancelled_by_shop_refunded": (v) =>
+    `${v.firstName}, מצטערים — נאלצנו לבטל את ההזמנה ${v.orderNumber}: ${v.reason}. ההקפאה בכרטיס שוחררה, והתוספת שחויבה (${v.refundAmount}) הוחזרה לכרטיס.`,
   "order.reauth_required": (v) =>
     `${v.firstName}, תוקף ההקפאה בכרטיס להזמנה ${v.orderNumber} פג לפני שהספקנו לשקול. כדי שנמשיך — אשרו תשלום מחדש:\n${v.trackingUrl}`,
   "auth.otp": (v) => `קוד הכניסה שלך לקצביית הרימון: ${v.code}\nהקוד בתוקף ל-5 דקות. לא לשתף עם אף אחד.`,
+  "interest.restocked": (v) => `ביקשתם שנעדכן: ${v.productName} חזר למלאי בקצביית הרימון.\nזו הודעה חד-פעמית.\n${v.productUrl}`,
+  "interest.area_opened": (v) => `ביקשתם שנעדכן: קצביית הרימון מגיעה עכשיו גם ל${v.city}. אפשר להזמין משלוח:\n${v.shopUrl}`,
 };
 
 const en: Record<TemplateKey, Body> = {
@@ -105,9 +115,13 @@ const en: Record<TemplateKey, Body> = {
   "order.refunded": (v) => `${v.firstName}, we've refunded ${v.refundAmount} for order ${v.orderNumber}. It will appear on your card within a few business days.`,
   "order.cancelled": (v) => `Order ${v.orderNumber} has been cancelled. Nothing was charged and the hold will be released.`,
   "order.cancelled_by_shop": (v) => `${v.firstName}, we're sorry — we had to cancel order ${v.orderNumber}: ${v.reason}. Nothing was charged.`,
+  "order.cancelled_by_shop_refunded": (v) =>
+    `${v.firstName}, we're sorry — we had to cancel order ${v.orderNumber}: ${v.reason}. The card hold was released and the extra you approved (${v.refundAmount}) was refunded.`,
   "order.reauth_required": (v) =>
     `${v.firstName}, the hold on your card for order ${v.orderNumber} expired before we could weigh it. To continue, please approve payment again:\n${v.trackingUrl}`,
   "auth.otp": (v) => `Your Harimon Butchery login code: ${v.code}\nValid for 5 minutes. Don't share it with anyone.`,
+  "interest.restocked": (v) => `You asked us to tell you: ${v.productName} is back in stock at Harimon Butchery.\nThis is a one-time message.\n${v.productUrl}`,
+  "interest.area_opened": (v) => `You asked us to tell you: Harimon Butchery now delivers to ${v.city}. Order here:\n${v.shopUrl}`,
 };
 
 export const TEMPLATE_KEYS = Object.keys(he) as TemplateKey[];
@@ -120,6 +134,36 @@ const actions: Partial<Record<TemplateKey, TemplateAction[]>> = {
   "order.not_home": [{ labelHe: "בחירת מועד חדש", labelEn: "Pick a new time", path: "#reschedule" }],
   "order.reauth_required": [{ labelHe: "אישור תשלום", labelEn: "Approve payment", path: "#reauth" }],
 };
+
+/** The order of variables in each Meta-approved WhatsApp template body ({{1}}, {{2}}, …). */
+export const TEMPLATE_PARAM_ORDER: Record<TemplateKey, Array<keyof TemplateVars>> = {
+  "order.authorized": ["firstName", "orderNumber", "slotWindow", "holdAmount", "trackingUrl"],
+  "order.picking": ["firstName", "orderNumber", "trackingUrl"],
+  "order.over_tolerance": ["firstName", "productName", "actualWeight", "requestedWeight", "extraAmount", "trimmedWeight", "deadline", "trackingUrl"],
+  "order.extra_approved": ["firstName", "extraAmount", "productName"],
+  "order.trimmed": ["firstName", "productName", "trimmedWeight"],
+  "order.repriced": ["firstName", "orderNumber", "estimateAmount", "finalAmount", "holdAmount", "trackingUrl"],
+  "order.captured": ["firstName", "finalAmount", "holdAmount", "trackingUrl"],
+  "order.capture_issue": ["firstName", "orderNumber", "trackingUrl"],
+  "order.packed": ["orderNumber", "slotWindow"],
+  "order.out_for_delivery": ["firstName", "orderNumber", "slotWindow", "trackingUrl"],
+  "order.delivered": ["orderNumber", "firstName", "trackingUrl"],
+  "order.not_home": ["firstName", "orderNumber", "trackingUrl"],
+  "order.rescheduled": ["orderNumber", "slotWindow"],
+  "order.returned": ["orderNumber"],
+  "order.refunded": ["firstName", "refundAmount", "orderNumber"],
+  "order.cancelled": ["orderNumber"],
+  "order.cancelled_by_shop": ["firstName", "orderNumber", "reason"],
+  "order.cancelled_by_shop_refunded": ["firstName", "orderNumber", "reason", "refundAmount"],
+  "order.reauth_required": ["firstName", "orderNumber", "trackingUrl"],
+  "auth.otp": ["code"],
+  "interest.restocked": ["productName", "productUrl"],
+  "interest.area_opened": ["city", "shopUrl"],
+};
+
+export function templateParams(key: TemplateKey, vars: TemplateVars): string[] {
+  return TEMPLATE_PARAM_ORDER[key].map((k) => vars[k] ?? "");
+}
 
 export function renderTemplate(key: TemplateKey, locale: "he" | "en", vars: TemplateVars) {
   return { body: (locale === "he" ? he : en)[key](vars), actions: actions[key] ?? [] };

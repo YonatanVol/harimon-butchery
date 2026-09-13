@@ -58,4 +58,6 @@ export interface PaymentProvider {
   capture(req: { transactionRef: string; amountAgorot: number; idempotencyKey: string }): Promise<CaptureResult>;
   voidAuthorization(req: { transactionRef: string }): Promise<{ ok: boolean }>;
   refund(req: { transactionRef: string; amountAgorot: number; idempotencyKey: string }): Promise<RefundResult>;
+  /** A separate immediate charge on a saved card token (e.g. extra weight the customer approved). */
+  chargeToken(req: { tokenRef: string; amountAgorot: number; idempotencyKey: string; orderNumber: string }): Promise<{ ok: true; transactionRef: string } | { ok: false; code: string }>;
 }

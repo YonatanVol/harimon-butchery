@@ -32,7 +32,8 @@ messaging providers active by default. The full plan lives in `docs/PLAN.md`.
 - `npm run dev` — dev server on :3000 (Hebrew at `/he`, English at `/en`)
 - `npm run db:setup` — create local `meatstore_dev` / `meatstore_test` (Homebrew Postgres 17)
 - `npm run db:migrate` (+ `db:migrate:test`) · `npm run db:generate` after schema changes
-- `npm run db:seed` — wipe and load the deterministic demo catalog
+- `npm run db:seed` — wipe and load the demo catalog plus 20 orders in every state (created through the real order flows)
+- `npm run db:seed:empty` — same catalog, no orders (to look at every empty state)
 - `npm test` — unit tests (Vitest) · `npm run typecheck` · `npm run lint`
 
 Postgres binaries are keg-only: `export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"`.

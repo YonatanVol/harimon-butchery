@@ -5,8 +5,15 @@ import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
 import { formatGrams, grams } from "@/domain/weight/grams";
 import { Link } from "@/i18n/navigation";
+import { tidyRelative } from "@/i18n/relativeTime";
 import type { Locale } from "@/i18n/routing";
+import { toleranceBounds } from "@/domain/weight/tolerance";
+import { priceForWeight } from "@/domain/weight/reprice";
+import { db } from "@/infra/db/client";
+import { expireApprovals, rescheduleOptions } from "@/infra/orders/customer";
 import { loadTrackedOrder } from "@/infra/orders/queries";
+import { appUrl } from "@/infra/payments/factory";
+import { CancelOrder, ExtraApproval, Reschedule } from "@/ui/shop/tracking/OrderActions";
 import { cx } from "@/ui/cx";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/orders/[number]">): Promise<Metadata> {
@@ -30,7 +37,9 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
   const sp = await searchParams;
   const t = await getTranslations("tracking");
   const format = await getFormatter();
-  const data = await loadTrackedOrder(number, typeof sp.t === "string" ? sp.t : "");
+  await expireApprovals(db, { appUrl: appUrl() });
+  const token = typeof sp.t === "string" ? sp.t : "";
+  const data = await loadTrackedOrder(number, token);
 
   if (!data) {
     return (
@@ -49,6 +58,10 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
   const time = (d: Date) => format.dateTime(d, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
   const addr = o.addressSnapshot as { street: string; houseNumber: string; city: string; apartment?: string | null; floor?: string | null };
   const captured = o.capturedAgorot != null;
+  const g = (n: number) => formatGrams(grams(n), locale);
+  const pendingLine = o.status === "AWAITING_CUSTOMER_APPROVAL" ? lines.find((l) => l.pendingActualG) : undefined;
+  const pendingBounds = pendingLine ? toleranceBounds(grams(pendingLine.estimatedG!), pendingLine.toleranceBp!) : null;
+  const windows = o.status === "DELIVERY_FAILED_NOT_HOME" ? await rescheduleOptions(db, o) : [];
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
@@ -70,6 +83,25 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
             : t("holdSummary", { hold: money(o.authorizationCeilingAgorot) })}
         </p>
       </header>
+
+      <div className="mt-6 flex flex-col gap-4">
+        {pendingLine && pendingBounds && o.approvalDeadlineAt && (
+          <ExtraApproval
+            orderNumber={o.orderNumber}
+            token={token}
+            productName={locale === "he" ? pendingLine.productNameHe : pendingLine.productNameEn}
+            actualWeight={g(pendingLine.pendingActualG!)}
+            requestedWeight={g(pendingLine.estimatedG!)}
+            trimmedWeight={g(pendingBounds.max)}
+            extraAmount={money(priceForWeight(agorot(pendingLine.pricePerKgAgorot!), grams(pendingLine.pendingActualG!)) - pendingLine.ceilingAgorot)}
+            deadline={o.approvalDeadlineAt.toISOString()}
+          />
+        )}
+        {o.status === "DELIVERY_FAILED_NOT_HOME" && (
+          <Reschedule target={{ by: "customer", orderNumber: o.orderNumber, token }} windows={windows.map((w) => ({ id: w.id, startsAt: w.startsAt.toISOString(), endsAt: w.endsAt.toISOString() }))} />
+        )}
+        {o.status === "AUTHORIZED" && <CancelOrder orderNumber={o.orderNumber} token={token} />}
+      </div>
 
       <ol className="mt-8 grid grid-cols-5 gap-2" aria-label={t("timeline")}>
         {MILESTONES.map((m) => {
@@ -168,7 +200,7 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
             <li key={e.id} className="relative">
               <span aria-hidden className="bg-wine-600 absolute -start-[27px] top-1.5 size-3 rounded-full ring-4 ring-bone-50" />
               <p className="font-medium">{t(`status.${e.toStatus}`)}</p>
-              <p className="text-char-500 text-sm">{format.relativeTime(e.createdAt)} · <bdi dir="ltr">{time(e.createdAt)}</bdi></p>
+              <p className="text-char-500 text-sm">{tidyRelative(format.relativeTime(e.createdAt))} · <bdi dir="ltr">{time(e.createdAt)}</bdi></p>
             </li>
           ))}
         </ol>

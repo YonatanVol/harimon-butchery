@@ -4,10 +4,11 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { formatIsraelTime, israelDateOf, toIsoDate } from "@/domain/delivery/israelTime";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
-import { type TemplateKey, type TemplateVars, renderTemplate } from "@/domain/notifications/templates";
+import { type TemplateKey, type TemplateVars, renderTemplate, templateParams } from "@/domain/notifications/templates";
 import { type Effect, type OrderEvent, type TransitionContext, transition } from "@/domain/order/machine";
 import type * as schema from "../db/schema";
-import { auditEvent, cart, customer, deliverySlot, notification, order, orderLine, orderStatusEvent, stockItem } from "../db/schema";
+import { auditEvent, cart, customer, deliverySlot, notification, order, orderLine, orderStatusEvent, productVariant, stockItem, stockMovement } from "../db/schema";
+import { notifyBackInStock } from "../interest/signups";
 
 type Database = PostgresJsDatabase<typeof schema>;
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -80,14 +81,23 @@ export async function applyOrderEvent(tx: Tx, input: ApplyEventInput): Promise<A
   });
 
   for (const effect of result.effects) {
-    if (effect === "RELEASE_SLOT_AND_STOCK") await releaseSlotAndStock(tx, updated);
-    else if (effect === "RESTORE_CART" && updated.cartId) {
+    if (effect === "RELEASE_SLOT_AND_STOCK") {
+      await releaseSlotAndStock(tx, updated);
+      await notifyRestockFor(tx, updated.id, input.appUrl, now);
+    } else if (effect === "RESTORE_CART" && updated.cartId) {
       await tx.update(cart).set({ convertedOrderId: null, status: "OPEN" }).where(eq(cart.id, updated.cartId));
     } else if (effect === "CONVERT_CART" && updated.cartId) {
       await tx
         .update(cart)
         .set({ status: "CONVERTED", anonymousToken: null, customerId: updated.customerId })
         .where(eq(cart.id, updated.cartId));
+    } else if (effect === "RESTOCK") {
+      await restock(tx, updated, input.actorId ?? null);
+      await notifyRestockFor(tx, updated.id, input.appUrl, now);
+    } else if (effect === "TRIM_OVER_TOLERANCE_LINE") {
+      // The butcher trims to the upper limit and weighs again.
+      await tx.update(orderLine).set({ pendingActualG: null }).where(eq(orderLine.orderId, updated.id));
+      await tx.update(order).set({ approvalDeadlineAt: null }).where(eq(order.id, updated.id));
     } else if (effect === "AUDIT") {
       await tx.insert(auditEvent).values({
         actorType: actorTypeOf(input.ctx.actor),
@@ -101,7 +111,10 @@ export async function applyOrderEvent(tx: Tx, input: ApplyEventInput): Promise<A
         createdAt: now,
       });
     } else if (effect.startsWith("NOTIFY:")) {
-      await enqueueNotification(tx, updated, effect.slice("NOTIFY:".length) as TemplateKey, input.appUrl, now, input.payload);
+      const key = effect.slice("NOTIFY:".length) as TemplateKey;
+      // A caller that knows more (e.g. an extra charge was refunded) can send a truer variant of the same message.
+      const override = (input.payload?.templateOverrides as Partial<Record<TemplateKey, TemplateKey>> | undefined)?.[key];
+      await enqueueNotification(tx, updated, override ?? key, input.appUrl, now, input.payload);
     }
   }
 
@@ -129,6 +142,52 @@ async function releaseSlotAndStock(tx: Tx, o: typeof order.$inferSelect) {
         reservedUnits: sql`greatest(${stockItem.reservedUnits} - ${l.quantity ?? 0}, 0)`,
       })
       .where(eq(stockItem.productId, productId));
+  }
+}
+
+/**
+ * An order cancelled after picking started: release what's still reserved and, if the weighed
+ * meat was already taken out of stock, put it back — a cut steak can still be sold.
+ */
+/** Stock this order held is free again: anyone waiting for one of its products hears, if it is really orderable now. */
+async function notifyRestockFor(tx: Tx, orderId: string, appUrl: string, now: Date) {
+  const products = await tx
+    .selectDistinct({ productId: productVariant.productId })
+    .from(orderLine)
+    .innerJoin(productVariant, eq(productVariant.id, orderLine.variantId))
+    .where(eq(orderLine.orderId, orderId));
+  for (const { productId } of products) await notifyBackInStock(tx, { productId, appUrl, now });
+}
+
+async function restock(tx: Tx, o: typeof order.$inferSelect, staffId: string | null) {
+  const lines = await tx
+    .select({ line: orderLine, productId: sql<string>`(select product_id from product_variant where id = ${orderLine.variantId})` })
+    .from(orderLine)
+    .where(eq(orderLine.orderId, o.id));
+  const committed = o.weighedAt !== null;
+  for (const { line: l, productId } of lines) {
+    const reservedG = committed || l.substitutionReasonKey ? 0 : (l.estimatedG ?? 0);
+    const reservedUnits = committed || l.substitutionReasonKey ? 0 : (l.quantity ?? 0);
+    const backG = committed && l.status === "WEIGHED" ? (l.actualG ?? 0) : 0;
+    const backUnits = committed && l.status === "WEIGHED" ? (l.actualQuantity ?? 0) : 0;
+    await tx
+      .update(stockItem)
+      .set({
+        reservedG: sql`greatest(${stockItem.reservedG} - ${reservedG}, 0)`,
+        reservedUnits: sql`greatest(${stockItem.reservedUnits} - ${reservedUnits}, 0)`,
+        onHandG: sql`${stockItem.onHandG} + ${backG}`,
+        onHandUnits: sql`${stockItem.onHandUnits} + ${backUnits}`,
+      })
+      .where(eq(stockItem.productId, productId));
+    if (backG || backUnits) {
+      await tx.insert(stockMovement).values({ productId, deltaG: backG, deltaUnits: backUnits, reason: "RETURN", orderId: o.id, staffId, note: "Order cancelled after weighing" });
+    }
+  }
+  if (o.slotId) {
+    await tx
+      .update(deliverySlot)
+      .set({ reservedOrders: sql`greatest(${deliverySlot.reservedOrders} - 1, 0)`, reservedWeightG: sql`greatest(${deliverySlot.reservedWeightG} - ${o.reservedWeightG}, 0)` })
+      .where(eq(deliverySlot.id, o.slotId));
   }
 }
 
@@ -176,6 +235,7 @@ async function enqueueNotification(
       toE164: c.phoneE164,
       locale,
       renderedBody: body,
+      templateParams: templateParams(key, vars),
       actions,
       status: "QUEUED",
       idempotencyKey: `${o.id}:${key}:${toIsoDate(israelDateOf(now))}:${randomBytes(4).toString("hex")}`,

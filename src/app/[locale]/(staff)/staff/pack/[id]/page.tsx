@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { can, type StaffRole } from "@/domain/auth/permissions";
 import type { Locale } from "@/i18n/routing";
+import { db } from "@/infra/db/client";
+import { expireApprovals } from "@/infra/orders/customer";
 import { loadPackView } from "@/infra/orders/packView";
+import { appUrl } from "@/infra/payments/factory";
 import { requireStaff } from "@/infra/staff/session";
 import { PackStation } from "@/ui/staff/pack/PackStation";
 
@@ -19,6 +22,7 @@ export default async function PackPage({ params, searchParams }: PageProps<"/[lo
   const { locale: raw, id } = await params;
   setRequestLocale(raw);
   const member = await requireStaff(raw as Locale, "PICK_AND_WEIGH");
+  await expireApprovals(db, { appUrl: appUrl() });
   const view = await loadPackView(id);
   if (!view) notFound();
   const autoStart = (await searchParams).start === "1";

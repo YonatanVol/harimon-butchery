@@ -65,6 +65,12 @@ export async function SiteHeader() {
           >
             <LocaleSwitch label={t("switchLocale")} shortLabel={t("switchLocaleShort")} ariaLabel={t("switchLocaleLabel")} />
           </Suspense>
+          <Link href="/account" className="hover:bg-bone-200 grid size-11 place-items-center rounded-full" aria-label={t("account")}>
+            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+            </svg>
+          </Link>
           <CartButton />
         </div>
       </div>

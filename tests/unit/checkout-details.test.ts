@@ -60,6 +60,9 @@ describe("notification templates", () => {
     refundAmount: "120 ₪",
     reason: "חוסר במלאי",
     code: "482913",
+    productUrl: "https://example.test/he/p/entrecote",
+    city: "נתניה",
+    shopUrl: "https://example.test/he",
   };
 
   it("every template renders fully in both languages — no missing variables", () => {

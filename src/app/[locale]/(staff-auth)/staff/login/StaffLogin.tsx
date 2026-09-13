@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { staffLogin } from "@/infra/staff/actions";
 import { cx } from "@/ui/cx";
@@ -12,7 +12,13 @@ export function StaffLogin({ members }: { members: Array<{ id: string; name: str
   const t = useTranslations("staff.login");
   const router = useRouter();
   const [selected, setSelected] = useState<(typeof members)[number] | null>(null);
-  const [pin, setPin] = useState("");
+  const [pin, setPinState] = useState("");
+  // Fast typing delivers several keys before React re-renders; the ref always holds the latest code.
+  const pinRef = useRef("");
+  const setPin = (next: string | ((p: string) => string)) => {
+    pinRef.current = typeof next === "function" ? next(pinRef.current) : next;
+    setPinState(pinRef.current);
+  };
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -37,9 +43,9 @@ export function StaffLogin({ members }: { members: Array<{ id: string; name: str
   };
 
   const press = (digit: string) => {
-    if (pending || pin.length >= PIN_LENGTH) return;
+    if (pending || pinRef.current.length >= PIN_LENGTH) return;
     setError(null);
-    const next = pin + digit;
+    const next = pinRef.current + digit;
     setPin(next);
     // The code is complete: sign in without asking for another tap.
     if (next.length === PIN_LENGTH) submit(next);

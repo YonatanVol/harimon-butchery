@@ -5,11 +5,24 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { staffLogout } from "@/infra/staff/actions";
 import { cx } from "@/ui/cx";
 
-export function StaffNav({ labels, member }: { labels: { board: string; logout: string }; member: { name: string; role: string } }) {
+export function StaffNav({
+  labels,
+  member,
+  canViewMessages,
+}: {
+  labels: { board: string; messages: string; deliveries: string; logout: string };
+  member: { name: string; role: string };
+  canViewMessages: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [pending, start] = useTransition();
-  const items = [{ href: "/staff", label: labels.board }];
+  const items = [
+    { href: "/staff", label: labels.board },
+    { href: "/staff/deliveries", label: labels.deliveries },
+    // Only tabs this person can open: a tab that bounces you back is a silent no-op.
+    ...(canViewMessages ? [{ href: "/staff/messages", label: labels.messages }] : []),
+  ];
 
   return (
     <>

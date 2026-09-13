@@ -2,15 +2,17 @@ import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { can, type StaffRole } from "@/domain/auth/permissions";
 import { agorot } from "@/domain/money/agorot";
+import { formatAgorot } from "@/domain/money/format";
 import { vatFromGross } from "@/domain/money/vat";
 import { MAX_CAPTURE_ATTEMPTS } from "@/domain/order/machine";
 import type { PaymentProvider } from "@/domain/payments/provider";
-import { grams } from "@/domain/weight/grams";
+import { formatGrams, grams } from "@/domain/weight/grams";
 import { priceForWeight } from "@/domain/weight/reprice";
 import { classifyWeight, toleranceBounds } from "@/domain/weight/tolerance";
 import type * as schema from "../db/schema";
 import {
   auditEvent,
+  deliverySlot,
   invoice,
   invoiceCounter,
   order,
@@ -46,7 +48,9 @@ export type WeighingProblem =
   | { key: "SUBSTITUTE_TOO_EXPENSIVE" }
   | { key: "MANAGER_PIN_INVALID" }
   | { key: "TOO_MANY_CAPTURE_ATTEMPTS" }
-  | { key: "CAPTURE_FAILED"; reason: string };
+  | { key: "CAPTURE_FAILED"; reason: string }
+  | { key: "AWAITING_CUSTOMER" }
+  | { key: "ALREADY_ASKING" };
 
 export type WeighingResult<T = object> = ({ ok: true } & T) | { ok: false; problem: WeighingProblem };
 
@@ -56,7 +60,7 @@ class Stop extends Error {
   }
 }
 
-const EDITABLE = ["PICKING"] as const;
+const EDITABLE = ["PICKING", "AWAITING_CUSTOMER_APPROVAL"] as const;
 
 async function lockOrder(tx: Tx, orderId: string, expectedVersion?: number) {
   const [o] = await tx.select().from(order).where(eq(order.id, orderId)).for("update");
@@ -123,6 +127,7 @@ export function recordWeight(db: Database, input: RecordWeightInput) {
       if (!EDITABLE.includes(o.status as (typeof EDITABLE)[number])) throw new Stop({ key: "WRONG_STATE", status: o.status });
       const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.id, input.lineId), eq(orderLine.orderId, o.id)));
       if (!line || line.pricingMode !== "WEIGHT" || !["PENDING", "WEIGHED"].includes(line.status)) throw new Stop({ key: "NOT_FOUND" });
+      if (line.pendingActualG) throw new Stop({ key: "AWAITING_CUSTOMER" });
 
       const bounds = toleranceBounds(grams(line.estimatedG!), line.toleranceBp!);
       const status = classifyWeight(grams(input.actualG), bounds);
@@ -167,14 +172,68 @@ export function recordWeight(db: Database, input: RecordWeightInput) {
   );
 }
 
+/** Over the range: ask the customer whether to keep the extra (separate charge) or trim. */
+export function askCustomer(
+  db: Database,
+  input: { orderId: string; lineId: string; actualG: number; expectedVersion: number; staff: Staff; appUrl: string; locale: "he" | "en"; now?: Date },
+) {
+  const now = input.now ?? new Date();
+  return run(() =>
+    db.transaction(async (tx) => {
+      requireFloor(input.staff);
+      const o = await lockOrder(tx, input.orderId, input.expectedVersion);
+      if (o.status === "AWAITING_CUSTOMER_APPROVAL") throw new Stop({ key: "ALREADY_ASKING" });
+      if (o.status !== "PICKING") throw new Stop({ key: "WRONG_STATE", status: o.status });
+      const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.id, input.lineId), eq(orderLine.orderId, o.id)));
+      if (!line || line.pricingMode !== "WEIGHT") throw new Stop({ key: "NOT_FOUND" });
+      const bounds = toleranceBounds(grams(line.estimatedG!), line.toleranceBp!);
+      if (classifyWeight(grams(input.actualG), bounds).kind !== "over") throw new Stop({ key: "INVALID_WEIGHT" });
+
+      const price = agorot(line.pricePerKgAgorot!);
+      const extra = priceForWeight(price, grams(input.actualG)) - priceForWeight(price, bounds.max);
+      const [slot] = o.slotId ? await tx.select().from(deliverySlot).where(eq(deliverySlot.id, o.slotId)) : [];
+      // Two hours to answer, but always an hour before the delivery window, and never less than 15 minutes.
+      const latest = slot ? slot.startsAt.getTime() - 60 * 60_000 : now.getTime() + 2 * 3_600_000;
+      const deadline = new Date(Math.max(now.getTime() + 15 * 60_000, Math.min(now.getTime() + 2 * 3_600_000, latest)));
+
+      await tx.update(orderLine).set({ pendingActualG: input.actualG }).where(eq(orderLine.id, line.id));
+      await tx.update(order).set({ approvalDeadlineAt: deadline }).where(eq(order.id, o.id));
+      const fmt = (g: number) => formatGrams(grams(g), input.locale);
+      const moved = await applyOrderEvent(tx, {
+        orderId: o.id,
+        event: "OVER_TOLERANCE_ASKED",
+        ctx: { actor: input.staff.role as StaffRole },
+        actorId: input.staff.id,
+        appUrl: input.appUrl,
+        now,
+        payload: {
+          lineId: line.id,
+          actualG: input.actualG,
+          templateVars: {
+            productName: input.locale === "he" ? line.productNameHe : line.productNameEn,
+            actualWeight: fmt(input.actualG),
+            requestedWeight: fmt(line.estimatedG!),
+            trimmedWeight: fmt(bounds.max),
+            extraAmount: formatAgorot(agorot(extra), input.locale),
+            deadline: new Intl.DateTimeFormat(input.locale === "he" ? "he-IL" : "en-IL", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Jerusalem" }).format(deadline),
+          },
+        },
+      });
+      if (!moved.ok) throw new Stop({ key: "WRONG_STATE", status: o.status });
+      return { version: moved.order.version, extraAgorot: extra, deadline: deadline.toISOString() };
+    }),
+  );
+}
+
 export function undoLine(db: Database, { orderId, lineId, expectedVersion, staff }: { orderId: string; lineId: string; expectedVersion: number; staff: Staff }) {
   return run(() =>
     db.transaction(async (tx) => {
       requireFloor(staff);
       const o = await lockOrder(tx, orderId, expectedVersion);
-      if (o.status !== "PICKING") throw new Stop({ key: "WRONG_STATE", status: o.status });
+      if (!EDITABLE.includes(o.status as (typeof EDITABLE)[number])) throw new Stop({ key: "WRONG_STATE", status: o.status });
       const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.id, lineId), eq(orderLine.orderId, orderId)));
       if (!line || line.status === "SUBSTITUTED") throw new Stop({ key: "NOT_FOUND" });
+      if (line.pendingActualG) throw new Stop({ key: "AWAITING_CUSTOMER" });
       if (line.actualG && line.estimatedG && line.toleranceMaxG && line.actualG > line.toleranceMaxG) {
         const price = agorot(line.pricePerKgAgorot!);
         const given = priceForWeight(price, grams(line.actualG)) - priceForWeight(price, grams(line.toleranceMaxG));
@@ -194,7 +253,7 @@ export function confirmPackageLine(db: Database, { orderId, lineId, expectedVers
     db.transaction(async (tx) => {
       requireFloor(staff);
       const o = await lockOrder(tx, orderId, expectedVersion);
-      if (o.status !== "PICKING") throw new Stop({ key: "WRONG_STATE", status: o.status });
+      if (!EDITABLE.includes(o.status as (typeof EDITABLE)[number])) throw new Stop({ key: "WRONG_STATE", status: o.status });
       const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.id, lineId), eq(orderLine.orderId, orderId)));
       if (!line || line.pricingMode !== "PACKAGE") throw new Stop({ key: "NOT_FOUND" });
       await tx
@@ -211,9 +270,10 @@ export function markShort(db: Database, { orderId, lineId, expectedVersion, staf
     db.transaction(async (tx) => {
       requireFloor(staff);
       const o = await lockOrder(tx, orderId, expectedVersion);
-      if (o.status !== "PICKING") throw new Stop({ key: "WRONG_STATE", status: o.status });
+      if (!EDITABLE.includes(o.status as (typeof EDITABLE)[number])) throw new Stop({ key: "WRONG_STATE", status: o.status });
       const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.id, lineId), eq(orderLine.orderId, orderId)));
       if (!line || !["PENDING", "WEIGHED"].includes(line.status)) throw new Stop({ key: "NOT_FOUND" });
+      if (line.pendingActualG) throw new Stop({ key: "AWAITING_CUSTOMER" });
       await tx
         .update(orderLine)
         .set({ status: "SHORT", actualG: null, actualQuantity: 0, finalAgorot: 0, weighedByStaffId: staff.id, weighedAt: new Date() })
@@ -274,9 +334,10 @@ export function substituteLine(
     db.transaction(async (tx) => {
       requireFloor(staff);
       const o = await lockOrder(tx, orderId, expectedVersion);
-      if (o.status !== "PICKING") throw new Stop({ key: "WRONG_STATE", status: o.status });
+      if (!EDITABLE.includes(o.status as (typeof EDITABLE)[number])) throw new Stop({ key: "WRONG_STATE", status: o.status });
       const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.id, lineId), eq(orderLine.orderId, orderId)));
       if (!line || line.pricingMode !== "WEIGHT" || !["PENDING", "WEIGHED"].includes(line.status)) throw new Stop({ key: "NOT_FOUND" });
+      if (line.pendingActualG) throw new Stop({ key: "AWAITING_CUSTOMER" });
       if (!line.allowSubstitute) throw new Stop({ key: "SUBSTITUTE_NOT_ALLOWED" });
       const [sub] = await tx
         .select({ variant: productVariant, product })
@@ -329,7 +390,7 @@ export function confirmHandling(db: Database, { orderId, lineId, expectedVersion
     db.transaction(async (tx) => {
       requireFloor(staff);
       const o = await lockOrder(tx, orderId, expectedVersion);
-      if (o.status !== "PICKING") throw new Stop({ key: "WRONG_STATE", status: o.status });
+      if (!EDITABLE.includes(o.status as (typeof EDITABLE)[number])) throw new Stop({ key: "WRONG_STATE", status: o.status });
       await tx
         .update(orderLine)
         .set({ handlingConfirmedAt: new Date() })
@@ -352,7 +413,7 @@ export async function finishWeighing(
 ): Promise<FinishResult> {
   if (!can(staff.role as StaffRole, "CAPTURE_PAYMENT")) return { ok: false, problem: { key: "NOT_PERMITTED" } };
 
-  let prepared: { intentId: string; transactionRef: string; purpose: string; charged: number; finalTotal: number; attempt: number };
+  let prepared: { intentId: string; transactionRef: string; purpose: string; charged: number; finalTotal: number; onHold: number; attempt: number };
   try {
     prepared = await db.transaction(async (tx) => {
       const o = await lockOrder(tx, orderId, expectedVersion);
@@ -396,6 +457,8 @@ export async function finishWeighing(
       }
 
       await tx.update(order).set({ itemsFinalAgorot: itemsFinal, finalTotalAgorot: finalTotal }).where(eq(order.id, orderId));
+      // Extra weight the customer approved was already charged on its own; the hold covers the rest.
+      const onHold = finalTotal - o.extraChargedAgorot;
       for (const [event] of [["LINES_COMPLETED"], ["REPRICED"]] as const) {
         const moved = await applyOrderEvent(tx, { orderId, event, ctx: { actor: staff.role as StaffRole }, actorId: staff.id, appUrl, now });
         if (!moved.ok) throw new Stop({ key: "WRONG_STATE", status: event });
@@ -415,14 +478,14 @@ export async function finishWeighing(
       const [intent] = await tx
         .select()
         .from(paymentIntent)
-        .where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.status, "AUTHORIZED")));
+        .where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.status, "AUTHORIZED"), ne(paymentIntent.purpose, "EXTRA")));
       const [{ attempts }] = await tx
         .select({ attempts: sql<number>`count(*)::int` })
         .from(paymentCapture)
         .where(eq(paymentCapture.paymentIntentId, intent.id));
       await tx.insert(paymentCapture).values({
         paymentIntentId: intent.id,
-        amountAgorot: finalTotal,
+        amountAgorot: onHold,
         attempt: attempts + 1,
         idempotencyKey: `order:${orderId}:capture:${attempts + 1}`,
         status: "PENDING",
@@ -433,6 +496,7 @@ export async function finishWeighing(
         purpose: intent.purpose,
         charged: intent.amountAgorot,
         finalTotal,
+        onHold,
         attempt: attempts + 1,
       };
     });
@@ -447,14 +511,14 @@ export async function finishWeighing(
 async function settleCapture(
   db: Database,
   provider: PaymentProvider,
-  p: { orderId: string; staff: Staff; appUrl: string; now: Date; intentId: string; transactionRef: string; purpose: string; charged: number; finalTotal: number; attempt: number },
+  p: { orderId: string; staff: Staff; appUrl: string; now: Date; intentId: string; transactionRef: string; purpose: string; charged: number; finalTotal: number; onHold: number; attempt: number },
 ): Promise<FinishResult> {
   const idempotencyKey = `order:${p.orderId}:capture:${p.attempt}`;
   let outcome: { ok: true; ref: string } | { ok: false; code: string; reason: string };
 
   if (p.purpose === "CHARGE") {
     // Already charged in full at checkout: settle by refunding whatever was not supplied.
-    const difference = p.charged - p.finalTotal;
+    const difference = p.charged - p.onHold;
     if (difference > 0) {
       const r = await provider.refund({ transactionRef: p.transactionRef, amountAgorot: difference, idempotencyKey: `${idempotencyKey}:refund` });
       outcome = r.ok ? { ok: true, ref: r.refundRef } : { ok: false, code: r.code, reason: "PROVIDER_ERROR" };
@@ -465,7 +529,7 @@ async function settleCapture(
       outcome = { ok: true, ref: p.transactionRef };
     }
   } else {
-    const r = await provider.capture({ transactionRef: p.transactionRef, amountAgorot: p.finalTotal, idempotencyKey });
+    const r = await provider.capture({ transactionRef: p.transactionRef, amountAgorot: p.onHold, idempotencyKey });
     outcome = r.ok ? { ok: true, ref: r.captureRef } : { ok: false, code: r.code, reason: r.reason };
   }
 
@@ -525,22 +589,26 @@ export async function retryCapture(
   { orderId, staff, appUrl, now = new Date() }: { orderId: string; staff: Staff; appUrl: string; now?: Date },
 ): Promise<FinishResult> {
   if (!can(staff.role as StaffRole, "CAPTURE_PAYMENT")) return { ok: false, problem: { key: "NOT_PERMITTED" } };
-  let prepared: { intentId: string; transactionRef: string; purpose: string; charged: number; finalTotal: number; attempt: number };
+  let prepared: { intentId: string; transactionRef: string; purpose: string; charged: number; finalTotal: number; onHold: number; attempt: number };
   try {
     prepared = await db.transaction(async (tx) => {
       const o = await lockOrder(tx, orderId);
-      const [intent] = await tx.select().from(paymentIntent).where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.status, "AUTHORIZED")));
+      const [intent] = await tx
+        .select()
+        .from(paymentIntent)
+        .where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.status, "AUTHORIZED"), ne(paymentIntent.purpose, "EXTRA")));
       const [{ attempts }] = await tx.select({ attempts: sql<number>`count(*)::int` }).from(paymentCapture).where(eq(paymentCapture.paymentIntentId, intent.id));
       const moved = await applyOrderEvent(tx, { orderId, event: "CAPTURE_RETRIED", ctx: { actor: staff.role as StaffRole, captureAttempts: attempts }, actorId: staff.id, appUrl, now });
       if (!moved.ok) throw new Stop(moved.reason === "TOO_MANY_CAPTURE_ATTEMPTS" ? { key: "TOO_MANY_CAPTURE_ATTEMPTS" } : { key: "WRONG_STATE", status: o.status });
+      const onHold = o.finalTotalAgorot! - o.extraChargedAgorot;
       await tx.insert(paymentCapture).values({
         paymentIntentId: intent.id,
-        amountAgorot: o.finalTotalAgorot!,
+        amountAgorot: onHold,
         attempt: attempts + 1,
         idempotencyKey: `order:${orderId}:capture:${attempts + 1}`,
         status: "PENDING",
       });
-      return { intentId: intent.id, transactionRef: intent.providerTransactionRef!, purpose: intent.purpose, charged: intent.amountAgorot, finalTotal: o.finalTotalAgorot!, attempt: attempts + 1 };
+      return { intentId: intent.id, transactionRef: intent.providerTransactionRef!, purpose: intent.purpose, charged: intent.amountAgorot, finalTotal: o.finalTotalAgorot!, onHold, attempt: attempts + 1 };
     });
   } catch (e) {
     if (e instanceof Stop) return { ok: false, problem: e.problem };

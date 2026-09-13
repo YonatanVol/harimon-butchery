@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { brand } from "@/config/brand";
+import { can, type StaffRole } from "@/domain/auth/permissions";
 import type { Locale } from "@/i18n/routing";
 import { requireStaff } from "@/infra/staff/session";
 import { StaffNav } from "./StaffNav";
@@ -19,8 +20,9 @@ export default async function StaffLayout({ children, params }: LayoutProps<"/[l
             {brand.name[locale]} <span className="text-bone-300 font-normal">· {t("area")}</span>
           </span>
           <StaffNav
-            labels={{ board: t("nav.board"), logout: t("nav.logout") }}
+            labels={{ board: t("nav.board"), messages: t("nav.messages"), deliveries: t("nav.deliveries"), logout: t("nav.logout") }}
             member={{ name: locale === "he" ? member.fullNameHe : member.fullNameEn, role: t(`role.${member.role}`) }}
+            canViewMessages={can(member.role as StaffRole, "VIEW_MESSAGES")}
           />
         </div>
       </header>

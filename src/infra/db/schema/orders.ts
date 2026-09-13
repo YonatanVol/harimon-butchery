@@ -105,6 +105,9 @@ export const order = pgTable(
     capturedAgorot: agorotCol("captured_agorot"),
     refundedAgorot: agorotCol("refunded_agorot").notNull().default(0),
     goodwillAgorot: agorotCol("goodwill_agorot").notNull().default(0),
+    /** Extra weight the customer approved, charged separately on their saved card. */
+    extraChargedAgorot: agorotCol("extra_charged_agorot").notNull().default(0),
+    approvalDeadlineAt: timestamp("approval_deadline_at", { withTimezone: true }),
     vatRateBp: integer("vat_rate_bp").notNull(),
     overTolerancePolicy: overTolerancePolicy("over_tolerance_policy").notNull().default("TRIM_TO_CEILING"),
 
@@ -168,6 +171,8 @@ export const orderLine = pgTable(
     toleranceMinG: gramsCol("tolerance_min_g"),
     toleranceMaxG: gramsCol("tolerance_max_g"),
     actualG: gramsCol("actual_g"),
+    /** Weight awaiting the customer's decision (over the range). */
+    pendingActualG: gramsCol("pending_actual_g"),
 
     unitPriceAgorot: agorotCol("unit_price_agorot"),
     quantity: integer("quantity"),

@@ -20,6 +20,8 @@ export const notification = pgTable(
     toE164: text("to_e164").notNull(),
     locale: text("locale").notNull(),
     renderedBody: text("rendered_body").notNull(),
+    /** Ordered template variables, for providers that send pre-approved templates. */
+    templateParams: jsonb("template_params"),
     actions: jsonb("actions"),
     status: notificationStatus("status").notNull().default("QUEUED"),
     providerMessageId: text("provider_message_id"),

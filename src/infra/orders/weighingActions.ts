@@ -1,8 +1,10 @@
 "use server";
 
 import { db } from "../db/client";
+import { kickDispatch } from "../notify/kick";
 import { appUrl, paymentProvider } from "../payments/factory";
 import { currentStaff } from "../staff/session";
+import { expireApprovals } from "./customer";
 import { loadPackView, type PackView } from "./packView";
 import * as w from "./weighing";
 
@@ -13,10 +15,14 @@ async function withStaff<T extends object>(orderId: string, fn: (staff: { id: st
   const staff = await currentStaff();
   if (!staff) return { ok: false, problem: { key: "NOT_PERMITTED" }, view: null };
   const result = await fn(staff);
+  kickDispatch();
   return { ...result, view: await loadPackView(orderId) };
 }
 
-export async function packRefresh(orderId: string) {
+/** The tablet polls this while an item waits for the customer, so the answer (or the deadline) shows up by itself. */
+export async function packRefresh(orderId: string): Promise<PackView | null> {
+  if (!(await currentStaff())) return null;
+  if (await expireApprovals(db, { appUrl: appUrl() })) kickDispatch();
   return loadPackView(orderId);
 }
 
@@ -26,6 +32,10 @@ export async function packStart(orderId: string) {
 
 export async function packWeigh(input: { orderId: string; lineId: string; actualG: number; expectedVersion: number; confirmUnder?: boolean; giveExtraFree?: { managerId: string; pin: string } }) {
   return withStaff(input.orderId, (staff) => w.recordWeight(db, { ...input, staff }));
+}
+
+export async function packAskCustomer(input: { orderId: string; lineId: string; actualG: number; expectedVersion: number; locale: "he" | "en" }) {
+  return withStaff(input.orderId, (staff) => w.askCustomer(db, { ...input, staff, appUrl: appUrl() }));
 }
 
 export async function packUndo(input: { orderId: string; lineId: string; expectedVersion: number }) {

@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { addToCart } from "@/infra/cart/actions";
 import { Button } from "../primitives/Button";
+import { InterestForm } from "./InterestForm";
 import { announceCartChange } from "./CartButton";
 import { type PurchaseProduct, PurchasePanel, type PurchaseSelection } from "./PurchasePanel";
 import { useProblemText } from "./useProblemText";
@@ -58,6 +59,7 @@ export function ProductPurchase({ product, outOfStockLabel }: { product: Purchas
           >
             {t("product.addToCart")}
           </Button>
+          {disabledReason && product.availability.kind === "OUT" && <InterestForm target={{ kind: "RESTOCK", productId: product.id, productName: name }} />}
           {error && (
             <p role="alert" className="bg-bad-600/10 text-bad-600 rounded-lg p-3 text-sm font-medium">
               {error}

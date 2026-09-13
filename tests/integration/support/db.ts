@@ -19,7 +19,7 @@ export async function truncateAll(db: TestDb) {
     payment_intent, invoice, invoice_counter, order_status_event, order_line, orders, cart_line, cart,
     slot_hold, delivery_slot, delivery_slot_template, calendar_blackout, address, customer,
     stock_movement, stock_item, product_variant, product_kashrut, product, category,
-    kashrut_authority, delivery_zone, staff_user, audit_event, setting, idempotency_key, order_counter, mock_psp_transaction
+    kashrut_authority, delivery_zone, staff_user, audit_event, setting, idempotency_key, order_counter, mock_psp_transaction, customer_login_code, interest_signup
     RESTART IDENTITY CASCADE`);
 }
 
@@ -119,3 +119,12 @@ export const validDetails = {
   intercom: "",
   deliveryNotes: "",
 };
+
+export async function makeStaff(db: TestDb, role: "OWNER" | "MANAGER" | "BUTCHER" | "PACKER" | "DRIVER" | "VIEWER", pin = "4321") {
+  const { hashPin } = await import("@/infra/staff/pin");
+  const [s] = await db
+    .insert(schema.staffUser)
+    .values({ phoneE164: `+97250${Math.floor(1_000_000 + Math.random() * 8_999_999)}`, fullNameHe: "צוות", fullNameEn: "Staff", role, pinHash: hashPin(pin) })
+    .returning();
+  return s;
+}
