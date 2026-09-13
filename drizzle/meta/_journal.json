@@ -15,6 +15,20 @@
       "when": 1789324413860,
       "tag": "0001_cart_city",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789325594571,
+      "tag": "0002_orders_checkout",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789325869144,
+      "tag": "0003_order_reserved_weight",
+      "breakpoints": true
     }
   ]
 }

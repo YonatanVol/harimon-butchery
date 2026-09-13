@@ -38,7 +38,9 @@ export const cart = pgTable(
     zoneId: uuid("zone_id").references(() => deliveryZone.id),
     addressId: uuid("address_id").references(() => address.id),
     status: cartStatus("status").notNull().default("OPEN"),
+    /** Set while an order from this cart awaits payment; cleared if payment fails so the cart stays usable. */
     convertedOrderId: uuid("converted_order_id"),
+    checkoutDraft: jsonb("checkout_draft"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -78,6 +80,9 @@ export const order = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     orderNumber: text("order_number").notNull().unique(),
+    /** Unguessable token for the no-login tracking link sent to the customer. */
+    accessToken: text("access_token").notNull().unique(),
+    cartId: uuid("cart_id"),
     customerId: uuid("customer_id")
       .notNull()
       .references(() => customer.id),
@@ -119,6 +124,8 @@ export const order = pgTable(
     customerNote: text("customer_note"),
     internalNote: text("internal_note"),
     deliveryAttempts: integer("delivery_attempts").notNull().default(0),
+    /** Weight added to the delivery window at placement, so releasing undoes exactly that. */
+    reservedWeightG: gramsCol("reserved_weight_g").notNull().default(0),
     version: integer("version").notNull().default(1),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -133,6 +140,11 @@ export const order = pgTable(
     check("orders_locale", sql`${t.locale} IN ('he', 'en')`),
   ],
 );
+
+export const orderCounter = pgTable("order_counter", {
+  year: integer("year").primaryKey(),
+  lastSequence: integer("last_sequence").notNull().default(0),
+});
 
 export const orderLine = pgTable(
   "order_line",

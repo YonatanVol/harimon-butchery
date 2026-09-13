@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { createdAt, hebrewText, updatedAt } from "./columns";
 import { deliveryZone } from "./delivery";
 import { staffRole } from "./enums";
@@ -62,6 +62,8 @@ export const staffUser = pgTable("staff_user", {
   fullNameEn: text("full_name_en").notNull(),
   role: staffRole("role").notNull(),
   pinHash: text("pin_hash"),
+  failedPinAttempts: integer("failed_pin_attempts").notNull().default(0),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
   active: boolean("active").notNull().default(true),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
   createdAt: createdAt(),
