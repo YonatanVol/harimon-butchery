@@ -75,7 +75,8 @@
       "switchLocaleLabel": "עברו לעברית",
       "home": "Home",
       "skipToContent": "Skip to content",
-      "switchLocaleShort": "עב"
+      "switchLocaleShort": "עב",
+      "account": "My account"
     },
     "footer": {
       "demoTitle": "Demo shop",
@@ -334,6 +335,51 @@
       "holdCountdownLabel": "Time left on your held window",
       "servedCities": "Cities we deliver to",
       "cityRequired": "Type a city to check"
+    },
+    "account": {
+      "title": "My account",
+      "hello": "Hello {name}",
+      "signedInAs": "Signed in with",
+      "signOut": "Sign out",
+      "signingOut": "Signing out…",
+      "ordersTitle": "My orders",
+      "emptyTitle": "You haven't ordered from us yet",
+      "emptyBody": "When you order with this number, your orders show up here — with tracking, actual weights and the invoice.",
+      "startShopping": "Go to the shop",
+      "placed": "Ordered {date} · {count, plural, one {1 item} other {# items}}",
+      "charged": "Charged {amount}",
+      "held": "{amount} held",
+      "notCharged": "Not charged",
+      "details": "Details",
+      "actionNeeded": "Needs you",
+      "login": {
+        "title": "Sign in",
+        "body": "No password: we send a code by WhatsApp to the number you ordered with.",
+        "phone": "Mobile number",
+        "phoneHelp": "The number you used when ordering",
+        "phoneMissing": "Enter a mobile number",
+        "sendCode": "Send me a code",
+        "sending": "Sending…",
+        "sentTo": "We sent a 6-digit code to",
+        "code": "Code",
+        "codeHelp": "Type or paste all 6 digits and you're in — no extra tap.",
+        "verifying": "Checking the code…",
+        "resend": "Send a new code",
+        "resendIn": "You can ask for a new code in {seconds} seconds",
+        "changePhone": "Change number",
+        "demoCode": "Demo mode — the message isn't really sent. Your code:",
+        "problems": {
+          "PHONE_INVALID": "That number isn't valid — please check it",
+          "PHONE_NOT_MOBILE": "We need a mobile number (starting 05) to send the code",
+          "WAIT": "You can ask for a new code in {seconds} seconds",
+          "CODE_MALFORMED": "The code is 6 digits",
+          "NO_CODE": "No active code for this number — ask for a new one",
+          "EXPIRED": "The code expired (5 minutes) — ask for a new one",
+          "WRONG_CODE": "Wrong code. {attemptsLeft, plural, one {1 try left} other {# tries left}}",
+          "TOO_MANY_ATTEMPTS": "Too many tries for this code — ask for a new one",
+          "NETWORK": "Can't reach the server. Check the network and try again."
+        }
+      }
     }
   },
   "orders": {
@@ -777,7 +823,8 @@
         "order_cancelled_by_shop": "Cancelled by shop",
         "order_reauth_required": "Payment re-approval",
         "auth_otp": "Login code"
-      }
+      },
+      "otpNoResend": "Login codes aren't resent — the customer asks for a new one"
     },
     "manager": {
       "title": "Manager decisions",

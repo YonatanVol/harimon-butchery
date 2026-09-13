@@ -68,3 +68,18 @@ export const staffUser = pgTable("staff_user", {
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
+
+/** One-time sign-in codes. Only a keyed hash is stored; the code itself exists in the message and nowhere else. */
+export const customerLoginCode = pgTable(
+  "customer_login_code",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    phoneE164: text("phone_e164").notNull(),
+    codeHash: text("code_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("customer_login_code_phone_idx").on(t.phoneE164, t.createdAt), check("customer_login_code_attempts", sql`${t.attempts} >= 0`)],
+);

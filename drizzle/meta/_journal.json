@@ -43,6 +43,13 @@
       "when": 1789327961534,
       "tag": "0005_over_tolerance_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789329944196,
+      "tag": "0006_customer_login_code",
+      "breakpoints": true
     }
   ]
 }

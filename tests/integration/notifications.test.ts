@@ -17,12 +17,12 @@ async function queued(count = 1, phone = "+972541234567") {
     .values(
       Array.from({ length: count }, (_, i) => ({
         customerId: c.id,
-        templateKey: "auth.otp",
+        templateKey: "order.packed",
         channel: "WHATSAPP" as const,
         provider: "MOCK" as const,
         toE164: phone,
         locale: "he",
-        renderedBody: `קוד ${i}`,
+        renderedBody: `ההזמנה ${i} ארוזה`,
         templateParams: [String(i)],
         idempotencyKey: `k${i}-${phone}`,
       })),

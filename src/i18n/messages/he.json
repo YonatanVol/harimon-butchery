@@ -75,7 +75,8 @@
       "switchLocaleLabel": "Switch to English",
       "home": "דף הבית",
       "skipToContent": "דלגו לתוכן",
-      "switchLocaleShort": "EN"
+      "switchLocaleShort": "EN",
+      "account": "החשבון שלי"
     },
     "footer": {
       "demoTitle": "חנות הדגמה",
@@ -334,6 +335,51 @@
       "holdCountdownLabel": "זמן שנותר לשמירת המועד",
       "servedCities": "ערים שאנחנו מגיעים אליהן",
       "cityRequired": "הקלידו עיר כדי לבדוק"
+    },
+    "account": {
+      "title": "החשבון שלי",
+      "hello": "שלום {name}",
+      "signedInAs": "מחוברים עם",
+      "signOut": "יציאה",
+      "signingOut": "יוצאים…",
+      "ordersTitle": "ההזמנות שלי",
+      "emptyTitle": "עוד לא הזמנתם מאיתנו",
+      "emptyBody": "כשתזמינו עם המספר הזה, ההזמנות יופיעו כאן — עם המעקב, המשקל בפועל והחשבונית.",
+      "startShopping": "לחנות",
+      "placed": "הוזמן ב-{date} · {count, plural, one {פריט אחד} other {# פריטים}}",
+      "charged": "חויב {amount}",
+      "held": "הוקפא {amount}",
+      "notCharged": "לא חויב",
+      "details": "לפרטים",
+      "actionNeeded": "מחכה לכם",
+      "login": {
+        "title": "כניסה לחשבון",
+        "body": "בלי סיסמה: נשלח קוד בוואטסאפ למספר שאיתו הזמנתם.",
+        "phone": "מספר נייד",
+        "phoneHelp": "המספר שהזנתם בהזמנה",
+        "phoneMissing": "הקלידו מספר נייד",
+        "sendCode": "שלחו לי קוד",
+        "sending": "שולחים…",
+        "sentTo": "שלחנו קוד בן 6 ספרות אל",
+        "code": "הקוד",
+        "codeHelp": "כשתקלידו או תדביקו את כל 6 הספרות — ניכנס לבד.",
+        "verifying": "בודקים את הקוד…",
+        "resend": "שלחו קוד חדש",
+        "resendIn": "אפשר לבקש קוד חדש בעוד {seconds} שניות",
+        "changePhone": "שינוי מספר",
+        "demoCode": "מצב הדגמה — ההודעה לא נשלחת באמת. הקוד שלכם:",
+        "problems": {
+          "PHONE_INVALID": "המספר לא תקין — בדקו אותו",
+          "PHONE_NOT_MOBILE": "צריך מספר נייד (שמתחיל ב-05) כדי לקבל את הקוד",
+          "WAIT": "אפשר לבקש קוד חדש בעוד {seconds} שניות",
+          "CODE_MALFORMED": "הקוד הוא 6 ספרות",
+          "NO_CODE": "לא מצאנו קוד פעיל למספר הזה — בקשו קוד חדש",
+          "EXPIRED": "הקוד פג תוקף (5 דקות) — בקשו קוד חדש",
+          "WRONG_CODE": "הקוד לא נכון. {attemptsLeft, plural, one {נשאר ניסיון אחד} other {נשארו # ניסיונות}}",
+          "TOO_MANY_ATTEMPTS": "יותר מדי ניסיונות לקוד הזה — בקשו קוד חדש",
+          "NETWORK": "אין חיבור לשרת. בדקו את הרשת ונסו שוב."
+        }
+      }
     }
   },
   "orders": {
@@ -777,7 +823,8 @@
         "order_cancelled_by_shop": "ביטול על ידי החנות",
         "order_reauth_required": "נדרש אישור תשלום מחדש",
         "auth_otp": "קוד כניסה"
-      }
+      },
+      "otpNoResend": "קוד כניסה לא נשלח מחדש — הלקוח מבקש קוד חדש"
     },
     "manager": {
       "title": "החלטות מנהל",

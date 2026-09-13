@@ -104,7 +104,12 @@ export default async function MessagesPage({ params, searchParams }: PageProps<"
                 {n.deliveredAt && <span>{t("deliveredAt", { time: time(n.deliveredAt)! })}</span>}
                 {n.readAt && <span>{t("readAt", { time: time(n.readAt)! })}</span>}
                 {n.failureReason && <span className="text-bad-600">{t("reason", { reason: n.failureReason })}</span>}
-                {n.status === "FAILED" && <ResendButton id={n.id} label={t("resend")} pendingLabel={t("resending")} />}
+                {n.status === "FAILED" &&
+                  (n.templateKey === "auth.otp" ? (
+                    <span className="text-char-500 text-sm">{t("otpNoResend")}</span>
+                  ) : (
+                    <ResendButton id={n.id} label={t("resend")} pendingLabel={t("resending")} />
+                  ))}
               </div>
             </li>
           ))}
