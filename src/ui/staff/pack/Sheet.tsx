@@ -7,13 +7,21 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
   const id = useId();
   const ref = useRef<HTMLDivElement>(null);
 
+  // Callers pass a fresh onClose each render; keep the latest without re-running the open/close effect,
+  // which would pull focus back to the first field on every keystroke.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    ref.current?.querySelector<HTMLElement>("button, input")?.focus();
+    // A field if there is one (that's where typing should go), otherwise the first button.
+    (ref.current?.querySelector<HTMLElement>("input, select, textarea") ?? ref.current?.querySelector<HTMLElement>("button"))?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
       }
     };
     window.addEventListener("keydown", onKey, true);
@@ -21,7 +29,7 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
       window.removeEventListener("keydown", onKey, true);
       previous?.focus();
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div className="bg-char-900/60 fixed inset-0 z-50 grid place-items-center p-4" onClick={onClose}>

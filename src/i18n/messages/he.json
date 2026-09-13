@@ -615,7 +615,8 @@
       "board": "לוח היום",
       "messages": "הודעות",
       "logout": "יציאה",
-      "deliveries": "משלוחים"
+      "deliveries": "משלוחים",
+      "stock": "מלאי"
     },
     "board": {
       "title": "לוח היום",
@@ -905,6 +906,82 @@
         "NOT_PERMITTED": "אין לך הרשאה לעדכן משלוחים",
         "WRONG_STATE": "המשלוח הזה כבר עודכן ממכשיר אחר — רעננו את הדף",
         "NETWORK": "אין חיבור לשרת. בדקו את הרשת ונסו שוב."
+      }
+    },
+    "stock": {
+      "title": "מלאי",
+      "attention": "{count, plural, one {מוצר אחד דורש} other {# מוצרים דורשים}} תשומת לב",
+      "allGood": "כל המוצרים במלאי",
+      "product": "מוצר",
+      "state": "מצב",
+      "onHand": "במקרר",
+      "reserved": "שמור להזמנות",
+      "available": "פנוי למכירה",
+      "threshold": "סף התראה",
+      "lastMovement": "תנועה אחרונה",
+      "unpublished": "לא מוצג באתר",
+      "waiting": "{count, plural, one {לקוח אחד מחכה} other {# לקוחות מחכים}} להודעה",
+      "restockOn": "חוזר {date}",
+      "units": "{count, plural, one {יחידה אחת} other {# יחידות}}",
+      "update": "עדכון",
+      "states": {
+        "OUT": "אזל",
+        "LOW": "מלאי נמוך",
+        "IN_STOCK": "במלאי"
+      },
+      "reasons": {
+        "RECEIVED": "התקבל",
+        "RESERVED": "נשמר",
+        "RELEASED": "שוחרר",
+        "PICKED": "נלקט",
+        "TRIM_LOSS": "פחת חיתוך",
+        "SPOILAGE": "פחת",
+        "RETURN": "הוחזר",
+        "MANUAL_ADJUST": "תיקון",
+        "COUNT_CORRECTION": "ספירה"
+      },
+      "sheetTitle": "מלאי: {name}",
+      "sheetNow": "עכשיו במקרר {onHand}, מתוכם {reserved} שמורים להזמנות.",
+      "kind": "סוג העדכון",
+      "kinds": {
+        "RECEIVED": "קבלת סחורה",
+        "SPOILAGE": "פחת",
+        "COUNT_CORRECTION": "ספירה"
+      },
+      "kindHelp": {
+        "RECEIVED": "מוסיף למלאי",
+        "SPOILAGE": "מוריד מהמלאי",
+        "COUNT_CORRECTION": "קובע את הכמות המדויקת"
+      },
+      "amountG": "כמות בגרמים",
+      "amountUnits": "מספר יחידות",
+      "countedG": "כמה נספר, בגרמים",
+      "countedUnits": "כמה יחידות נספרו",
+      "amountMissingG": "הקלידו כמות בגרמים",
+      "amountMissingUnits": "הקלידו מספר יחידות",
+      "noteOptional": "הערה (לא חובה)",
+      "noteRequired": "למה? (חובה — נשמר ביומן)",
+      "preview": "במקרר: {before} ← {after}",
+      "save": "שמירה",
+      "saving": "שומר…",
+      "close": "סגירה",
+      "saved": "נשמר.",
+      "savedNotified": "נשמר, ו{count, plural, one {לקוח אחד שחיכה קיבל} other {# לקוחות שחיכו קיבלו}} הודעה שהמוצר חזר.",
+      "restockDate": "צפי חזרה למלאי (מוצג ללקוחות)",
+      "saveDate": "שמירת תאריך",
+      "clearDate": "הסרת התאריך",
+      "dateUnchanged": "התאריך לא השתנה",
+      "dateSaved": "התאריך נשמר ויוצג ללקוחות.",
+      "dateCleared": "התאריך הוסר.",
+      "problems": {
+        "NOT_PERMITTED": "אין לך הרשאה לעדכן מלאי",
+        "NOT_FOUND": "המוצר לא נמצא",
+        "INVALID_AMOUNT": "הכמות לא תקינה — רק מספר שלם",
+        "NOTE_REQUIRED": "כתבו בקצרה למה (לפחות 3 תווים)",
+        "BELOW_RESERVED": "אי אפשר לרדת מתחת ל-{reserved} ששמורים להזמנות פתוחות",
+        "INVALID_DATE": "התאריך לא תקין",
+        "NETWORK": "אין חיבור לשרת. נסו שוב.",
+        "TOO_LARGE": "יותר מ-{max} בעדכון אחד — כנראה טעות הקלדה. בדקו את המספר"
       }
     }
   }

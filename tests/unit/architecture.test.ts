@@ -31,6 +31,29 @@ describe("architecture", () => {
     expect(violations).toEqual([]);
   });
 
+  it("client components import server code only as types or server actions", () => {
+    const violations: string[] = [];
+    const clientFiles = filesUnder(SRC).filter((f) => /^\s*["']use client["']/.test(readFileSync(f, "utf8")));
+    for (const file of clientFiles) {
+      const source = readFileSync(file, "utf8");
+      for (const m of source.matchAll(/import\s+(type\s+)?[^'"]*?from\s+["'](@\/infra\/[^"']+|\.{1,2}\/[^"']*infra\/[^"']+)["']/g)) {
+        const [, typeOnly, spec] = m;
+        if (typeOnly) continue;
+        const target = path.join(SRC, spec.replace(/^@\//, "")).replace(/$/, "");
+        const candidates = [`${target}.ts`, `${target}.tsx`];
+        const isServerActions = candidates.some((c) => {
+          try {
+            return /^\s*["']use server["']/.test(readFileSync(c, "utf8"));
+          } catch {
+            return false;
+          }
+        });
+        if (!isServerActions) violations.push(`${path.relative(SRC, file)} imports values from "${spec}"`);
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
   it("no floating-point money helpers are used in src/domain", () => {
     const violations: string[] = [];
     for (const file of filesUnder(path.join(SRC, "domain"))) {

@@ -144,13 +144,9 @@ async function main() {
         lowThresholdUnits: isWeight ? 0 : 4,
         nextRestockDate: level === "out" ? isoDate(3) : null,
       });
-      await tx.insert(s.stockMovement).values({
-        productId: row.id,
-        deltaG: onHandG,
-        deltaUnits: onHandUnits,
-        reason: "RECEIVED",
-        note: "Seed",
-      });
+      if (onHandG || onHandUnits) {
+        await tx.insert(s.stockMovement).values({ productId: row.id, deltaG: onHandG, deltaUnits: onHandUnits, reason: "RECEIVED", note: "Seed" });
+      }
     }
 
     const zoneRows = await tx.insert(s.deliveryZone).values(

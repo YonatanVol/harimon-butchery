@@ -615,7 +615,8 @@
       "board": "Today's board",
       "messages": "Messages",
       "logout": "Sign out",
-      "deliveries": "Deliveries"
+      "deliveries": "Deliveries",
+      "stock": "Stock"
     },
     "board": {
       "title": "Today's board",
@@ -905,6 +906,82 @@
         "NOT_PERMITTED": "You don't have permission to update deliveries",
         "WRONG_STATE": "This delivery was already updated from another device — refresh the page",
         "NETWORK": "Can't reach the server. Check the network and try again."
+      }
+    },
+    "stock": {
+      "title": "Stock",
+      "attention": "{count, plural, one {1 product needs} other {# products need}} attention",
+      "allGood": "Everything is in stock",
+      "product": "Product",
+      "state": "State",
+      "onHand": "On hand",
+      "reserved": "Held for orders",
+      "available": "Free to sell",
+      "threshold": "Alert below",
+      "lastMovement": "Last movement",
+      "unpublished": "Not shown on the site",
+      "waiting": "{count, plural, one {1 customer waiting} other {# customers waiting}} to hear",
+      "restockOn": "Back {date}",
+      "units": "{count, plural, one {1 unit} other {# units}}",
+      "update": "Update",
+      "states": {
+        "OUT": "Sold out",
+        "LOW": "Low",
+        "IN_STOCK": "In stock"
+      },
+      "reasons": {
+        "RECEIVED": "Received",
+        "RESERVED": "Reserved",
+        "RELEASED": "Released",
+        "PICKED": "Picked",
+        "TRIM_LOSS": "Trim loss",
+        "SPOILAGE": "Spoilage",
+        "RETURN": "Returned",
+        "MANUAL_ADJUST": "Adjusted",
+        "COUNT_CORRECTION": "Count"
+      },
+      "sheetTitle": "Stock: {name}",
+      "sheetNow": "Now {onHand} on hand, {reserved} of it held for orders.",
+      "kind": "Kind of update",
+      "kinds": {
+        "RECEIVED": "Goods received",
+        "SPOILAGE": "Spoilage",
+        "COUNT_CORRECTION": "Count"
+      },
+      "kindHelp": {
+        "RECEIVED": "Adds to stock",
+        "SPOILAGE": "Takes off stock",
+        "COUNT_CORRECTION": "Sets the exact amount"
+      },
+      "amountG": "Amount in grams",
+      "amountUnits": "Number of units",
+      "countedG": "Counted, in grams",
+      "countedUnits": "Units counted",
+      "amountMissingG": "Enter an amount in grams",
+      "amountMissingUnits": "Enter a number of units",
+      "noteOptional": "Note (optional)",
+      "noteRequired": "Why? (required — kept in the log)",
+      "preview": "On hand: {before} → {after}",
+      "save": "Save",
+      "saving": "Saving…",
+      "close": "Close",
+      "saved": "Saved.",
+      "savedNotified": "Saved, and {count, plural, one {1 waiting customer was} other {# waiting customers were}} told it's back.",
+      "restockDate": "Expected back (shown to customers)",
+      "saveDate": "Save date",
+      "clearDate": "Remove date",
+      "dateUnchanged": "The date hasn't changed",
+      "dateSaved": "Date saved and shown to customers.",
+      "dateCleared": "Date removed.",
+      "problems": {
+        "NOT_PERMITTED": "You don't have permission to change stock",
+        "NOT_FOUND": "Product not found",
+        "INVALID_AMOUNT": "That amount isn't valid — whole numbers only",
+        "NOTE_REQUIRED": "Say briefly why (at least 3 characters)",
+        "BELOW_RESERVED": "Can't go below the {reserved} held for open orders",
+        "INVALID_DATE": "That date isn't valid",
+        "NETWORK": "Can't reach the server. Try again.",
+        "TOO_LARGE": "More than {max} in one update — probably a typo. Check the number"
       }
     }
   }

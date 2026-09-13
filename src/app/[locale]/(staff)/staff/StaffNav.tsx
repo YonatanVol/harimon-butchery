@@ -5,34 +5,20 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { staffLogout } from "@/infra/staff/actions";
 import { cx } from "@/ui/cx";
 
-export function StaffNav({
-  labels,
-  member,
-  canViewMessages,
-}: {
-  labels: { board: string; messages: string; deliveries: string; logout: string };
-  member: { name: string; role: string };
-  canViewMessages: boolean;
-}) {
+export function StaffNav({ items, member, logoutLabel }: { items: Array<{ href: string; label: string }>; member: { name: string; role: string }; logoutLabel: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const [pending, start] = useTransition();
-  const items = [
-    { href: "/staff", label: labels.board },
-    { href: "/staff/deliveries", label: labels.deliveries },
-    // Only tabs this person can open: a tab that bounces you back is a silent no-op.
-    ...(canViewMessages ? [{ href: "/staff/messages", label: labels.messages }] : []),
-  ];
 
   return (
     <>
-      <nav className="flex gap-1">
+      <nav className="flex flex-wrap gap-1">
         {items.map((i) => (
           <Link
             key={i.href}
             href={i.href}
-            aria-current={pathname === i.href ? "page" : undefined}
-            className={cx("inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium", pathname === i.href ? "bg-bone-50/15" : "hover:bg-bone-50/10")}
+            aria-current={pathname === i.href || (i.href !== "/staff" && pathname.startsWith(i.href)) ? "page" : undefined}
+            className={cx("inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium", pathname === i.href || (i.href !== "/staff" && pathname.startsWith(i.href)) ? "bg-bone-50/15" : "hover:bg-bone-50/10")}
           >
             {i.label}
           </Link>
@@ -54,7 +40,7 @@ export function StaffNav({
           }
           className="ring-bone-50/30 hover:bg-bone-50/10 min-h-11 rounded-lg px-3 ring-1"
         >
-          {labels.logout}
+          {logoutLabel}
         </button>
       </div>
     </>
