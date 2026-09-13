@@ -45,6 +45,7 @@ export async function loadPackView(orderId: string) {
     captureAttempts: captures.length,
     lastCaptureFailure: captures.find((c) => c.status === "FAILED")?.failureReasonKey ?? null,
     invoiceNumber: inv?.number ?? null,
+    approvalDeadlineAt: o.approvalDeadlineAt?.toISOString() ?? null,
     managers,
     lines: lines.map(({ line: l, animal, image }) => ({
       id: l.id,
@@ -64,6 +65,7 @@ export async function loadPackView(orderId: string) {
       minG: l.toleranceMinG,
       maxG: l.toleranceMaxG,
       actualG: l.actualG,
+      pendingActualG: l.pendingActualG,
       quantity: l.quantity,
       unitPriceAgorot: l.unitPriceAgorot,
       estimateAgorot: l.estimateAgorot,

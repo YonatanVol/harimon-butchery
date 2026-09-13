@@ -48,7 +48,7 @@ export function LineList({ lines, activeId, onSelect }: { lines: PackLine[]; act
                   ) : (
                     t("package", { count: l.quantity ?? 0 })
                   )}{" "}
-                  · {t(`status.${l.status}`)}
+                  · {l.pendingActualG ? t("status.WAITING") : t(`status.${l.status}`)}
                 </span>
               </span>
             </button>

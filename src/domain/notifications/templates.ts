@@ -121,6 +121,33 @@ const actions: Partial<Record<TemplateKey, TemplateAction[]>> = {
   "order.reauth_required": [{ labelHe: "אישור תשלום", labelEn: "Approve payment", path: "#reauth" }],
 };
 
+/** The order of variables in each Meta-approved WhatsApp template body ({{1}}, {{2}}, …). */
+export const TEMPLATE_PARAM_ORDER: Record<TemplateKey, Array<keyof TemplateVars>> = {
+  "order.authorized": ["firstName", "orderNumber", "slotWindow", "holdAmount", "trackingUrl"],
+  "order.picking": ["firstName", "orderNumber", "trackingUrl"],
+  "order.over_tolerance": ["firstName", "productName", "actualWeight", "requestedWeight", "extraAmount", "trimmedWeight", "deadline", "trackingUrl"],
+  "order.extra_approved": ["firstName", "extraAmount", "productName"],
+  "order.trimmed": ["firstName", "productName", "trimmedWeight"],
+  "order.repriced": ["firstName", "orderNumber", "estimateAmount", "finalAmount", "holdAmount", "trackingUrl"],
+  "order.captured": ["firstName", "finalAmount", "holdAmount", "trackingUrl"],
+  "order.capture_issue": ["firstName", "orderNumber", "trackingUrl"],
+  "order.packed": ["orderNumber", "slotWindow"],
+  "order.out_for_delivery": ["firstName", "orderNumber", "slotWindow", "trackingUrl"],
+  "order.delivered": ["orderNumber", "firstName", "trackingUrl"],
+  "order.not_home": ["firstName", "orderNumber", "trackingUrl"],
+  "order.rescheduled": ["orderNumber", "slotWindow"],
+  "order.returned": ["orderNumber"],
+  "order.refunded": ["firstName", "refundAmount", "orderNumber"],
+  "order.cancelled": ["orderNumber"],
+  "order.cancelled_by_shop": ["firstName", "orderNumber", "reason"],
+  "order.reauth_required": ["firstName", "orderNumber", "trackingUrl"],
+  "auth.otp": ["code"],
+};
+
+export function templateParams(key: TemplateKey, vars: TemplateVars): string[] {
+  return TEMPLATE_PARAM_ORDER[key].map((k) => vars[k] ?? "");
+}
+
 export function renderTemplate(key: TemplateKey, locale: "he" | "en", vars: TemplateVars) {
   return { body: (locale === "he" ? he : en)[key](vars), actions: actions[key] ?? [] };
 }

@@ -29,6 +29,20 @@
       "when": 1789325869144,
       "tag": "0003_order_reserved_weight",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789327794783,
+      "tag": "0004_notification_params",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789327961534,
+      "tag": "0005_over_tolerance_approval",
+      "breakpoints": true
     }
   ]
 }

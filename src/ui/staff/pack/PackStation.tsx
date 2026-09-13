@@ -85,6 +85,19 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
     return () => clearTimeout(timer);
   }, [undo]);
 
+  // While an item waits for the customer, check every 10 seconds so their answer appears without a reload.
+  const waiting = view.lines.some((l) => l.pendingActualG);
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setInterval(() => {
+      act
+        .packRefresh(view.id)
+        .then((fresh) => fresh && setView((v) => (fresh.version >= v.version ? fresh : v)))
+        .catch(() => {});
+    }, 10_000);
+    return () => clearInterval(timer);
+  }, [waiting, view.id]);
+
   const typedG = Number(typed) || 0;
   const bounds = active?.pricingMode === "WEIGHT" && active.estimatedG && active.toleranceBp != null ? toleranceBounds(grams(active.estimatedG), active.toleranceBp) : null;
   const classification = bounds && typedG > 0 ? classifyWeight(grams(typedG), bounds) : null;
@@ -149,9 +162,12 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
   const unhandled = view.lines.find(
     (l) => l.status === "WEIGHED" && (l.handlingFlags.includes("REQUIRES_BROILING_TZLIYA") || l.handlingFlags.includes("REQUIRES_SALTING")) && !l.handlingConfirmed,
   );
+  const waitingLine = view.lines.find((l) => l.pendingActualG);
   const finishReason = !canCapture
     ? t("problems.NOT_PERMITTED")
-    : remaining > 0
+    : waitingLine
+      ? t("finishReasonWaiting", { name: name(waitingLine) })
+      : remaining > 0
       ? t("finishReasonLines", { count: remaining })
       : unhandled
         ? t("finishReasonHandling", { name: name(unhandled) })
@@ -215,7 +231,7 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
     );
   }
 
-  if (view.status !== "PICKING") {
+  if (view.status !== "PICKING" && view.status !== "AWAITING_CUSTOMER_APPROVAL") {
     return (
       <Centered>
         <p className="text-2xl">{t("notPicking", { status: view.status })}</p>
@@ -245,6 +261,19 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
           </Link>
         </div>
       </header>
+
+      {waitingLine && view.approvalDeadlineAt && (
+        <div role="status" className="bg-warn-600/10 border-warn-600 rounded-2xl border-s-8 p-4 text-lg">
+          <strong>
+            {t("waitingTitle", {
+              name: name(waitingLine),
+              weight: g(waitingLine.pendingActualG!),
+              time: new Intl.DateTimeFormat(locale === "he" ? "he-IL" : "en-IL", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Jerusalem" }).format(new Date(view.approvalDeadlineAt)),
+            })}
+          </strong>{" "}
+          {t("waitingBody")}
+        </div>
+      )}
 
       {problem && (
         <div role="alert" className="bg-bad-600/10 text-bad-600 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 text-xl font-semibold">
@@ -304,7 +333,7 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
 
               {active.pricingMode === "WEIGHT" && bounds && (
                 <div className="flex flex-col gap-3">
-                  <ToleranceBar bounds={bounds} actual={typedG > 0 ? grams(typedG) : active.actualG ? grams(active.actualG) : null} />
+                  <ToleranceBar bounds={bounds} actual={typedG > 0 ? grams(typedG) : active.pendingActualG ? grams(active.pendingActualG) : active.actualG ? grams(active.actualG) : null} />
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="text-char-500">{t("linePrice")}</span>
                     <bdi className="text-4xl font-bold tabular-nums">{money(livePrice ?? active.finalAgorot ?? active.estimateAgorot)}</bdi>
@@ -329,9 +358,23 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
               )}
 
               {classification?.kind === "over" && (
-                <div role="group" aria-label={t("confirmOver")} className="bg-bad-600/5 ring-bad-600/30 grid gap-2 rounded-2xl p-3 ring-1 sm:grid-cols-2">
+                <div role="group" aria-label={t("confirmOver")} className="bg-bad-600/5 ring-bad-600/30 grid gap-2 rounded-2xl p-3 ring-1 sm:grid-cols-3">
                   <Button size="lg" fullWidth variant="secondary" onClick={() => setTyped("")}>
                     {t("overTrim", { max: g(bounds!.max) })}
+                  </Button>
+                  <Button
+                    size="lg"
+                    fullWidth
+                    variant="secondary"
+                    disabledReason={waitingLine ? t("problems.ALREADY_ASKING") : null}
+                    pendingLabel={busyLabel}
+                    onClick={() => {
+                      const line = active;
+                      const weight = typedG;
+                      call(t("saving"), () => act.packAskCustomer({ orderId: view.id, lineId: line.id, actualG: weight, expectedVersion: view.version, locale }), (r) => advance(r.view!, line.id));
+                    }}
+                  >
+                    {t("overAsk")}
                   </Button>
                   <Button size="lg" fullWidth variant="secondary" onClick={() => setSheet({ kind: "manager", line: active, actualG: typedG })}>
                     {t("overFree")}
@@ -349,7 +392,7 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
                 </div>
               )}
 
-              {active.pricingMode === "WEIGHT" && (active.status === "PENDING" || active.status === "WEIGHED") && !classification?.kind.match(/over|under/) && (
+              {active.pricingMode === "WEIGHT" && (active.status === "PENDING" || active.status === "WEIGHED") && !active.pendingActualG && !classification?.kind.match(/over|under/) && (
                 <Button size="md" variant="secondary" disabledReason={t("scaleMissing")}>
                   {t("scale")}
                 </Button>
@@ -371,7 +414,7 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
                   </Button>
                 )}
                 {(active.status === "PENDING" || active.status === "WEIGHED") && !active.isSubstitute && (
-                  <Button size="xl" variant="secondary" onClick={() => setSheet({ kind: "substitute", line: active })}>
+                  <Button size="xl" variant="secondary" disabledReason={active.pendingActualG ? t("problems.AWAITING_CUSTOMER") : null} onClick={() => setSheet({ kind: "substitute", line: active })}>
                     {t("short")}
                   </Button>
                 )}
@@ -381,7 +424,7 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
         </section>
 
         <aside className="flex min-w-0 flex-col gap-2">
-          {active?.pricingMode === "WEIGHT" && (active.status === "PENDING" || active.status === "WEIGHED") ? (
+          {active?.pricingMode === "WEIGHT" && (active.status === "PENDING" || active.status === "WEIGHED") && !active.pendingActualG ? (
             <>
               <div className="bg-bone-50 ring-bone-300 flex min-h-16 items-center justify-between rounded-2xl px-5 ring-1" aria-live="polite">
                 <span className="text-char-500">{t("typed")}</span>
@@ -405,6 +448,11 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
                 </Button>
               )}
             </>
+          ) : active?.pendingActualG ? (
+            <div className="bg-warn-600/10 ring-warn-600/40 flex flex-col gap-2 rounded-2xl p-5 text-lg ring-1" role="status">
+              <strong className="text-2xl">{t("status.WAITING")}</strong>
+              <span>{t("waitingLine", { weight: g(active.pendingActualG) })}</span>
+            </div>
           ) : null}
         </aside>
       </div>

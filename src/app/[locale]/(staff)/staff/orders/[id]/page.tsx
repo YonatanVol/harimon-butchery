@@ -2,15 +2,21 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { can, type StaffRole } from "@/domain/auth/permissions";
+import { eventsFrom, type OrderStatus } from "@/domain/order/machine";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
 import { formatGrams, grams } from "@/domain/weight/grams";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { db } from "@/infra/db/client";
+import { rescheduleOptions } from "@/infra/orders/customer";
 import { loadStaffOrder } from "@/infra/staff/orderDetail";
 import { requireStaff } from "@/infra/staff/session";
 import { Badge } from "@/ui/primitives/Badge";
 import { Button } from "@/ui/primitives/Button";
+import { DriverButtons } from "@/ui/staff/DriverButtons";
+import { type ManagerAction, ManagerActions } from "@/ui/staff/ManagerActions";
+import { Reschedule } from "@/ui/shop/tracking/OrderActions";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +51,20 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
       ? t("orders.rejections.INVALID_TRANSITION")
       : null;
 
+  const possible = eventsFrom(o.status as OrderStatus);
+  const notPermitted = t("orders.rejections.NOT_PERMITTED");
+  const refundableAgorot = Math.max(0, (o.capturedAgorot ?? 0) - o.refundedAgorot);
+  const managerActions: ManagerAction[] = [
+    possible.includes("FORCE_DISPATCHED") && { kind: "FORCE_DISPATCH" as const, blockedReason: can(role, "OVERRIDE") ? null : notPermitted },
+    possible.includes("REFUND_REQUESTED") && {
+      kind: "REFUND" as const,
+      blockedReason: !can(role, "REFUND") ? notPermitted : refundableAgorot <= 0 ? t("staff.manager.nothingToRefund") : null,
+    },
+    possible.includes("CANCELLED_BY_SHOP") && { kind: "CANCEL" as const, blockedReason: can(role, "CANCEL_ORDER") ? null : notPermitted },
+  ].filter((a): a is ManagerAction => Boolean(a));
+
+  const windows = o.status === "DELIVERY_FAILED_NOT_HOME" && can(role, "OVERRIDE") ? await rescheduleOptions(db, o) : [];
+
   return (
     <div className="flex flex-col gap-6">
       <Link href="/staff" className="text-char-700 w-fit text-sm underline-offset-4 hover:underline">
@@ -58,11 +78,13 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
           </h1>
           <div className="mt-2 flex flex-wrap gap-2">
             <Badge tone="wine">{t(`tracking.status.${o.status}`)}</Badge>
-            {o.unpaidDispatch && <Badge tone="bad">UNPAID</Badge>}
+            {o.unpaidDispatch && <Badge tone="bad">{t("staff.order.unpaid")}</Badge>}
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          {pickReason ? (
+          {!PICKABLE.includes(o.status) ? (
+            <DriverButtons orderId={o.id} status={o.status} blockedReason={can(role, "DELIVER") ? null : t("orders.rejections.NOT_PERMITTED")} />
+          ) : pickReason ? (
             <Button size="lg" disabledReason={pickReason}>
               {t("staff.order.startPicking")}
             </Button>
@@ -111,6 +133,12 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
               <dd className="text-end tabular-nums"><bdi>{money(o.finalTotalAgorot)}</bdi></dd>
               <dt>{t("staff.order.captured")}</dt>
               <dd className="text-end tabular-nums"><bdi>{money(o.capturedAgorot)}</bdi></dd>
+              {o.refundedAgorot > 0 && (
+                <>
+                  <dt>{t("staff.order.refunded")}</dt>
+                  <dd className="text-end tabular-nums"><bdi>{money(o.refundedAgorot)}</bdi></dd>
+                </>
+              )}
               {authorized && (
                 <>
                   <dt>{t("staff.order.card")}</dt>
@@ -143,6 +171,11 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
           </ol>
         </section>
       </div>
+
+      {o.status === "DELIVERY_FAILED_NOT_HOME" && can(role, "OVERRIDE") && (
+        <Reschedule target={{ by: "staff", orderId: o.id }} windows={windows.map((w) => ({ id: w.id, startsAt: w.startsAt.toISOString(), endsAt: w.endsAt.toISOString() }))} />
+      )}
+      {managerActions.length > 0 && <ManagerActions orderId={o.id} actions={managerActions} refundableAgorot={refundableAgorot} />}
 
       <section className="bg-bone-50 ring-bone-300 rounded-2xl p-5 ring-1">
         <h2 className="text-lg font-bold">{t("staff.order.lines")}</h2>

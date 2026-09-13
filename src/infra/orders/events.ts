@@ -4,10 +4,10 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { formatIsraelTime, israelDateOf, toIsoDate } from "@/domain/delivery/israelTime";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
-import { type TemplateKey, type TemplateVars, renderTemplate } from "@/domain/notifications/templates";
+import { type TemplateKey, type TemplateVars, renderTemplate, templateParams } from "@/domain/notifications/templates";
 import { type Effect, type OrderEvent, type TransitionContext, transition } from "@/domain/order/machine";
 import type * as schema from "../db/schema";
-import { auditEvent, cart, customer, deliverySlot, notification, order, orderLine, orderStatusEvent, stockItem } from "../db/schema";
+import { auditEvent, cart, customer, deliverySlot, notification, order, orderLine, orderStatusEvent, stockItem, stockMovement } from "../db/schema";
 
 type Database = PostgresJsDatabase<typeof schema>;
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -88,6 +88,12 @@ export async function applyOrderEvent(tx: Tx, input: ApplyEventInput): Promise<A
         .update(cart)
         .set({ status: "CONVERTED", anonymousToken: null, customerId: updated.customerId })
         .where(eq(cart.id, updated.cartId));
+    } else if (effect === "RESTOCK") {
+      await restock(tx, updated, input.actorId ?? null);
+    } else if (effect === "TRIM_OVER_TOLERANCE_LINE") {
+      // The butcher trims to the upper limit and weighs again.
+      await tx.update(orderLine).set({ pendingActualG: null }).where(eq(orderLine.orderId, updated.id));
+      await tx.update(order).set({ approvalDeadlineAt: null }).where(eq(order.id, updated.id));
     } else if (effect === "AUDIT") {
       await tx.insert(auditEvent).values({
         actorType: actorTypeOf(input.ctx.actor),
@@ -129,6 +135,42 @@ async function releaseSlotAndStock(tx: Tx, o: typeof order.$inferSelect) {
         reservedUnits: sql`greatest(${stockItem.reservedUnits} - ${l.quantity ?? 0}, 0)`,
       })
       .where(eq(stockItem.productId, productId));
+  }
+}
+
+/**
+ * An order cancelled after picking started: release what's still reserved and, if the weighed
+ * meat was already taken out of stock, put it back — a cut steak can still be sold.
+ */
+async function restock(tx: Tx, o: typeof order.$inferSelect, staffId: string | null) {
+  const lines = await tx
+    .select({ line: orderLine, productId: sql<string>`(select product_id from product_variant where id = ${orderLine.variantId})` })
+    .from(orderLine)
+    .where(eq(orderLine.orderId, o.id));
+  const committed = o.weighedAt !== null;
+  for (const { line: l, productId } of lines) {
+    const reservedG = committed || l.substitutionReasonKey ? 0 : (l.estimatedG ?? 0);
+    const reservedUnits = committed || l.substitutionReasonKey ? 0 : (l.quantity ?? 0);
+    const backG = committed && l.status === "WEIGHED" ? (l.actualG ?? 0) : 0;
+    const backUnits = committed && l.status === "WEIGHED" ? (l.actualQuantity ?? 0) : 0;
+    await tx
+      .update(stockItem)
+      .set({
+        reservedG: sql`greatest(${stockItem.reservedG} - ${reservedG}, 0)`,
+        reservedUnits: sql`greatest(${stockItem.reservedUnits} - ${reservedUnits}, 0)`,
+        onHandG: sql`${stockItem.onHandG} + ${backG}`,
+        onHandUnits: sql`${stockItem.onHandUnits} + ${backUnits}`,
+      })
+      .where(eq(stockItem.productId, productId));
+    if (backG || backUnits) {
+      await tx.insert(stockMovement).values({ productId, deltaG: backG, deltaUnits: backUnits, reason: "RETURN", orderId: o.id, staffId, note: "Order cancelled after weighing" });
+    }
+  }
+  if (o.slotId) {
+    await tx
+      .update(deliverySlot)
+      .set({ reservedOrders: sql`greatest(${deliverySlot.reservedOrders} - 1, 0)`, reservedWeightG: sql`greatest(${deliverySlot.reservedWeightG} - ${o.reservedWeightG}, 0)` })
+      .where(eq(deliverySlot.id, o.slotId));
   }
 }
 
@@ -176,6 +218,7 @@ async function enqueueNotification(
       toE164: c.phoneE164,
       locale,
       renderedBody: body,
+      templateParams: templateParams(key, vars),
       actions,
       status: "QUEUED",
       idempotencyKey: `${o.id}:${key}:${toIsoDate(israelDateOf(now))}:${randomBytes(4).toString("hex")}`,

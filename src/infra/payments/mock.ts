@@ -89,6 +89,28 @@ export function createMockProvider(db: Database, appUrl: string): PaymentProvide
       return { ok: r.length === 1 };
     },
 
+    async chargeToken({ tokenRef, amountAgorot, orderNumber }) {
+      const [original] = await db.select().from(mockPspTransaction).where(eq(mockPspTransaction.tokenRef, tokenRef));
+      if (!original) return { ok: false as const, code: "TOKEN" };
+      if (original.scenario === "APPROVE_CAPTURE_FAILS") return { ok: false as const, code: "J4-DECLINED" };
+      const txRef = ref("mock");
+      await db.insert(mockPspTransaction).values({
+        ref: txRef,
+        mode: "CHARGE",
+        amountAgorot,
+        status: "APPROVED",
+        scenario: "TOKEN_CHARGE",
+        capturedAgorot: amountAgorot,
+        cardBrand: original.cardBrand,
+        cardLast4: original.cardLast4,
+        returnUrl: original.returnUrl,
+        orderNumber,
+        locale: original.locale,
+        decidedAt: new Date(),
+      });
+      return { ok: true as const, transactionRef: txRef };
+    },
+
     async refund({ transactionRef, amountAgorot }): Promise<RefundResult> {
       const r = await db
         .update(mockPspTransaction)

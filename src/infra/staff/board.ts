@@ -58,7 +58,7 @@ export async function loadBoard(serviceDate: string) {
 }
 
 export type BoardAlert =
-  | { key: "CAPTURE_FAILED" | "AUTH_EXPIRED" | "AWAITING_CUSTOMER"; orderId: string; orderNumber: string }
+  | { key: "CAPTURE_FAILED" | "AUTH_EXPIRED" | "AWAITING_CUSTOMER" | "NOT_HOME" | "NEEDS_REFUND"; orderId: string; orderNumber: string }
   | { key: "HOLD_EXPIRING" | "SLOT_SOON"; orderId: string; orderNumber: string; when: Date }
   | { key: "CERT_EXPIRING"; authorityHe: string; authorityEn: string; when: Date };
 
@@ -69,10 +69,13 @@ export async function loadAlerts(now = new Date()): Promise<BoardAlert[]> {
   const stuck = await db
     .select({ id: order.id, orderNumber: order.orderNumber, status: order.status, authorizedAt: order.authorizedAt })
     .from(order)
-    .where(inArray(order.status, ["CAPTURE_FAILED", "AUTH_EXPIRED", "AWAITING_CUSTOMER_APPROVAL"]));
+    .where(inArray(order.status, ["CAPTURE_FAILED", "AUTH_EXPIRED", "AWAITING_CUSTOMER_APPROVAL", "DELIVERY_FAILED_NOT_HOME", "RETURNED_TO_SHOP", "REFUND_PENDING"]));
   for (const o of stuck) {
     if (o.status === "CAPTURE_FAILED") alerts.push({ key: "CAPTURE_FAILED", orderId: o.id, orderNumber: o.orderNumber });
     else if (o.status === "AWAITING_CUSTOMER_APPROVAL") alerts.push({ key: "AWAITING_CUSTOMER", orderId: o.id, orderNumber: o.orderNumber });
+    // The customer is told someone will call; this row is that promise on the shop's side.
+    else if (o.status === "DELIVERY_FAILED_NOT_HOME") alerts.push({ key: "NOT_HOME", orderId: o.id, orderNumber: o.orderNumber });
+    else if (o.status === "RETURNED_TO_SHOP" || o.status === "REFUND_PENDING") alerts.push({ key: "NEEDS_REFUND", orderId: o.id, orderNumber: o.orderNumber });
     else if (o.authorizedAt) alerts.push({ key: "AUTH_EXPIRED", orderId: o.id, orderNumber: o.orderNumber });
   }
 

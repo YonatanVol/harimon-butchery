@@ -275,6 +275,8 @@ const T: Partial<Record<OrderStatus, Partial<Record<OrderEvent, Rule>>>> = {
     REFUND_REQUESTED: { to: "REFUND_PENDING", actors: MANAGERS, effects: ["REFUND_PAYMENT", "AUDIT"], guard: needsReason },
   },
   REFUND_PENDING: {
+    // A refund the provider rejected can be tried again, with a (new) recorded reason.
+    REFUND_REQUESTED: { to: "REFUND_PENDING", actors: MANAGERS, effects: ["REFUND_PAYMENT", "AUDIT"], guard: needsReason },
     REFUND_SUCCEEDED_FULL: { to: "REFUNDED", actors: MACHINE, effects: ["NOTIFY:order.refunded"] },
     REFUND_SUCCEEDED_PARTIAL: { to: "PARTIALLY_REFUNDED", actors: MACHINE, effects: ["NOTIFY:order.refunded"] },
   },

@@ -486,7 +486,38 @@
     "final": "Final",
     "short": "Short — not charged",
     "substituted": "Substituted",
-    "goodwill": "Some pieces came out heavier than requested — the extra, worth {amount}, is on us."
+    "goodwill": "Some pieces came out heavier than requested — the extra, worth {amount}, is on us.",
+    "actions": {
+      "extraTitle": "Your {product} came out heavier than requested — what should we do?",
+      "extraBody": "It weighed {actual} instead of {requested}. Keep the whole piece? That's {extra} extra.",
+      "extraDeadline": "We need an answer by {time} ({relative}). If we don't hear from you, we'll trim to {trimmed} at no extra cost.",
+      "extraSeparate": "If you approve, the extra is charged to your card separately from the hold and appears as its own charge.",
+      "approveExtra": "Keep it — {extra} extra",
+      "trimTo": "Trim to {weight}",
+      "working": "Updating…",
+      "cancelTitle": "Need to cancel?",
+      "cancelBody": "You can cancel here until the butcher starts preparing your order. Nothing is charged and the hold is released.",
+      "cancelOrder": "Cancel order",
+      "cancelConfirm": "Cancel this order?",
+      "cancelYes": "Yes, cancel",
+      "cancelNo": "No",
+      "rescheduleTitle": "Pick a new delivery time",
+      "rescheduleBody": "To keep the cold chain, redelivery is only possible in the next few hours. If none suits you, we'll contact you about a refund.",
+      "rescheduleNone": "No time is available in the next few hours. Someone will contact you.",
+      "problems": {
+        "NOT_FOUND": "We couldn't find this order — check the link",
+        "NOT_ALLOWED_NOW": "That's no longer possible — the order may have moved on. Refresh the page",
+        "DEADLINE_PASSED": "The time to answer passed, so the piece was trimmed at no extra cost",
+        "EXTRA_CHARGE_FAILED": "We couldn't charge the extra to your card, so we'll trim at no extra cost",
+        "SLOT_UNAVAILABLE": "That time is no longer available — pick another",
+        "COLD_CHAIN_EXCEEDED": "Too much time has passed since packing — we can't send the meat again. Someone will contact you about a refund",
+        "NETWORK": "Can't reach the server. Try again",
+        "NOT_PERMITTED": "You don't have permission to do this"
+      },
+      "rescheduleTitleStaff": "Rebook with the customer",
+      "rescheduleBodyStaff": "Nobody was home. Call and choose a window together — only windows that keep the cold chain are shown. The customer gets a message with the new time.",
+      "rescheduleNoneStaff": "No window keeps the cold chain. Return it to the shop and decide on a refund."
+    }
   },
   "staff": {
     "area": "Staff",
@@ -517,7 +548,8 @@
     "nav": {
       "board": "Today's board",
       "messages": "Messages",
-      "logout": "Sign out"
+      "logout": "Sign out",
+      "deliveries": "Deliveries"
     },
     "board": {
       "title": "Today's board",
@@ -541,7 +573,9 @@
         "AUTH_EXPIRED": "Order {number}: the card hold expired — the customer must re-approve payment",
         "AWAITING_CUSTOMER": "Order {number}: waiting for the customer to approve extra weight",
         "SLOT_SOON": "Order {number}: delivery starts {when} and it isn't packed yet",
-        "CERT_EXPIRING": "{authority}'s kashrut certificate expires {when}"
+        "CERT_EXPIRING": "{authority}'s kashrut certificate expires {when}",
+        "NOT_HOME": "Order {number}: nobody was home — call to arrange, or return it to the shop",
+        "NEEDS_REFUND": "Order {number}: back at the shop — a refund decision is needed"
       },
       "open": "Open",
       "denied": "You don't have permission for that ({capability})"
@@ -570,7 +604,9 @@
       "demoMessages": "Demo mode — messages are recorded, not actually sent",
       "startPicking": "Start preparing and weighing",
       "openWeighing": "Continue weighing",
-      "actions": "Actions"
+      "actions": "Actions",
+      "unpaid": "Unpaid",
+      "refunded": "Refunded"
     },
     "pack": {
       "title": "Weighing & packing",
@@ -586,7 +622,8 @@
         "SHORT": "Short",
         "SUBSTITUTED": "Substituted",
         "CANCELLED": "Cancelled",
-        "REFUNDED": "Refunded"
+        "REFUNDED": "Refunded",
+        "WAITING": "Waiting for customer"
       },
       "requested": "Requested",
       "cut": "Cut",
@@ -678,14 +715,129 @@
         "MANAGER_PIN_INVALID": "Wrong manager code",
         "TOO_MANY_CAPTURE_ATTEMPTS": "All charge attempts used",
         "CAPTURE_FAILED": "The charge failed",
-        "NETWORK": "Not saved — can't reach the server. Try again"
+        "NETWORK": "Not saved — can't reach the server. Try again",
+        "AWAITING_CUSTOMER": "This item is waiting for the customer's answer",
+        "ALREADY_ASKING": "Already waiting for the customer about another item"
       },
       "retrySave": "Try again",
       "saved": "Saved",
       "wakeLock": "The screen stays on while weighing",
       "notPicking": "Order status: {status}",
       "confirmEmpty": "Confirm weight",
-      "managerPinNeeded": "Enter the manager's code (4 digits)"
+      "managerPinNeeded": "Enter the manager's code (4 digits)",
+      "overAsk": "Ask the customer",
+      "finishReasonWaiting": "Waiting for the customer about {name}",
+      "waitingTitle": "Waiting for the customer: {name} weighed {weight} — until {time}.",
+      "waitingBody": "Keep weighing the other items. If they don't answer, we trim to the limit.",
+      "waitingLine": "Weighed {weight}. When the customer answers, this line updates by itself."
+    },
+    "messages": {
+      "title": "Customer messages",
+      "demoBanner": "Demo mode — messages are recorded here in full and not actually sent to WhatsApp or SMS.",
+      "liveBanner": "Messages are sent through {provider}.",
+      "searchOrder": "Order number",
+      "status": "Status",
+      "all": "All",
+      "filter": "Filter",
+      "empty": "No messages match this filter",
+      "providerDemo": "Demo — not sent",
+      "statuses": {
+        "QUEUED": "Queued",
+        "SENT": "Sent",
+        "DELIVERED": "Delivered",
+        "READ": "Read",
+        "FAILED": "Failed",
+        "SUPPRESSED": "Not sent (suppressed)"
+      },
+      "queuedAt": "Created {time}",
+      "sentAt": "Sent {time}",
+      "deliveredAt": "Delivered {time}",
+      "readAt": "Read {time}",
+      "reason": "Reason: {reason}",
+      "resend": "Send again",
+      "resending": "Sending…",
+      "templates": {
+        "order_authorized": "Order confirmed",
+        "order_picking": "Preparing",
+        "order_over_tolerance": "Approve extra weight",
+        "order_extra_approved": "Extra approved",
+        "order_trimmed": "Trimmed to limit",
+        "order_repriced": "Weighed, final price",
+        "order_captured": "Final charge",
+        "order_capture_issue": "Charge problem",
+        "order_packed": "Packed",
+        "order_out_for_delivery": "Out for delivery",
+        "order_delivered": "Delivered",
+        "order_not_home": "Not home",
+        "order_rescheduled": "New time",
+        "order_returned": "Returned to shop",
+        "order_refunded": "Refund",
+        "order_cancelled": "Cancelled",
+        "order_cancelled_by_shop": "Cancelled by shop",
+        "order_reauth_required": "Payment re-approval",
+        "auth_otp": "Login code"
+      }
+    },
+    "manager": {
+      "title": "Manager decisions",
+      "reason": "Reason",
+      "amount": "Amount to refund (₪)",
+      "close": "Close",
+      "working": "Working…",
+      "reasonMissing": "Write a reason — at least {count} more characters",
+      "nothingToRefund": "Everything charged has already been refunded",
+      "CANCEL": {
+        "open": "Cancel by shop",
+        "help": "The card hold is released, the delivery window is freed, and any meat already cut goes back into stock.",
+        "reasonAudience": "The reason is sent to the customer and kept in the log — write it for the customer.",
+        "confirm": "Cancel the order"
+      },
+      "FORCE_DISPATCH": {
+        "open": "Dispatch without payment",
+        "help": "The charge failed. The order moves to delivery unpaid and is flagged \"Unpaid\" on every screen until settled.",
+        "reasonAudience": "The reason is kept in the log only; the customer doesn't see it.",
+        "confirm": "Dispatch unpaid"
+      },
+      "REFUND": {
+        "open": "Refund",
+        "help": "You can refund up to {max}. The customer gets a message with the amount.",
+        "reasonAudience": "The reason is kept in the log only; the customer doesn't see it.",
+        "confirm": "Refund {amount}"
+      },
+      "problems": {
+        "NOT_PERMITTED": "You don't have permission to do this",
+        "NOT_FOUND": "No matching payment was found for this order",
+        "WRONG_STATE": "The order is no longer in a state that allows this — refresh the page",
+        "REASON_REQUIRED": "Write a reason (at least 10 characters). It is kept in the log",
+        "INVALID_AMOUNT": "Enter an amount between ₪0.01 and {max}",
+        "REFUND_FAILED": "The payment provider rejected the refund. The order is marked as awaiting refund — you can try again.",
+        "NETWORK": "Can't reach the server. Check the network and try again."
+      }
+    },
+    "deliveries": {
+      "title": "Deliveries",
+      "summary": "{open} open of {total}",
+      "dayNav": "Choose day",
+      "prevDay": "Previous day",
+      "nextDay": "Next day",
+      "empty": "No packed deliveries for this day. Orders show up here once they're packed.",
+      "intercom": "Intercom",
+      "call": "Call",
+      "navigate": "Navigate in Waze",
+      "attempt": "Delivery attempt {count}",
+      "working": "Saving…",
+      "events": {
+        "DISPATCHED": "Out for delivery",
+        "DELIVERED": "Delivered",
+        "NOT_HOME": "Nobody home",
+        "REFUSED": "Customer refused",
+        "RETURNED_TO_SHOP": "Returned to shop"
+      },
+      "problems": {
+        "NOT_PERMITTED": "You don't have permission to update deliveries",
+        "WRONG_STATE": "This delivery was already updated from another device — refresh the page",
+        "NETWORK": "Can't reach the server. Check the network and try again."
+      }
     }
   }
 }

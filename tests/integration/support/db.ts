@@ -119,3 +119,12 @@ export const validDetails = {
   intercom: "",
   deliveryNotes: "",
 };
+
+export async function makeStaff(db: TestDb, role: "OWNER" | "MANAGER" | "BUTCHER" | "PACKER" | "DRIVER" | "VIEWER", pin = "4321") {
+  const { hashPin } = await import("@/infra/staff/pin");
+  const [s] = await db
+    .insert(schema.staffUser)
+    .values({ phoneE164: `+97250${Math.floor(1_000_000 + Math.random() * 8_999_999)}`, fullNameHe: "צוות", fullNameEn: "Staff", role, pinHash: hashPin(pin) })
+    .returning();
+  return s;
+}
