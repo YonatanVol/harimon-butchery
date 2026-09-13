@@ -1,9 +1,20 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { brand } from "@/config/brand";
-import { can, type StaffRole } from "@/domain/auth/permissions";
+import { type Capability, can, type StaffRole } from "@/domain/auth/permissions";
 import type { Locale } from "@/i18n/routing";
 import { requireStaff } from "@/infra/staff/session";
 import { StaffNav } from "./StaffNav";
+
+/** Only tabs this person can open: a tab that bounces you back is a silent no-op. */
+const navItems: Array<{ href: string; key: string; needs: Capability }> = [
+  { href: "/staff", key: "board", needs: "VIEW_BOARD" },
+  { href: "/staff/deliveries", key: "deliveries", needs: "VIEW_BOARD" },
+  { href: "/staff/catalog", key: "catalog", needs: "EDIT_CATALOG" },
+  { href: "/staff/stock", key: "stock", needs: "MANAGE_STOCK" },
+  { href: "/staff/zones", key: "zones", needs: "MANAGE_SLOTS" },
+  { href: "/staff/messages", key: "messages", needs: "VIEW_MESSAGES" },
+  { href: "/staff/audit", key: "audit", needs: "VIEW_AUDIT" },
+];
 
 export default async function StaffLayout({ children, params }: LayoutProps<"/[locale]/staff">) {
   const { locale: raw } = await params;
@@ -11,6 +22,7 @@ export default async function StaffLayout({ children, params }: LayoutProps<"/[l
   const locale = raw as Locale;
   const member = await requireStaff(locale);
   const t = await getTranslations("staff");
+  const role = member.role as StaffRole;
 
   return (
     <div className="bg-bone-100 min-h-dvh">
@@ -20,9 +32,9 @@ export default async function StaffLayout({ children, params }: LayoutProps<"/[l
             {brand.name[locale]} <span className="text-bone-300 font-normal">· {t("area")}</span>
           </span>
           <StaffNav
-            labels={{ board: t("nav.board"), messages: t("nav.messages"), deliveries: t("nav.deliveries"), logout: t("nav.logout") }}
+            items={navItems.filter((i) => can(role, i.needs)).map(({ href, key }) => ({ href, label: t(`nav.${key}`) }))}
             member={{ name: locale === "he" ? member.fullNameHe : member.fullNameEn, role: t(`role.${member.role}`) }}
-            canViewMessages={can(member.role as StaffRole, "VIEW_MESSAGES")}
+            logoutLabel={t("nav.logout")}
           />
         </div>
       </header>

@@ -14,7 +14,7 @@
   --color-bone-200: #e9e2d6;
   --color-bone-300: #d8cdbb;
 
-  --color-char-500: #6b6560;
+  --color-char-500: #625c57; /* ≥ 5:1 on bone-200 (WCAG AA) */
   --color-char-700: #3a3633;
   --color-char-800: #2a2725;
   --color-char-900: #1c1a19;
@@ -24,7 +24,7 @@
   --color-wine-700: #6a1222;
 
   --color-ok-600: #2f6b3f;
-  --color-warn-600: #9a6a00;
+  --color-warn-600: #7d5600; /* ≥ 5:1 on every light and tinted ground (WCAG AA) */
   --color-bad-600: #b3261e;
 }
 
@@ -40,4 +40,35 @@ html {
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+@layer base {
+  /* One visible focus ring for keyboard users everywhere; components with their own ring override it. */
+  :focus-visible {
+    outline: 3px solid var(--color-wine-500);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  @media print {
+    /* Paper is white and ink is black, whatever the screen theme. */
+    html,
+    body {
+      background: #fff;
+      color: #000;
+    }
+    [role="note"] {
+      display: none;
+    }
+  }
 }

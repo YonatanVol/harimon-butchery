@@ -248,8 +248,8 @@ export async function seedDemoOrders(db: Database, appUrl: string) {
 }
 
 /**
- * Orders that have left the shop are shown on today's run (or the latest day the zone had deliveries,
- * e.g. on Shabbat), keeping the windows' reserved counts consistent.
+ * Orders that have left the shop are shown on today's run — or the latest day the zone had open windows
+ * (on Shabbat or a holiday) — keeping the windows' reserved counts consistent.
  */
 async function moveToTodaysRun(db: Database, orderId: string, spread: number) {
   const [o] = await db.select().from(s.order).where(eq(s.order.id, orderId));
@@ -257,14 +257,15 @@ async function moveToTodaysRun(db: Database, orderId: string, spread: number) {
   const [latest] = await db
     .select({ serviceDate: s.deliverySlot.serviceDate })
     .from(s.deliverySlot)
-    .where(and(eq(s.deliverySlot.zoneId, o.zoneId), lte(s.deliverySlot.serviceDate, today)))
+    // The latest day this zone really delivered — never a Shabbat or holiday.
+    .where(and(eq(s.deliverySlot.zoneId, o.zoneId), lte(s.deliverySlot.serviceDate, today), eq(s.deliverySlot.status, "OPEN")))
     .orderBy(desc(s.deliverySlot.serviceDate))
     .limit(1);
   if (!latest) return;
   const sameDay = await db
     .select()
     .from(s.deliverySlot)
-    .where(and(eq(s.deliverySlot.zoneId, o.zoneId), eq(s.deliverySlot.serviceDate, latest.serviceDate), lt(s.deliverySlot.reservedOrders, s.deliverySlot.capacityOrders)))
+    .where(and(eq(s.deliverySlot.zoneId, o.zoneId), eq(s.deliverySlot.serviceDate, latest.serviceDate), eq(s.deliverySlot.status, "OPEN"), lt(s.deliverySlot.reservedOrders, s.deliverySlot.capacityOrders)))
     .orderBy(asc(s.deliverySlot.startsAt));
   const slot = sameDay[spread % Math.max(sameDay.length, 1)];
   if (!slot || slot.id === o.slotId) return;

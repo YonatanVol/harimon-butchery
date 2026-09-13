@@ -135,7 +135,7 @@ describe("delivery run", () => {
 
     const later = await makeSlot(db, f.zone.id, { startsAt: new Date(Date.now() + 3 * 3_600_000), endsAt: new Date(Date.now() + 5 * 3_600_000), cutoffAt: new Date(Date.now() + 2 * 3_600_000) });
     const tooLate = await makeSlot(db, f.zone.id, { startsAt: new Date(Date.now() + 5 * 3_600_000), endsAt: new Date(Date.now() + 8 * 3_600_000), cutoffAt: new Date(Date.now() + 4 * 3_600_000) });
-    const offered = await rescheduleOptions(db, await orderRow(f.orderId));
+    const offered = await rescheduleOptions(db, { ...(await orderRow(f.orderId)), cutAt: (await orderRow(f.orderId)).capturedAt });
     // Only windows that keep the cold chain, and never the window that just failed.
     expect(offered.map((w) => w.id)).toEqual([later.id]);
     expect(await rescheduleDelivery(db, { orderNumber: f.order.orderNumber, token: f.order.accessToken, slotId: tooLate.id, appUrl: APP })).toEqual({ ok: false, problem: { key: "COLD_CHAIN_EXCEEDED" } });

@@ -61,7 +61,7 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
   const g = (n: number) => formatGrams(grams(n), locale);
   const pendingLine = o.status === "AWAITING_CUSTOMER_APPROVAL" ? lines.find((l) => l.pendingActualG) : undefined;
   const pendingBounds = pendingLine ? toleranceBounds(grams(pendingLine.estimatedG!), pendingLine.toleranceBp!) : null;
-  const windows = o.status === "DELIVERY_FAILED_NOT_HOME" ? await rescheduleOptions(db, o) : [];
+  const windows = o.status === "DELIVERY_FAILED_NOT_HOME" ? await rescheduleOptions(db, { zoneId: o.zoneId, slotId: o.slotId, cutAt: o.capturedAt ?? new Date() }) : [];
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">

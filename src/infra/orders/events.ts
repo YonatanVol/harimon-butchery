@@ -195,6 +195,12 @@ export function trackingUrl(appUrl: string, o: { locale: string; orderNumber: st
   return `${appUrl}/${o.locale}/orders/${o.orderNumber}?t=${o.accessToken}`;
 }
 
+/** Send one customer message about an order outside a status change (e.g. a manager moved the delivery window). */
+export async function notifyAboutOrder(tx: Tx, input: { orderId: string; key: TemplateKey; appUrl: string; now?: Date; payload?: Record<string, unknown> }) {
+  const [o] = await tx.select().from(order).where(eq(order.id, input.orderId));
+  if (o) await enqueueNotification(tx, o, input.key, input.appUrl, input.now ?? new Date(), input.payload);
+}
+
 async function enqueueNotification(
   tx: Tx,
   o: typeof order.$inferSelect,

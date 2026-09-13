@@ -144,13 +144,9 @@ async function main() {
         lowThresholdUnits: isWeight ? 0 : 4,
         nextRestockDate: level === "out" ? isoDate(3) : null,
       });
-      await tx.insert(s.stockMovement).values({
-        productId: row.id,
-        deltaG: onHandG,
-        deltaUnits: onHandUnits,
-        reason: "RECEIVED",
-        note: "Seed",
-      });
+      if (onHandG || onHandUnits) {
+        await tx.insert(s.stockMovement).values({ productId: row.id, deltaG: onHandG, deltaUnits: onHandUnits, reason: "RECEIVED", note: "Seed" });
+      }
     }
 
     const zoneRows = await tx.insert(s.deliveryZone).values(
@@ -201,7 +197,8 @@ async function main() {
     ]);
   });
 
-  const slots = await generateSlots(db, { days: 84 });
+  // From a week back, so demo orders that already went out sit on a real past delivery day.
+  const slots = await generateSlots(db, { days: 91, now: new Date(Date.now() - 7 * 86_400_000) });
   const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(s.product);
   const withOrders = !process.argv.includes("--empty");
   const orders = withOrders ? await seedDemoOrders(db, process.env.APP_URL ?? "http://localhost:3000") : null;

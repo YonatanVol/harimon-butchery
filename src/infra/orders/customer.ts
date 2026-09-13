@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { and, asc, eq, gt, isNotNull, lt, lte, ne, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { can, type StaffRole } from "@/domain/auth/permissions";
 import { slotAvailability } from "@/domain/delivery/slots";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
@@ -9,8 +10,8 @@ import type { PaymentProvider } from "@/domain/payments/provider";
 import { grams } from "@/domain/weight/grams";
 import { priceForWeight } from "@/domain/weight/reprice";
 import type * as schema from "../db/schema";
-import { deliverySlot, deliveryZone, order, orderLine, paymentIntent, setting } from "../db/schema";
-import { applyOrderEvent } from "./events";
+import { auditEvent, deliverySlot, deliveryZone, order, orderLine, paymentIntent, setting } from "../db/schema";
+import { applyOrderEvent, notifyAboutOrder } from "./events";
 
 type Database = PostgresJsDatabase<typeof schema>;
 
@@ -150,12 +151,13 @@ async function coldChainMaxHours(db: Database) {
 }
 
 /**
- * Windows a customer who wasn't home can move to: same zone, open, and ending within the cold-chain
- * limit counted from packing — never the window that just failed. The same rule is enforced on submit.
+ * Windows an order can move to: same zone, open, with room, and — once the meat has been cut — ending
+ * within the cold-chain limit counted from then. Never the window it is in now.
+ * `cutAt` null means nothing is cut yet, so any upcoming window will do.
  */
-export async function rescheduleOptions(db: Database, o: { zoneId: string; slotId: string | null; capturedAt: Date | null }, now = new Date()) {
+export async function rescheduleOptions(db: Database, o: { zoneId: string; slotId: string | null; cutAt: Date | null }, now = new Date()) {
   const maxHours = await coldChainMaxHours(db);
-  const latestEnd = new Date((o.capturedAt ?? now).getTime() + maxHours * 3_600_000);
+  const latestEnd = o.cutAt ? new Date(o.cutAt.getTime() + maxHours * 3_600_000) : null;
   return db
     .select({ id: deliverySlot.id, startsAt: deliverySlot.startsAt, endsAt: deliverySlot.endsAt })
     .from(deliverySlot)
@@ -165,12 +167,59 @@ export async function rescheduleOptions(db: Database, o: { zoneId: string; slotI
         eq(deliverySlot.status, "OPEN"),
         gt(deliverySlot.cutoffAt, now),
         lt(deliverySlot.reservedOrders, deliverySlot.capacityOrders),
-        lte(deliverySlot.endsAt, latestEnd),
+        latestEnd ? lte(deliverySlot.endsAt, latestEnd) : undefined,
         o.slotId ? ne(deliverySlot.id, o.slotId) : undefined,
       ),
     )
     .orderBy(asc(deliverySlot.startsAt))
-    .limit(8);
+    .limit(12);
+}
+
+const BEFORE_DISPATCH = ["AUTHORIZED", "PICKING", "AWAITING_CUSTOMER_APPROVAL", "WEIGHED", "REPRICED", "CAPTURE_PENDING", "CAPTURED", "CAPTURE_FAILED", "PACKED"];
+
+/**
+ * A manager moves an order that hasn't left the shop to another window (its window was closed, or the
+ * customer called). Not a status change: the reservation moves, the log records it, the customer is told.
+ */
+export async function changeWindow(
+  db: Database,
+  input: { orderId: string; slotId: string; staff: { id: string; role: string }; appUrl: string; now?: Date },
+): Promise<CustomerResult | { ok: false; problem: { key: "NOT_PERMITTED" } }> {
+  const now = input.now ?? new Date();
+  if (!can(input.staff.role as StaffRole, "OVERRIDE")) return { ok: false, problem: { key: "NOT_PERMITTED" } };
+  const maxHours = await coldChainMaxHours(db);
+  try {
+    await db.transaction(async (tx) => {
+      const [locked] = await tx.select().from(order).where(eq(order.id, input.orderId)).for("update");
+      if (!locked) throw new Error("NOT_FOUND");
+      if (!BEFORE_DISPATCH.includes(locked.status)) throw new Error("NOT_ALLOWED_NOW");
+      const [slot] = await tx.select().from(deliverySlot).where(eq(deliverySlot.id, input.slotId)).for("update");
+      if (!slot || slot.zoneId !== locked.zoneId || slot.id === locked.slotId || slot.status !== "OPEN" || slot.cutoffAt <= now || slot.reservedOrders >= slot.capacityOrders) {
+        throw new Error("SLOT_UNAVAILABLE");
+      }
+      const cutAt = locked.weighedAt ?? locked.capturedAt;
+      if (cutAt && slot.endsAt.getTime() - cutAt.getTime() > maxHours * 3_600_000) throw new Error("COLD_CHAIN_EXCEEDED");
+
+      if (locked.slotId) {
+        await tx
+          .update(deliverySlot)
+          .set({ reservedOrders: sql`greatest(${deliverySlot.reservedOrders} - 1, 0)`, reservedWeightG: sql`greatest(${deliverySlot.reservedWeightG} - ${locked.reservedWeightG}, 0)` })
+          .where(eq(deliverySlot.id, locked.slotId));
+      }
+      await tx
+        .update(deliverySlot)
+        .set({ reservedOrders: sql`${deliverySlot.reservedOrders} + 1`, reservedWeightG: sql`${deliverySlot.reservedWeightG} + ${locked.reservedWeightG}` })
+        .where(eq(deliverySlot.id, slot.id));
+      await tx.update(order).set({ slotId: slot.id }).where(eq(order.id, locked.id));
+      await tx.insert(auditEvent).values({ actorType: "STAFF", actorId: input.staff.id, entityType: "order", entityId: locked.id, action: "order.change_window", before: { slotId: locked.slotId }, after: { slotId: slot.id } });
+      await notifyAboutOrder(tx, { orderId: locked.id, key: "order.rescheduled", appUrl: input.appUrl, now });
+    });
+  } catch (e) {
+    const key = (e as Error).message;
+    if (key === "NOT_FOUND" || key === "SLOT_UNAVAILABLE" || key === "COLD_CHAIN_EXCEEDED" || key === "NOT_ALLOWED_NOW") return { ok: false, problem: { key } };
+    throw e;
+  }
+  return { ok: true };
 }
 
 export async function rescheduleDelivery(

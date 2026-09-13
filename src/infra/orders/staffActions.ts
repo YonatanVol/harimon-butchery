@@ -8,7 +8,9 @@ import { db } from "../db/client";
 import { kickDispatch } from "../notify/kick";
 import { appUrl, paymentProvider } from "../payments/factory";
 import { currentStaff } from "../staff/session";
-import { moveDelivery } from "./customer";
+import { eq } from "drizzle-orm";
+import { order } from "../db/schema";
+import { changeWindow, moveDelivery } from "./customer";
 import { type DeliveryResult, driverAction, refundOrder, shopDecision } from "./delivery";
 
 const id = z.string().uuid();
@@ -41,12 +43,20 @@ export async function staffRefund(input: { orderId: string; amountAgorot: number
   );
 }
 
-/** A manager on the phone with a customer who wasn't home moves the delivery for them — same cold-chain rule as the customer's own link. */
+/**
+ * A manager moves a delivery for the customer: after a failed attempt (a status change, cold-chain rule
+ * from packing), or before dispatch when a window closed or the customer called.
+ */
 export async function staffMoveDelivery(orderId: string, slotId: string) {
   const staff = await currentStaff();
   if (!staff || !can(staff.role as StaffRole, "OVERRIDE")) return { ok: false as const, problem: { key: "NOT_PERMITTED" as const } };
   if (!id.safeParse(orderId).success || !id.safeParse(slotId).success) return { ok: false as const, problem: { key: "NOT_FOUND" as const } };
-  const r = await moveDelivery(db, { orderId, slotId, actor: staff.role as StaffRole, actorId: staff.id, appUrl: appUrl() });
+  const [o] = await db.select({ status: order.status }).from(order).where(eq(order.id, orderId));
+  if (!o) return { ok: false as const, problem: { key: "NOT_FOUND" as const } };
+  const r =
+    o.status === "DELIVERY_FAILED_NOT_HOME"
+      ? await moveDelivery(db, { orderId, slotId, actor: staff.role as StaffRole, actorId: staff.id, appUrl: appUrl() })
+      : await changeWindow(db, { orderId, slotId, staff, appUrl: appUrl() });
   kickDispatch();
   refresh();
   return r;

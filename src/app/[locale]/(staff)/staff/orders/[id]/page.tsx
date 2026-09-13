@@ -64,7 +64,11 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
     possible.includes("CANCELLED_BY_SHOP") && { kind: "CANCEL" as const, blockedReason: can(role, "CANCEL_ORDER") ? null : notPermitted },
   ].filter((a): a is ManagerAction => Boolean(a));
 
-  const windows = o.status === "DELIVERY_FAILED_NOT_HOME" && can(role, "OVERRIDE") ? await rescheduleOptions(db, o) : [];
+  const beforeDispatch = ["AUTHORIZED", "PICKING", "AWAITING_CUSTOMER_APPROVAL", "WEIGHED", "REPRICED", "CAPTURE_PENDING", "CAPTURED", "CAPTURE_FAILED", "PACKED"].includes(o.status);
+  const movable = can(role, "OVERRIDE") && (o.status === "DELIVERY_FAILED_NOT_HOME" || beforeDispatch);
+  const windows = movable
+    ? await rescheduleOptions(db, { zoneId: o.zoneId, slotId: o.slotId, cutAt: o.status === "DELIVERY_FAILED_NOT_HOME" ? (o.capturedAt ?? o.weighedAt) : (o.weighedAt ?? o.capturedAt) })
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -96,6 +100,15 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
           )}
         </div>
       </header>
+
+      <nav aria-label={t("staff.order.printouts")} className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-char-500">{t("staff.order.printouts")}:</span>
+        {(["pick", "label", "delivery-note"] as const).map((kind) => (
+          <Link key={kind} href={`/staff/print/${kind}/${o.id}`} className="bg-bone-50 ring-bone-300 hover:ring-char-900 inline-flex min-h-11 items-center rounded-lg px-3 font-medium ring-1">
+            {t(`staff.order.print.${kind === "delivery-note" ? "note" : kind}`)}
+          </Link>
+        ))}
+      </nav>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="bg-bone-50 ring-bone-300 rounded-2xl p-5 ring-1">
@@ -173,8 +186,8 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
         </section>
       </div>
 
-      {o.status === "DELIVERY_FAILED_NOT_HOME" && can(role, "OVERRIDE") && (
-        <Reschedule target={{ by: "staff", orderId: o.id }} windows={windows.map((w) => ({ id: w.id, startsAt: w.startsAt.toISOString(), endsAt: w.endsAt.toISOString() }))} />
+      {movable && (
+        <Reschedule target={{ by: "staff", orderId: o.id, reason: o.status === "DELIVERY_FAILED_NOT_HOME" ? "notHome" : "change" }} windows={windows.map((w) => ({ id: w.id, startsAt: w.startsAt.toISOString(), endsAt: w.endsAt.toISOString() }))} />
       )}
       {managerActions.length > 0 && <ManagerActions orderId={o.id} actions={managerActions} refundableAgorot={refundableAgorot} />}
 
