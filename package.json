@@ -2,20 +2,22 @@
   "name": "meat-store",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint && tsx scripts/verify-rtl.ts",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "TZ=UTC vitest run",
+    "test:watch": "TZ=UTC vitest",
     "db:setup": "bash scripts/db-setup.sh",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:test": "DATABASE_URL=$(grep DATABASE_URL_TEST .env.local | cut -d= -f2-) drizzle-kit migrate",
     "db:seed": "tsx scripts/seed.ts",
-    "db:reset": "bash scripts/db-reset.sh"
+    "db:reset": "bash scripts/db-reset.sh",
+    "test:integration": "TZ=UTC vitest run --config vitest.integration.config.mts"
   },
   "dependencies": {
     "@hebcal/core": "^6.9.2",

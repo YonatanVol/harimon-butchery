@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   // A stray package-lock.json in the home directory otherwise makes Turbopack guess the wrong root.
-  turbopack: { root: path.join(__dirname) },
+  turbopack: { root: path.resolve(process.cwd()) },
 };
 
 export default withNextIntl(nextConfig);

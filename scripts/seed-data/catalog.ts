@@ -572,6 +572,31 @@ export const zones: SeedZone[] = [
   { slug: "eilat", nameHe: "אילת", nameEn: "Eilat", citiesHe: ["אילת"], citiesEn: ["Eilat"], fee: 90, freeOver: null, minOrder: 500, leadHours: 48, active: false },
 ];
 
+/** Weekly delivery windows. Metro zones: Sun–Thu four windows, Friday three. Far zones: fewer, next-day. */
+export const slotTemplates: Record<string, Array<{ weekday: number; start: string; end: string; capacity: number; cutoffHours: number }>> = (() => {
+  const metro = [
+    ...[0, 1, 2, 3, 4].flatMap((weekday) =>
+      [["08:00", "11:00"], ["11:00", "14:00"], ["14:00", "17:00"], ["17:00", "20:00"]].map(([start, end]) => ({ weekday, start, end, capacity: 8, cutoffHours: 3 })),
+    ),
+    ...[["08:00", "10:00"], ["10:00", "12:00"], ["12:00", "14:00"]].map(([start, end]) => ({ weekday: 5, start, end, capacity: 10, cutoffHours: 3 })),
+  ];
+  const far = [
+    ...[0, 2, 4].flatMap((weekday) => [["10:00", "14:00"], ["14:00", "18:00"]].map(([start, end]) => ({ weekday, start, end, capacity: 6, cutoffHours: 24 }))),
+    { weekday: 5, start: "09:00", end: "12:00", capacity: 6, cutoffHours: 24 },
+  ];
+  return {
+    "tel-aviv": metro,
+    "ramat-gan": metro,
+    sharon: metro,
+    "rishon-holon": metro,
+    jerusalem: metro.map((t) => ({ ...t, capacity: 6, cutoffHours: 5 })),
+    modiin: metro.map((t) => ({ ...t, capacity: 6, cutoffHours: 4 })),
+    haifa: far,
+    "beer-sheva": far,
+    eilat: [],
+  };
+})();
+
 export const staff = [
   { phone: "+972501110001", nameHe: "מאיר אלמוג", nameEn: "Meir Almog", role: "OWNER" },
   { phone: "+972501110002", nameHe: "רונית בן דוד", nameEn: "Ronit Ben David", role: "MANAGER" },

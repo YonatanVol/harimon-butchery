@@ -34,6 +34,7 @@ export const cart = pgTable(
     customerId: uuid("customer_id").references(() => customer.id, { onDelete: "set null" }),
     anonymousToken: text("anonymous_token").unique(),
     locale: text("locale").notNull().default("he"),
+    city: text("city"),
     zoneId: uuid("zone_id").references(() => deliveryZone.id),
     addressId: uuid("address_id").references(() => address.id),
     status: cartStatus("status").notNull().default("OPEN"),
