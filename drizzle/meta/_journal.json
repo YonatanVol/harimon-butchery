@@ -57,6 +57,13 @@
       "when": 1789330335563,
       "tag": "0007_interest_signup",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789331601875,
+      "tag": "0008_status_event_seq",
+      "breakpoints": true
     }
   ]
 }

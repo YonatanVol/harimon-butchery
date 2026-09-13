@@ -6,7 +6,7 @@ import { formatAgorot } from "@/domain/money/format";
 import { type OrderEvent, type OrderStatus, transition } from "@/domain/order/machine";
 import type { PaymentProvider } from "@/domain/payments/provider";
 import type * as schema from "../db/schema";
-import { customer, deliverySlot, deliveryZone, order, paymentIntent, paymentRefund } from "../db/schema";
+import { customer, deliverySlot, deliveryZone, order, paymentCapture, paymentIntent, paymentRefund } from "../db/schema";
 import { applyOrderEvent } from "./events";
 
 type Database = PostgresJsDatabase<typeof schema>;
@@ -69,8 +69,15 @@ export async function refundOrder(
   );
   if (!requested.ok) return { ok: false, problem: requested.reason === "REASON_REQUIRED" ? { key: "REASON_REQUIRED" } : { key: "WRONG_STATE", reason: requested.reason } };
 
+  // A J5 hold becomes a new transaction when captured (PayPlus); money comes back from that one.
+  const [capture] = await db
+    .select({ ref: paymentCapture.providerCaptureRef })
+    .from(paymentCapture)
+    .where(and(eq(paymentCapture.paymentIntentId, intent.id), eq(paymentCapture.status, "SUCCEEDED")));
+  const refundFrom = capture?.ref ?? intent.providerTransactionRef;
+
   const idempotencyKey = `order:${orderId}:refund:${o.refundedAgorot}:${amountAgorot}`;
-  const r = await provider.refund({ transactionRef: intent.providerTransactionRef, amountAgorot, idempotencyKey });
+  const r = await provider.refund({ transactionRef: refundFrom, amountAgorot, idempotencyKey });
 
   return db.transaction(async (tx): Promise<DeliveryResult> => {
     await tx.insert(paymentRefund).values({

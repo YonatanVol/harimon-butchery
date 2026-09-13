@@ -34,7 +34,7 @@ export async function loadStaffOrder(id: string) {
       .from(orderStatusEvent)
       .leftJoin(staffUser, eq(staffUser.id, orderStatusEvent.actorId))
       .where(eq(orderStatusEvent.orderId, id))
-      .orderBy(desc(orderStatusEvent.createdAt)),
+      .orderBy(desc(orderStatusEvent.createdAt), desc(orderStatusEvent.seq)),
     db.select().from(notification).where(eq(notification.orderId, id)).orderBy(desc(notification.queuedAt)),
     db.select().from(paymentIntent).where(eq(paymentIntent.orderId, id)).orderBy(asc(paymentIntent.createdAt)),
   ]);
