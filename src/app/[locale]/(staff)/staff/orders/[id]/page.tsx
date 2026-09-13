@@ -67,7 +67,7 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
               {t("staff.order.startPicking")}
             </Button>
           ) : (
-            <Link href={`/staff/pack/${o.id}`} className="bg-wine-600 text-bone-50 hover:bg-wine-700 inline-flex min-h-16 items-center rounded-lg px-6 text-lg font-medium">
+            <Link href={o.status === "AUTHORIZED" ? `/staff/pack/${o.id}?start=1` : `/staff/pack/${o.id}`} className="bg-wine-600 text-bone-50 hover:bg-wine-700 inline-flex min-h-16 items-center rounded-lg px-6 text-lg font-medium">
               {o.status === "AUTHORIZED" ? t("staff.order.startPicking") : t("staff.order.openWeighing")}
             </Link>
           )}

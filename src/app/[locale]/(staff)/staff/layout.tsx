@@ -14,7 +14,7 @@ export default async function StaffLayout({ children, params }: LayoutProps<"/[l
   return (
     <div className="bg-bone-100 min-h-dvh">
       <header className="bg-char-900 text-bone-50 sticky top-0 z-30">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2">
           <span className="font-bold">
             {brand.name[locale]} <span className="text-bone-300 font-normal">· {t("area")}</span>
           </span>
@@ -24,7 +24,7 @@ export default async function StaffLayout({ children, params }: LayoutProps<"/[l
           />
         </div>
       </header>
-      <main id="main" className="mx-auto max-w-[1400px] px-4 py-6">
+      <main id="main" className="mx-auto max-w-[1400px] px-4 py-3">
         {children}
       </main>
     </div>
