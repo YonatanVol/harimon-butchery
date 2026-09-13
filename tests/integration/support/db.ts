@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "@/infra/db/schema";
@@ -19,7 +19,7 @@ export async function truncateAll(db: TestDb) {
     payment_intent, invoice, invoice_counter, order_status_event, order_line, orders, cart_line, cart,
     slot_hold, delivery_slot, delivery_slot_template, calendar_blackout, address, customer,
     stock_movement, stock_item, product_variant, product_kashrut, product, category,
-    kashrut_authority, delivery_zone, staff_user, audit_event, setting, idempotency_key, order_counter, mock_psp_transaction, customer_login_code, interest_signup
+    kashrut_authority, delivery_zone, staff_user, audit_event, setting, idempotency_key, order_counter, mock_psp_transaction, customer_login_code, interest_signup, mock_psp_operation
     RESTART IDENTITY CASCADE`);
 }
 
@@ -119,6 +119,17 @@ export const validDetails = {
   intercom: "",
   deliveryNotes: "",
 };
+
+/** A package product (fixed price per unit), e.g. a ₪149 family chicken bundle. */
+export async function makePackageProduct(db: TestDb, { priceAgorot = 14_900, onHandUnits = 30 } = {}) {
+  const w = await makeWeightProduct(db, { onHandG: 0 });
+  await db
+    .update(schema.product)
+    .set({ pricingMode: "PACKAGE", pricePerKgAgorot: null, minOrderG: null, maxOrderG: null, stepG: null, defaultOrderG: null, packagePriceAgorot: priceAgorot, packageNominalG: 2000, packageContentsHe: "מארז", packageContentsEn: "Bundle" })
+    .where(eq(schema.product.id, w.product.id));
+  await db.update(schema.stockItem).set({ onHandUnits, lowThresholdUnits: 2 }).where(eq(schema.stockItem.productId, w.product.id));
+  return w;
+}
 
 export async function makeStaff(db: TestDb, role: "OWNER" | "MANAGER" | "BUTCHER" | "PACKER" | "DRIVER" | "VIEWER", pin = "4321") {
   const { hashPin } = await import("@/infra/staff/pin");

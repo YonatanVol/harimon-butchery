@@ -1,3 +1,7 @@
+import { after } from "next/server";
+import { db as sweepDb } from "@/infra/db/client";
+import { expireAbandonedCheckouts } from "@/infra/orders/authorization";
+import { appUrl, paymentProvider } from "@/infra/payments/factory";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { orderableMaxG } from "@/domain/catalog/availability";
@@ -19,6 +23,8 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/cart">):
 }
 
 export default async function CartPage({ params }: PageProps<"/[locale]/cart">) {
+  // Abandoned payment pages give back their windows and stock, after this response is sent.
+  after(() => expireAbandonedCheckouts(sweepDb, paymentProvider(), { appUrl: appUrl() }).catch((e) => console.error("abandoned checkout sweep", e)));
   const { locale: raw } = await params;
   setRequestLocale(raw);
   const locale = raw as Locale;

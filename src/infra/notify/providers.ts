@@ -100,3 +100,8 @@ export function activeNotifier(env = process.env): Notifier {
   }
   return mockNotifier;
 }
+
+/** Demo messaging on purpose (not a real provider that fell back for lack of credentials). */
+export function demoMessagingIntended(env = process.env) {
+  return (env.NOTIFICATIONS_PROVIDER ?? "MOCK") === "MOCK";
+}

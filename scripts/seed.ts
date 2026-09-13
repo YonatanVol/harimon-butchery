@@ -16,7 +16,8 @@ if (!process.env.DATABASE_URL && existsSync(".env.local")) process.loadEnvFile("
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is not set");
 
-const client = postgres(url, { max: 1, onnotice: () => {} });
+// More than one connection: money flows hold a transaction while the demo gateway records its side on another.
+const client = postgres(url, { max: 4, onnotice: () => {} });
 const db = drizzle(client, { schema: s, casing: "snake_case" });
 
 /** Shown on the staff login screen in demo mode. */
@@ -40,7 +41,7 @@ async function main() {
     payment_intent, invoice, invoice_counter, order_status_event, order_line, orders, cart_line, cart,
     slot_hold, delivery_slot, delivery_slot_template, calendar_blackout, address, customer,
     stock_movement, stock_item, product_variant, product_kashrut, product, category,
-    kashrut_authority, delivery_zone, staff_user, audit_event, setting, idempotency_key, order_counter, mock_psp_transaction, customer_login_code, interest_signup
+    kashrut_authority, delivery_zone, staff_user, audit_event, setting, idempotency_key, order_counter, mock_psp_transaction, customer_login_code, interest_signup, mock_psp_operation
     RESTART IDENTITY CASCADE`);
 
   await db.transaction(async (tx) => {

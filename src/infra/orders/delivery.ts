@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { can, type StaffRole } from "@/domain/auth/permissions";
 import { agorot } from "@/domain/money/agorot";
@@ -6,11 +6,13 @@ import { formatAgorot } from "@/domain/money/format";
 import { type OrderEvent, type OrderStatus, transition } from "@/domain/order/machine";
 import type { PaymentProvider } from "@/domain/payments/provider";
 import type * as schema from "../db/schema";
-import { customer, deliverySlot, deliveryZone, order, paymentCapture, paymentIntent, paymentRefund } from "../db/schema";
+import { auditEvent, customer, deliverySlot, deliveryZone, order, paymentCapture, paymentIntent, paymentRefund } from "../db/schema";
 import { applyOrderEvent } from "./events";
+import { PaymentReturnFailed, returnPayments } from "./returnPayments";
 
 type Database = PostgresJsDatabase<typeof schema>;
 type Staff = { id: string; role: string };
+type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export type DeliveryProblem =
   | { key: "NOT_PERMITTED" }
@@ -34,6 +36,7 @@ export async function driverAction(
   return db.transaction(async (tx): Promise<DeliveryResult> => {
     const moved = await applyOrderEvent(tx, { orderId, event, ctx: { actor: staff.role as StaffRole }, actorId: staff.id, appUrl, now });
     if (!moved.ok) return { ok: false, problem: moved.reason === "NOT_PERMITTED" ? { key: "NOT_PERMITTED" } : { key: "WRONG_STATE", reason: moved.reason } };
+    await tx.insert(auditEvent).values({ actorType: "STAFF", actorId: staff.id, entityType: "order", entityId: orderId, action: `delivery.${event.toLowerCase()}`, before: { status: moved.from }, after: { status: moved.to } });
     if (event === "DISPATCHED") {
       await tx.update(order).set({ assignedDriverId: staff.id, deliveryAttempts: sql`${order.deliveryAttempts} + 1` }).where(eq(order.id, orderId));
     }
@@ -53,50 +56,47 @@ export async function refundOrder(
   if (!can(staff.role as StaffRole, "REFUND")) return { ok: false, problem: { key: "NOT_PERMITTED" } };
   if (reason.trim().length < 10) return { ok: false, problem: { key: "REASON_REQUIRED" } };
 
-  const [o] = await db.select().from(order).where(eq(order.id, orderId));
-  if (!o) return { ok: false, problem: { key: "NOT_FOUND" } };
-  const refundable = (o.capturedAgorot ?? 0) - o.refundedAgorot;
-  if (!Number.isSafeInteger(amountAgorot) || amountAgorot <= 0 || amountAgorot > refundable) return { ok: false, problem: { key: "INVALID_AMOUNT", maxAgorot: refundable } };
-
-  const [intent] = await db
-    .select()
-    .from(paymentIntent)
-    .where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.status, "AUTHORIZED"), ne(paymentIntent.purpose, "EXTRA")));
-  if (!intent?.providerTransactionRef) return { ok: false, problem: { key: "NOT_FOUND" } };
-
-  const requested = await db.transaction((tx) =>
-    applyOrderEvent(tx, { orderId, event: "REFUND_REQUESTED", ctx: { actor: staff.role as StaffRole, reason }, actorId: staff.id, appUrl, now, payload: { amountAgorot } }),
-  );
-  if (!requested.ok) return { ok: false, problem: requested.reason === "REASON_REQUIRED" ? { key: "REASON_REQUIRED" } : { key: "WRONG_STATE", reason: requested.reason } };
-
-  // A J5 hold becomes a new transaction when captured (PayPlus); money comes back from that one.
-  const [capture] = await db
-    .select({ ref: paymentCapture.providerCaptureRef })
-    .from(paymentCapture)
-    .where(and(eq(paymentCapture.paymentIntentId, intent.id), eq(paymentCapture.status, "SUCCEEDED")));
-  const refundFrom = capture?.ref ?? intent.providerTransactionRef;
-
-  const idempotencyKey = `order:${orderId}:refund:${o.refundedAgorot}:${amountAgorot}`;
-  const r = await provider.refund({ transactionRef: refundFrom, amountAgorot, idempotencyKey });
-
+  // Locked from the amount check to the record: two managers refunding at once can't both pass the check.
   return db.transaction(async (tx): Promise<DeliveryResult> => {
-    await tx.insert(paymentRefund).values({
-      paymentIntentId: intent.id,
-      amountAgorot,
-      reasonKey: reason.trim().slice(0, 200),
-      requestedByStaffId: staff.id,
-      status: r.ok ? "SUCCEEDED" : "FAILED",
-      idempotencyKey,
-      providerRefundRef: r.ok ? r.refundRef : null,
-    });
-    if (!r.ok) return { ok: false, problem: { key: "REFUND_FAILED" } };
+    const [o] = await tx.select().from(order).where(eq(order.id, orderId)).for("update");
+    if (!o) return { ok: false, problem: { key: "NOT_FOUND" } };
+    const refundable = (o.capturedAgorot ?? 0) - o.refundedAgorot;
+    if (!Number.isSafeInteger(amountAgorot) || amountAgorot <= 0 || amountAgorot > refundable) return { ok: false, problem: { key: "INVALID_AMOUNT", maxAgorot: refundable } };
 
-    const [updated] = await tx
-      .update(order)
-      .set({ refundedAgorot: sql`${order.refundedAgorot} + ${amountAgorot}` })
-      .where(eq(order.id, orderId))
-      .returning();
-    const full = updated.refundedAgorot >= (updated.capturedAgorot ?? 0);
+    const sources = await refundSources(tx, o);
+    if (sources.length === 0) return { ok: false, problem: { key: "NOT_FOUND" } };
+
+    const requested = await applyOrderEvent(tx, { orderId, event: "REFUND_REQUESTED", ctx: { actor: staff.role as StaffRole, reason }, actorId: staff.id, appUrl, now, payload: { amountAgorot } });
+    if (!requested.ok) return { ok: false, problem: requested.reason === "REASON_REQUIRED" ? { key: "REASON_REQUIRED" } : { key: "WRONG_STATE", reason: requested.reason } };
+
+    // The main charge first, then any extra the customer approved: each transaction can only give back what it took.
+    let left = amountAgorot;
+    let succeeded = 0;
+    let failed = false;
+    for (const source of sources) {
+      if (left === 0) break;
+      const part = Math.min(left, source.remaining);
+      if (part <= 0) continue;
+      const idempotencyKey = `order:${orderId}:refund:${o.refundedAgorot}:${amountAgorot}:${source.intentId}`;
+      const r = await provider.refund({ transactionRef: source.ref, amountAgorot: part, idempotencyKey });
+      // Upsert: retrying a failed refund reuses its key, and the provider may report that it went through after all.
+      await tx
+        .insert(paymentRefund)
+        .values({ paymentIntentId: source.intentId, amountAgorot: part, reasonKey: reason.trim().slice(0, 200), requestedByStaffId: staff.id, status: r.ok ? "SUCCEEDED" : "FAILED", idempotencyKey, providerRefundRef: r.ok ? r.refundRef : null })
+        .onConflictDoUpdate({ target: paymentRefund.idempotencyKey, set: { status: r.ok ? "SUCCEEDED" : "FAILED", providerRefundRef: r.ok ? r.refundRef : null } });
+      if (!r.ok) {
+        failed = true;
+        break;
+      }
+      succeeded += part;
+      left -= part;
+    }
+
+    if (succeeded > 0) await tx.update(order).set({ refundedAgorot: sql`${order.refundedAgorot} + ${succeeded}` }).where(eq(order.id, orderId));
+    // Anything not given back leaves the order waiting for a refund, which a manager can retry.
+    if (failed || left > 0) return { ok: false, problem: { key: "REFUND_FAILED" } };
+
+    const full = o.refundedAgorot + succeeded >= (o.capturedAgorot ?? 0);
     await applyOrderEvent(tx, {
       orderId,
       event: full ? "REFUND_SUCCEEDED_FULL" : "REFUND_SUCCEEDED_PARTIAL",
@@ -105,9 +105,34 @@ export async function refundOrder(
       now,
       payload: { templateVars: { refundAmount: formatAgorot(agorot(amountAgorot), o.locale === "en" ? "en" : "he") } },
     });
-
     return { ok: true };
   });
+}
+
+/**
+ * Where a delivered order's money can come back from, and how much each still holds. A captured J5 hold is a
+ * new transaction at PayPlus, so the main refund goes to the capture; each approved extra is its own charge.
+ */
+async function refundSources(tx: Tx, o: typeof order.$inferSelect) {
+  const intents = await tx.select().from(paymentIntent).where(eq(paymentIntent.orderId, o.id));
+  const refunds = await tx.select().from(paymentRefund).where(and(inArray(paymentRefund.paymentIntentId, intents.map((i) => i.id).concat("00000000-0000-0000-0000-000000000000")), eq(paymentRefund.status, "SUCCEEDED")));
+  const refundedOn = (intentId: string) =>
+    refunds.filter((r) => r.paymentIntentId === intentId && !r.idempotencyKey.endsWith(":settle-refund")).reduce((sum, r) => sum + r.amountAgorot, 0);
+
+  const sources: Array<{ intentId: string; ref: string; remaining: number }> = [];
+  const main = intents.find((i) => i.purpose !== "EXTRA" && i.status === "AUTHORIZED" && i.providerTransactionRef);
+  if (main) {
+    const [capture] = await tx
+      .select({ ref: paymentCapture.providerCaptureRef })
+      .from(paymentCapture)
+      .where(and(eq(paymentCapture.paymentIntentId, main.id), eq(paymentCapture.status, "SUCCEEDED")));
+    const mainCharged = (o.capturedAgorot ?? 0) - o.extraChargedAgorot;
+    sources.push({ intentId: main.id, ref: capture?.ref ?? main.providerTransactionRef!, remaining: mainCharged - refundedOn(main.id) });
+  }
+  for (const extra of intents.filter((i) => i.purpose === "EXTRA" && i.status === "AUTHORIZED" && i.providerTransactionRef)) {
+    sources.push({ intentId: extra.id, ref: extra.providerTransactionRef!, remaining: extra.amountAgorot - refundedOn(extra.id) });
+  }
+  return sources;
 }
 
 /** Today's delivery run: everything packed or on the road, grouped by window. */
@@ -150,31 +175,20 @@ export async function shopDecision(
 ): Promise<DeliveryResult> {
   if (!can(staff.role as StaffRole, decision === "CANCEL" ? "CANCEL_ORDER" : "OVERRIDE")) return { ok: false, problem: { key: "NOT_PERMITTED" } };
   const event = decision === "CANCEL" ? "CANCELLED_BY_SHOP" : "FORCE_DISPATCHED";
-  const [o] = await db.select().from(order).where(eq(order.id, orderId));
-  if (!o) return { ok: false, problem: { key: "NOT_FOUND" } };
-  const check = transition(o.status as OrderStatus, event, { actor: staff.role as StaffRole, reason });
-  if (!check.ok) return { ok: false, problem: rejection(check.reason) };
 
-  // An extra the customer approved was charged on its own. Cancelling must give it back first:
-  // if the refund fails, the order is not cancelled and the manager sees why.
-  let refundedExtra = 0;
-  if (decision === "CANCEL") {
-    const extras = await db.select().from(paymentIntent).where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.purpose, "EXTRA"), eq(paymentIntent.status, "AUTHORIZED")));
-    for (const extra of extras) {
-      if (!extra.providerTransactionRef) continue;
-      const idempotencyKey = `order:${orderId}:cancel-extra:${extra.id}`;
-      const r = await provider.refund({ transactionRef: extra.providerTransactionRef, amountAgorot: extra.amountAgorot, idempotencyKey });
-      await db
-        .insert(paymentRefund)
-        .values({ paymentIntentId: extra.id, amountAgorot: extra.amountAgorot, reasonKey: reason.trim().slice(0, 200), requestedByStaffId: staff.id, status: r.ok ? "SUCCEEDED" : "FAILED", idempotencyKey, providerRefundRef: r.ok ? r.refundRef : null })
-        .onConflictDoUpdate({ target: paymentRefund.idempotencyKey, set: { status: r.ok ? "SUCCEEDED" : "FAILED", providerRefundRef: r.ok ? r.refundRef : null } });
-      if (!r.ok) return { ok: false, problem: { key: "REFUND_FAILED" } };
-      await db.update(paymentIntent).set({ status: "VOIDED" }).where(eq(paymentIntent.id, extra.id));
-      refundedExtra += extra.amountAgorot;
+  return db.transaction(async (tx): Promise<DeliveryResult> => {
+    // The order row stays locked from the state check to the event: weighing can't finish and charge in between.
+    const [o] = await tx.select().from(order).where(eq(order.id, orderId)).for("update");
+    if (!o) return { ok: false, problem: { key: "NOT_FOUND" } };
+    const check = transition(o.status as OrderStatus, event, { actor: staff.role as StaffRole, reason });
+    if (!check.ok) return { ok: false, problem: rejection(check.reason) };
+
+    // Everything the card paid comes back before the order is cancelled; if a refund fails, nothing is cancelled.
+    let refunded = 0;
+    if (decision === "CANCEL") {
+      refunded = (await returnPayments(tx, provider, { orderId, reasonKey: reason.trim(), staffId: staff.id })).refundedAgorot;
     }
-  }
 
-  const result = await db.transaction(async (tx) => {
     const moved = await applyOrderEvent(tx, {
       orderId,
       event,
@@ -183,23 +197,17 @@ export async function shopDecision(
       appUrl,
       now,
       payload: {
-        templateVars: { reason, refundAmount: formatAgorot(agorot(refundedExtra), o.locale === "en" ? "en" : "he") },
-        ...(refundedExtra > 0 && { templateOverrides: { "order.cancelled_by_shop": "order.cancelled_by_shop_refunded" } }),
+        templateVars: { reason, refundAmount: formatAgorot(agorot(refunded), o.locale === "en" ? "en" : "he") },
+        ...(refunded > 0 && { templateOverrides: { "order.cancelled_by_shop": "order.cancelled_by_shop_refunded" } }),
       },
     });
-    if (!moved.ok) return moved;
+    if (!moved.ok) return { ok: false, problem: rejection(moved.reason) };
     if (decision === "FORCE_DISPATCH") await tx.update(order).set({ unpaidDispatch: true }).where(eq(order.id, orderId));
-    return moved;
+    return { ok: true };
+  }).catch((e) => {
+    if (e instanceof PaymentReturnFailed) return { ok: false as const, problem: { key: "REFUND_FAILED" as const } };
+    throw e;
   });
-  if (!result.ok) return { ok: false, problem: rejection(result.reason) };
-  if (result.effects.includes("VOID_AUTHORIZATION")) {
-    const [intent] = await db.select().from(paymentIntent).where(and(eq(paymentIntent.orderId, orderId), eq(paymentIntent.status, "AUTHORIZED"), ne(paymentIntent.purpose, "EXTRA")));
-    if (intent?.providerTransactionRef) {
-      await provider.voidAuthorization({ transactionRef: intent.providerTransactionRef });
-      await db.update(paymentIntent).set({ status: "VOIDED" }).where(eq(paymentIntent.id, intent.id));
-    }
-  }
-  return { ok: true };
 }
 
 function rejection(reason: string): DeliveryProblem {

@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, eq, gt, inArray, isNotNull, lt, lte, ne, sql } from "drizzle-orm";
 import type { OrderStatus } from "@/domain/order/machine";
 import { db } from "../db/client";
-import { customer, deliverySlot, deliveryZone, kashrutAuthority, order, orderLine, paymentIntent } from "../db/schema";
+import { customer, deliverySlot, deliveryZone, kashrutAuthority, order, paymentIntent } from "../db/schema";
 
 export const BOARD_COLUMNS: Record<"toPrepare" | "inProgress" | "ready" | "onTheWay", OrderStatus[]> = {
   toPrepare: ["AUTHORIZED"],
@@ -28,7 +28,7 @@ export async function loadBoard(serviceDate: string) {
       hold: order.authorizationCeilingAgorot,
       captured: order.capturedAgorot,
       unpaidDispatch: order.unpaidDispatch,
-      lineCount: sql<number>`(select count(*)::int from ${orderLine} where ${orderLine.orderId} = ${order.id})`,
+      lineCount: sql<number>`(select count(*)::int from order_line ol where ol.order_id = orders.id)`,
       weightG: order.reservedWeightG,
     })
     .from(order)
@@ -58,7 +58,7 @@ export async function loadBoard(serviceDate: string) {
 }
 
 export type BoardAlert =
-  | { key: "CAPTURE_FAILED" | "AUTH_EXPIRED" | "AWAITING_CUSTOMER" | "NOT_HOME" | "NEEDS_REFUND"; orderId: string; orderNumber: string }
+  | { key: "CAPTURE_FAILED" | "AUTH_EXPIRED" | "AWAITING_CUSTOMER" | "NOT_HOME" | "NEEDS_REFUND" | "CAPTURE_STUCK" | "LATE_PAYMENT_NOT_RETURNED"; orderId: string; orderNumber: string }
   | { key: "HOLD_EXPIRING" | "SLOT_SOON" | "WINDOW_CLOSED"; orderId: string; orderNumber: string; when: Date }
   | { key: "CERT_EXPIRING"; authorityHe: string; authorityEn: string; when: Date };
 
@@ -104,6 +104,21 @@ export async function loadAlerts(now = new Date()): Promise<BoardAlert[]> {
       ),
     );
   for (const o of soon) alerts.push({ key: "SLOT_SOON", orderId: o.id, orderNumber: o.orderNumber, when: o.startsAt });
+
+  // A customer paid an expired page and the automatic return failed: staff must refund it by hand.
+  const unreturned = await db
+    .select({ id: order.id, orderNumber: order.orderNumber })
+    .from(paymentIntent)
+    .innerJoin(order, eq(order.id, paymentIntent.orderId))
+    .where(eq(paymentIntent.declineCode, "LATE_PAYMENT_NOT_RETURNED"));
+  for (const o of unreturned) alerts.push({ key: "LATE_PAYMENT_NOT_RETURNED", orderId: o.id, orderNumber: o.orderNumber });
+
+  // A charge that never came back: the order page offers to check it again.
+  const stuck2 = await db
+    .select({ id: order.id, orderNumber: order.orderNumber })
+    .from(order)
+    .where(and(eq(order.status, "CAPTURE_PENDING"), lt(order.updatedAt, new Date(now.getTime() - 2 * 60_000))));
+  for (const o of stuck2) alerts.push({ key: "CAPTURE_STUCK", orderId: o.id, orderNumber: o.orderNumber });
 
   // A window closed after an order was booked into it (a manual closure): someone has to call the customer.
   const stranded = await db

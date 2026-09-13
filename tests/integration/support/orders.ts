@@ -1,11 +1,11 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import type { PaymentProvider } from "@/domain/payments/provider";
 import { holdSlotForCart } from "@/infra/cart/holds";
 import { cartLine, order, orderLine, paymentIntent, product } from "@/infra/db/schema";
 import { resolveAuthorization } from "@/infra/orders/authorization";
 import { placeOrder } from "@/infra/orders/placeOrder";
 import { decideMockPayment, type MockScenario } from "@/infra/payments/mock";
-import { makeCart, makeSlot, makeWeightProduct, makeZone, type TestDb, validDetails } from "./db";
+import { makeCart, makePackageProduct, makeSlot, makeWeightProduct, makeZone, type TestDb, validDetails } from "./db";
 
 export const APP = "http://test.local";
 
@@ -32,3 +32,26 @@ export async function authorizedOrder(db: TestDb, provider: PaymentProvider, sce
 }
 
 export const versionOf = async (db: TestDb, orderId: string) => (await db.select().from(order).where(eq(order.id, orderId)))[0].version;
+
+/** A package-only order: charged in full at checkout (J4), not held. Two ₪149 bundles and one ₪99 bundle. */
+export async function paidPackageOrder(db: TestDb, provider: PaymentProvider) {
+  const zone = await makeZone(db, { minOrderAgorot: 0, freeDeliveryOverAgorot: 20_000 });
+  const startsAt = new Date(Date.now() + 48 * 3_600_000);
+  const slot = await makeSlot(db, zone.id, { startsAt, endsAt: new Date(startsAt.getTime() + 3 * 3_600_000), cutoffAt: new Date(startsAt.getTime() - 3_600_000) });
+  const bundle = await makePackageProduct(db);
+  const second = await makePackageProduct(db, { priceAgorot: 9_900 });
+  const c = await makeCart(db, zone.id);
+  await db.insert(cartLine).values({ cartId: c.id, variantId: bundle.variant.id, quantity: 2 });
+  await db.insert(cartLine).values({ cartId: c.id, variantId: second.variant.id, quantity: 1 });
+  const held = await holdSlotForCart(db, { cartId: c.id, zoneId: zone.id, slotId: slot.id });
+  if (!held.ok) throw new Error(`hold: ${held.problem.key}`);
+  const placed = await placeOrder(db, provider, { cartId: c.id, details: validDetails, locale: "he", appUrl: APP });
+  if (!placed.ok) throw new Error(placed.problem.key);
+  const [intent] = await db.select().from(paymentIntent).where(eq(paymentIntent.orderId, placed.orderId));
+  await decideMockPayment(db, intent.hostedPageRef!, "APPROVE");
+  await resolveAuthorization(db, provider, { intentId: intent.id, appUrl: APP });
+  const [o] = await db.select().from(order).where(eq(order.id, placed.orderId));
+  const lines = await db.select().from(orderLine).where(eq(orderLine.orderId, placed.orderId)).orderBy(asc(orderLine.sortOrder));
+  const [paid] = await db.select().from(paymentIntent).where(eq(paymentIntent.id, intent.id));
+  return { orderId: placed.orderId, order: o, lines, intent: paid, zone, slot };
+}

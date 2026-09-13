@@ -11,7 +11,9 @@ import { grams } from "@/domain/weight/grams";
 import { priceForWeight } from "@/domain/weight/reprice";
 import type * as schema from "../db/schema";
 import { auditEvent, deliverySlot, deliveryZone, order, orderLine, paymentIntent, setting } from "../db/schema";
+import { type OrderStatus, transition } from "@/domain/order/machine";
 import { applyOrderEvent, notifyAboutOrder } from "./events";
+import { PaymentReturnFailed, returnPayments } from "./returnPayments";
 
 type Database = PostgresJsDatabase<typeof schema>;
 
@@ -21,7 +23,8 @@ export type CustomerProblem =
   | { key: "DEADLINE_PASSED" }
   | { key: "EXTRA_CHARGE_FAILED" }
   | { key: "SLOT_UNAVAILABLE" }
-  | { key: "COLD_CHAIN_EXCEEDED" };
+  | { key: "COLD_CHAIN_EXCEEDED" }
+  | { key: "REFUND_FAILED" };
 
 export type CustomerResult<T = object> = ({ ok: true } & T) | { ok: false; problem: CustomerProblem };
 
@@ -51,44 +54,44 @@ export async function decideExtra(
   input: { orderNumber: string; token: string; decision: "APPROVE" | "TRIM"; appUrl: string; now?: Date },
 ): Promise<CustomerResult<{ outcome: "APPROVED" | "TRIMMED" }>> {
   const now = input.now ?? new Date();
-  const o = await findByToken(db, input.orderNumber, input.token);
-  if (!o) return { ok: false, problem: { key: "NOT_FOUND" } };
-  if (o.status !== "AWAITING_CUSTOMER_APPROVAL") return { ok: false, problem: { key: "NOT_ALLOWED_NOW" } };
-  if (o.approvalDeadlineAt && o.approvalDeadlineAt < now) {
-    await expireApprovals(db, { appUrl: input.appUrl, now });
-    return { ok: false, problem: { key: "DEADLINE_PASSED" } };
-  }
+  const found = await findByToken(db, input.orderNumber, input.token);
+  if (!found) return { ok: false, problem: { key: "NOT_FOUND" } };
 
-  const trim = async (reasonKey: string) => {
-    const r = await db.transaction((tx) =>
-      applyOrderEvent(tx, { orderId: o.id, event: "CUSTOMER_DECLINED_EXTRA", ctx: { actor: "CUSTOMER" }, reasonKey, appUrl: input.appUrl, now }),
-    );
-    return r.ok;
-  };
+  // One transaction holds the order row from the status check through the card charge to the record. A second
+  // click, the deadline sweep or the tablet's poll waits here, then finds the question already answered —
+  // so the extra can't be charged twice, nor charged after the order has moved on.
+  return db.transaction(async (tx): Promise<CustomerResult<{ outcome: "APPROVED" | "TRIMMED" }>> => {
+    const [o] = await tx.select().from(order).where(eq(order.id, found.id)).for("update");
+    if (o.status !== "AWAITING_CUSTOMER_APPROVAL") return { ok: false, problem: { key: "NOT_ALLOWED_NOW" } };
+    if (o.approvalDeadlineAt && o.approvalDeadlineAt < now) {
+      await applyOrderEvent(tx, { orderId: o.id, event: "APPROVAL_DEADLINE_PASSED", ctx: { actor: "SYSTEM" }, reasonKey: "DEADLINE", appUrl: input.appUrl, now });
+      return { ok: false, problem: { key: "DEADLINE_PASSED" } };
+    }
 
-  if (input.decision === "TRIM") {
-    return (await trim("CUSTOMER_CHOSE_TRIM")) ? { ok: true, outcome: "TRIMMED" } : { ok: false, problem: { key: "NOT_ALLOWED_NOW" } };
-  }
+    const trim = (reasonKey: string) =>
+      applyOrderEvent(tx, { orderId: o.id, event: "CUSTOMER_DECLINED_EXTRA", ctx: { actor: "CUSTOMER" }, reasonKey, appUrl: input.appUrl, now });
 
-  const [line] = await db.select().from(orderLine).where(and(eq(orderLine.orderId, o.id), isNotNull(orderLine.pendingActualG)));
-  const [intent] = await db
-    .select()
-    .from(paymentIntent)
-    .where(and(eq(paymentIntent.orderId, o.id), eq(paymentIntent.status, "AUTHORIZED"), ne(paymentIntent.purpose, "EXTRA")));
-  if (!line || !intent?.tokenRef) return { ok: false, problem: { key: "NOT_ALLOWED_NOW" } };
+    if (input.decision === "TRIM") {
+      return (await trim("CUSTOMER_CHOSE_TRIM")).ok ? { ok: true, outcome: "TRIMMED" } : { ok: false, problem: { key: "NOT_ALLOWED_NOW" } };
+    }
 
-  const price = agorot(line.pricePerKgAgorot!);
-  const newLinePrice = priceForWeight(price, grams(line.pendingActualG!));
-  const extra = newLinePrice - line.ceilingAgorot;
+    const [line] = await tx.select().from(orderLine).where(and(eq(orderLine.orderId, o.id), isNotNull(orderLine.pendingActualG)));
+    const [intent] = await tx
+      .select()
+      .from(paymentIntent)
+      .where(and(eq(paymentIntent.orderId, o.id), eq(paymentIntent.status, "AUTHORIZED"), ne(paymentIntent.purpose, "EXTRA")));
+    if (!line || !intent?.tokenRef) return { ok: false, problem: { key: "NOT_ALLOWED_NOW" } };
 
-  // Charge first, record after: a failed charge must never leave an "approved" order behind.
-  const charged = await provider.chargeToken({ tokenRef: intent.tokenRef, amountAgorot: extra, idempotencyKey: `order:${o.id}:extra:${line.id}`, orderNumber: o.orderNumber });
-  if (!charged.ok) {
-    await trim("EXTRA_CHARGE_FAILED");
-    return { ok: false, problem: { key: "EXTRA_CHARGE_FAILED" } };
-  }
+    const price = agorot(line.pricePerKgAgorot!);
+    const newLinePrice = priceForWeight(price, grams(line.pendingActualG!));
+    const extra = newLinePrice - line.ceilingAgorot;
 
-  await db.transaction(async (tx) => {
+    const charged = await provider.chargeToken({ tokenRef: intent.tokenRef, amountAgorot: extra, idempotencyKey: `order:${o.id}:extra:${line.id}`, orderNumber: o.orderNumber });
+    if (!charged.ok) {
+      await trim("EXTRA_CHARGE_FAILED");
+      return { ok: false, problem: { key: "EXTRA_CHARGE_FAILED" } };
+    }
+
     await tx.insert(paymentIntent).values({
       orderId: o.id,
       provider: provider.name,
@@ -113,7 +116,7 @@ export async function decideExtra(
         approvalDeadlineAt: null,
       })
       .where(eq(order.id, o.id));
-    const r = await applyOrderEvent(tx, {
+    const moved = await applyOrderEvent(tx, {
       orderId: o.id,
       event: "CUSTOMER_APPROVED_EXTRA",
       ctx: { actor: "CUSTOMER" },
@@ -121,9 +124,11 @@ export async function decideExtra(
       now,
       payload: { templateVars: { extraAmount: formatAgorot(agorot(extra), o.locale === "en" ? "en" : "he"), productName: o.locale === "en" ? line.productNameEn : line.productNameHe } },
     });
-    if (!r.ok) throw new Error(`CUSTOMER_APPROVED_EXTRA rejected: ${r.reason}`);
+    // Unreachable while the row is locked and the status was checked above; if it ever happens, fail loudly
+    // (the charge key is per line, so a retry of the same approval cannot charge again).
+    if (!moved.ok) throw new Error(`CUSTOMER_APPROVED_EXTRA rejected: ${moved.reason}`);
+    return { ok: true, outcome: "APPROVED" };
   });
-  return { ok: true, outcome: "APPROVED" };
 }
 
 export async function cancelByCustomer(
@@ -133,16 +138,29 @@ export async function cancelByCustomer(
 ): Promise<CustomerResult> {
   const o = await findByToken(db, input.orderNumber, input.token);
   if (!o) return { ok: false, problem: { key: "NOT_FOUND" } };
-  const [intent] = await db.select().from(paymentIntent).where(and(eq(paymentIntent.orderId, o.id), eq(paymentIntent.status, "AUTHORIZED")));
-  const moved = await db.transaction((tx) =>
-    applyOrderEvent(tx, { orderId: o.id, event: "CANCELLED_BY_CUSTOMER", ctx: { actor: "CUSTOMER" }, appUrl: input.appUrl, now: input.now }),
-  );
-  if (!moved.ok) return { ok: false, problem: { key: "NOT_ALLOWED_NOW" } };
-  if (intent?.providerTransactionRef && moved.effects.includes("VOID_AUTHORIZATION")) {
-    await provider.voidAuthorization({ transactionRef: intent.providerTransactionRef });
-    await db.update(paymentIntent).set({ status: "VOIDED" }).where(eq(paymentIntent.id, intent.id));
-  }
-  return { ok: true };
+  return db
+    .transaction(async (tx): Promise<CustomerResult> => {
+    // Locked first: the butcher can't start picking, nor a second click cancel again, while money is returned.
+    const [locked] = await tx.select().from(order).where(eq(order.id, o.id)).for("update");
+    if (!transition(locked.status as OrderStatus, "CANCELLED_BY_CUSTOMER", { actor: "CUSTOMER" }).ok) return { ok: false, problem: { key: "NOT_ALLOWED_NOW" } };
+    const returned = await returnPayments(tx, provider, { orderId: o.id, reasonKey: "CANCELLED_BY_CUSTOMER", staffId: null });
+    const moved = await applyOrderEvent(tx, {
+      orderId: o.id,
+      event: "CANCELLED_BY_CUSTOMER",
+      ctx: { actor: "CUSTOMER" },
+      appUrl: input.appUrl,
+      now: input.now,
+      payload: {
+        templateVars: { refundAmount: formatAgorot(agorot(returned.refundedAgorot), o.locale === "en" ? "en" : "he") },
+        ...(returned.refundedAgorot > 0 && { templateOverrides: { "order.cancelled": "order.cancelled_refunded" } }),
+      },
+    });
+    return moved.ok ? { ok: true } : { ok: false, problem: { key: "NOT_ALLOWED_NOW" } };
+  })
+    .catch((e) => {
+      if (e instanceof PaymentReturnFailed) return { ok: false as const, problem: { key: "REFUND_FAILED" as const } };
+      throw e;
+    });
 }
 
 async function coldChainMaxHours(db: Database) {
@@ -155,7 +173,7 @@ async function coldChainMaxHours(db: Database) {
  * within the cold-chain limit counted from then. Never the window it is in now.
  * `cutAt` null means nothing is cut yet, so any upcoming window will do.
  */
-export async function rescheduleOptions(db: Database, o: { zoneId: string; slotId: string | null; cutAt: Date | null }, now = new Date()) {
+export async function rescheduleOptions(db: Database, o: { zoneId: string; slotId: string | null; cutAt: Date | null; weightG?: number }, now = new Date()) {
   const maxHours = await coldChainMaxHours(db);
   const latestEnd = o.cutAt ? new Date(o.cutAt.getTime() + maxHours * 3_600_000) : null;
   return db
@@ -167,6 +185,7 @@ export async function rescheduleOptions(db: Database, o: { zoneId: string; slotI
         eq(deliverySlot.status, "OPEN"),
         gt(deliverySlot.cutoffAt, now),
         lt(deliverySlot.reservedOrders, deliverySlot.capacityOrders),
+        o.weightG ? sql`${deliverySlot.reservedWeightG} + ${o.weightG} <= ${deliverySlot.capacityWeightG}` : undefined,
         latestEnd ? lte(deliverySlot.endsAt, latestEnd) : undefined,
         o.slotId ? ne(deliverySlot.id, o.slotId) : undefined,
       ),
@@ -194,7 +213,15 @@ export async function changeWindow(
       if (!locked) throw new Error("NOT_FOUND");
       if (!BEFORE_DISPATCH.includes(locked.status)) throw new Error("NOT_ALLOWED_NOW");
       const [slot] = await tx.select().from(deliverySlot).where(eq(deliverySlot.id, input.slotId)).for("update");
-      if (!slot || slot.zoneId !== locked.zoneId || slot.id === locked.slotId || slot.status !== "OPEN" || slot.cutoffAt <= now || slot.reservedOrders >= slot.capacityOrders) {
+      if (
+        !slot ||
+        slot.zoneId !== locked.zoneId ||
+        slot.id === locked.slotId ||
+        slot.status !== "OPEN" ||
+        slot.cutoffAt <= now ||
+        slot.reservedOrders >= slot.capacityOrders ||
+        slot.reservedWeightG + locked.reservedWeightG > slot.capacityWeightG
+      ) {
         throw new Error("SLOT_UNAVAILABLE");
       }
       const cutAt = locked.weighedAt ?? locked.capturedAt;
@@ -252,6 +279,7 @@ export async function moveDelivery(
         Math.min(zone.leadTimeMinutes, 60),
       );
       if (state.kind !== "AVAILABLE") throw new Error("SLOT_UNAVAILABLE");
+      if (slot.reservedWeightG + locked.reservedWeightG > slot.capacityWeightG) throw new Error("SLOT_UNAVAILABLE");
 
       // Measured to the end of the new window: that is the latest the meat reaches the customer.
       const hoursSinceCapture = locked.capturedAt ? (slot.endsAt.getTime() - locked.capturedAt.getTime()) / 3_600_000 : null;

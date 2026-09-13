@@ -48,7 +48,11 @@ export function PackStation({ initial, canCapture, autoStart }: { initial: PackV
   const active = view.lines.find((l) => l.id === activeId) ?? null;
 
   const problemText = (p: WeighingProblem) =>
-    p.key === "CAPTURE_FAILED" ? `${t("captureFailedTitle")}: ${t(`captureReasons.${p.reason}` as never)}` : t(`problems.${p.key}`);
+    p.key === "CAPTURE_FAILED"
+      ? `${t("captureFailedTitle")}: ${t(`captureReasons.${p.reason}` as never)}`
+      : p.key === "MANAGER_PIN_LOCKED"
+        ? t("problems.MANAGER_PIN_LOCKED", { minutes: p.minutes })
+        : t(`problems.${p.key}` as never);
 
   /** Run a server action, adopt the fresh view, and surface any problem in words. */
   const call = <R extends { ok: boolean; view: PackView | null; problem?: WeighingProblem }>(label: string | null, fn: () => Promise<R>, onOk?: (r: R) => void) => {

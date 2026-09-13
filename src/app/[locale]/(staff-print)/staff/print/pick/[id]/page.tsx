@@ -5,6 +5,7 @@ import { brand } from "@/config/brand";
 import { formatGrams, grams } from "@/domain/weight/grams";
 import type { Locale } from "@/i18n/routing";
 import { loadPrintOrder } from "@/infra/staff/print";
+import { requireStaff } from "@/infra/staff/session";
 import { Barcode } from "@/ui/staff/print/Barcode";
 import { PrintToolbar } from "@/ui/staff/print/PrintToolbar";
 
@@ -21,6 +22,8 @@ export default async function PickSheet({ params }: PageProps<"/[locale]/staff/p
   const { locale: raw, id } = await params;
   setRequestLocale(raw);
   const locale = raw as Locale;
+  // Checked here as well as in the layout: a layout's check doesn't protect the page's own data.
+  await requireStaff(locale, "VIEW_BOARD");
   const data = await loadPrintOrder(id);
   if (!data) notFound();
   const t = await getTranslations("staff.print");

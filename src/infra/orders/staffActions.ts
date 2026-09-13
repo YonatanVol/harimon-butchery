@@ -11,6 +11,7 @@ import { currentStaff } from "../staff/session";
 import { eq } from "drizzle-orm";
 import { order } from "../db/schema";
 import { changeWindow, moveDelivery } from "./customer";
+import { reconcileCapture } from "./weighing";
 import { type DeliveryResult, driverAction, refundOrder, shopDecision } from "./delivery";
 
 const id = z.string().uuid();
@@ -57,6 +58,17 @@ export async function staffMoveDelivery(orderId: string, slotId: string) {
     o.status === "DELIVERY_FAILED_NOT_HOME"
       ? await moveDelivery(db, { orderId, slotId, actor: staff.role as StaffRole, actorId: staff.id, appUrl: appUrl() })
       : await changeWindow(db, { orderId, slotId, staff, appUrl: appUrl() });
+  kickDispatch();
+  refresh();
+  return r;
+}
+
+/** Check a charge that never finished, and record what really happened. */
+export async function staffReconcileCapture(orderId: string) {
+  const staff = await currentStaff();
+  if (!staff) return { ok: false as const, problem: { key: "NOT_PERMITTED" as const } };
+  if (!id.safeParse(orderId).success) return { ok: false as const, problem: { key: "NOT_FOUND" as const } };
+  const r = await reconcileCapture(db, paymentProvider(), { orderId, staff, appUrl: appUrl() });
   kickDispatch();
   refresh();
   return r;

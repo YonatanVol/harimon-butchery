@@ -95,8 +95,11 @@ export function CheckoutForm({
     const err = errorFor(k);
     const id = `co-${k}`;
     return (
-      <label className={cx("flex flex-col gap-1", opts.className)} htmlFor={id}>
-        <span className="text-char-700 text-sm font-medium">{opts.label}</span>
+      // The label names the field only; hint and error are linked by aria-describedby, not read as its name.
+      <div className={cx("flex flex-col gap-1", opts.className)}>
+        <label htmlFor={id} className="text-char-700 text-sm font-medium">
+          {opts.label}
+        </label>
         <input
           id={id}
           name={k}
@@ -123,7 +126,7 @@ export function CheckoutForm({
             {opts.hint}
           </span>
         ) : null}
-      </label>
+      </div>
     );
   };
 

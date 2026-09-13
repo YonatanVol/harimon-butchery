@@ -43,7 +43,7 @@ export async function loadStockView(db: Database) {
       minOrderG: product.minOrderG,
       published: product.published,
       stock: stockItem,
-      waiting: sql<number>`(select count(*)::int from interest_signup where kind = 'RESTOCK' and subject = ${product.id}::text and notified_at is null)`,
+      waiting: sql<number>`(select count(*)::int from interest_signup i where i.kind = 'RESTOCK' and i.subject = product.id::text and i.notified_at is null)`,
     })
     .from(product)
     .innerJoin(stockItem, eq(stockItem.productId, product.id))
@@ -143,5 +143,7 @@ export async function setRestockDate(db: Database, input: { productId: string; d
   if (!can(input.staff.role as StaffRole, "MANAGE_STOCK")) return { ok: false, problem: { key: "NOT_PERMITTED" } };
   if (input.date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return { ok: false, problem: { key: "INVALID_DATE" } };
   const r = await db.update(stockItem).set({ nextRestockDate: input.date }).where(eq(stockItem.productId, input.productId)).returning({ id: stockItem.productId });
-  return r.length ? { ok: true } : { ok: false, problem: { key: "NOT_FOUND" } };
+  if (!r.length) return { ok: false, problem: { key: "NOT_FOUND" } };
+  await db.insert(auditEvent).values({ actorType: "STAFF", actorId: input.staff.id, entityType: "product", entityId: input.productId, action: "stock.restock_date", after: { date: input.date } });
+  return { ok: true };
 }

@@ -7,6 +7,9 @@ import { formatAgorot } from "@/domain/money/format";
 import { Link } from "@/i18n/navigation";
 import { tidyRelative } from "@/i18n/relativeTime";
 import type { Locale } from "@/i18n/routing";
+import { db } from "@/infra/db/client";
+import { expireAbandonedCheckouts } from "@/infra/orders/authorization";
+import { appUrl, paymentProvider } from "@/infra/payments/factory";
 import { BOARD_COLUMNS, loadAlerts, loadBoard } from "@/infra/staff/board";
 import { requireStaff } from "@/infra/staff/session";
 import { cx } from "@/ui/cx";
@@ -33,6 +36,8 @@ export default async function BoardPage({ params, searchParams }: PageProps<"/[l
   const today = toIsoDate(israelDateOf(now));
   const tomorrow = toIsoDate(addDays(israelDateOf(now), 1));
   const date = typeof sp.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : today;
+  // Payment pages abandoned for a while give back their windows and stock before the board is drawn.
+  await expireAbandonedCheckouts(db, paymentProvider(), { appUrl: appUrl() });
   const [{ rows, slots }, alerts] = await Promise.all([loadBoard(date), loadAlerts(now)]);
   const time = (d: Date) => format.dateTime(d, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
   const when = (d: Date) => tidyRelative(format.relativeTime(d, now));

@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-e2e/
 /out/
 
 # production
@@ -47,3 +48,7 @@ next-env.d.ts
 /blob-report/
 /playwright/.cache/
 !.env.example
+
+# end-to-end
+/test-results/
+/playwright-report/

@@ -1,3 +1,7 @@
+import { after } from "next/server";
+import { db as sweepDb } from "@/infra/db/client";
+import { expireAbandonedCheckouts } from "@/infra/orders/authorization";
+import { appUrl, paymentProvider } from "@/infra/payments/factory";
 import type { Metadata } from "next";
 import { eq } from "drizzle-orm";
 import { getFormatter, getNow, getTranslations, setRequestLocale } from "next-intl/server";
@@ -22,6 +26,8 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/checkout
 const DECLINE_KEYS = ["INSUFFICIENT_FUNDS", "CARD_BLOCKED", "AUTHENTICATION_FAILED", "EXPIRED_CARD", "GENERIC_DECLINE", "AMOUNT_MISMATCH"] as const;
 
 export default async function CheckoutPage({ params, searchParams }: PageProps<"/[locale]/checkout">) {
+  // Abandoned payment pages give back their windows and stock, after this response is sent.
+  after(() => expireAbandonedCheckouts(sweepDb, paymentProvider(), { appUrl: appUrl() }).catch((e) => console.error("abandoned checkout sweep", e)));
   const { locale: raw } = await params;
   setRequestLocale(raw);
   const locale = raw as Locale;

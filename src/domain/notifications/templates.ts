@@ -20,6 +20,7 @@ export type TemplateKey =
   | "order.returned"
   | "order.refunded"
   | "order.cancelled"
+  | "order.cancelled_refunded"
   | "order.cancelled_by_shop"
   | "order.cancelled_by_shop_refunded"
   | "order.reauth_required"
@@ -80,10 +81,11 @@ const he: Record<TemplateKey, Body> = {
   "order.rescheduled": (v) => `מועד המשלוח החדש של ההזמנה ${v.orderNumber}: ${v.slotWindow}.`,
   "order.returned": (v) => `ההזמנה ${v.orderNumber} חזרה לחנות. נציג יחזור אליך לגבי זיכוי.`,
   "order.refunded": (v) => `${v.firstName}, זיכינו ${v.refundAmount} על ההזמנה ${v.orderNumber}. הזיכוי יופיע בכרטיס בתוך מספר ימי עסקים.`,
-  "order.cancelled": (v) => `ההזמנה ${v.orderNumber} בוטלה. לא בוצע חיוב, וההקפאה תשוחרר.`,
+  "order.cancelled": (v) => `ההזמנה ${v.orderNumber} בוטלה. לא בוצע חיוב; אם הוקפא סכום בכרטיס, ההקפאה משתחררת.`,
+  "order.cancelled_refunded": (v) => `ההזמנה ${v.orderNumber} בוטלה. הסכום שחויב (${v.refundAmount}) הוחזר לכרטיס ויופיע בתוך מספר ימי עסקים.`,
   "order.cancelled_by_shop": (v) => `${v.firstName}, מצטערים — נאלצנו לבטל את ההזמנה ${v.orderNumber}: ${v.reason}. לא בוצע חיוב.`,
   "order.cancelled_by_shop_refunded": (v) =>
-    `${v.firstName}, מצטערים — נאלצנו לבטל את ההזמנה ${v.orderNumber}: ${v.reason}. ההקפאה בכרטיס שוחררה, והתוספת שחויבה (${v.refundAmount}) הוחזרה לכרטיס.`,
+    `${v.firstName}, מצטערים — נאלצנו לבטל את ההזמנה ${v.orderNumber}: ${v.reason}. לא נחייב את הכרטיס, והסכום שכבר חויב (${v.refundAmount}) הוחזר אליו.`,
   "order.reauth_required": (v) =>
     `${v.firstName}, תוקף ההקפאה בכרטיס להזמנה ${v.orderNumber} פג לפני שהספקנו לשקול. כדי שנמשיך — אשרו תשלום מחדש:\n${v.trackingUrl}`,
   "auth.otp": (v) => `קוד הכניסה שלך לקצביית הרימון: ${v.code}\nהקוד בתוקף ל-5 דקות. לא לשתף עם אף אחד.`,
@@ -113,10 +115,11 @@ const en: Record<TemplateKey, Body> = {
   "order.rescheduled": (v) => `New delivery time for order ${v.orderNumber}: ${v.slotWindow}.`,
   "order.returned": (v) => `Order ${v.orderNumber} has returned to the shop. We'll be in touch about a refund.`,
   "order.refunded": (v) => `${v.firstName}, we've refunded ${v.refundAmount} for order ${v.orderNumber}. It will appear on your card within a few business days.`,
-  "order.cancelled": (v) => `Order ${v.orderNumber} has been cancelled. Nothing was charged and the hold will be released.`,
+  "order.cancelled": (v) => `Order ${v.orderNumber} has been cancelled. Nothing was charged; any hold on your card is being released.`,
+  "order.cancelled_refunded": (v) => `Order ${v.orderNumber} has been cancelled. The amount charged (${v.refundAmount}) was refunded to your card and will show within a few business days.`,
   "order.cancelled_by_shop": (v) => `${v.firstName}, we're sorry — we had to cancel order ${v.orderNumber}: ${v.reason}. Nothing was charged.`,
   "order.cancelled_by_shop_refunded": (v) =>
-    `${v.firstName}, we're sorry — we had to cancel order ${v.orderNumber}: ${v.reason}. The card hold was released and the extra you approved (${v.refundAmount}) was refunded.`,
+    `${v.firstName}, we're sorry — we had to cancel order ${v.orderNumber}: ${v.reason}. Your card won't be charged, and what was already charged (${v.refundAmount}) has been refunded.`,
   "order.reauth_required": (v) =>
     `${v.firstName}, the hold on your card for order ${v.orderNumber} expired before we could weigh it. To continue, please approve payment again:\n${v.trackingUrl}`,
   "auth.otp": (v) => `Your Harimon Butchery login code: ${v.code}\nValid for 5 minutes. Don't share it with anyone.`,
@@ -153,6 +156,7 @@ export const TEMPLATE_PARAM_ORDER: Record<TemplateKey, Array<keyof TemplateVars>
   "order.returned": ["orderNumber"],
   "order.refunded": ["firstName", "refundAmount", "orderNumber"],
   "order.cancelled": ["orderNumber"],
+  "order.cancelled_refunded": ["orderNumber", "refundAmount"],
   "order.cancelled_by_shop": ["firstName", "orderNumber", "reason"],
   "order.cancelled_by_shop_refunded": ["firstName", "orderNumber", "reason", "refundAmount"],
   "order.reauth_required": ["firstName", "orderNumber", "trackingUrl"],
