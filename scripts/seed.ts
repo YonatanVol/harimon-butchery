@@ -40,7 +40,7 @@ async function main() {
     payment_intent, invoice, invoice_counter, order_status_event, order_line, orders, cart_line, cart,
     slot_hold, delivery_slot, delivery_slot_template, calendar_blackout, address, customer,
     stock_movement, stock_item, product_variant, product_kashrut, product, category,
-    kashrut_authority, delivery_zone, staff_user, audit_event, setting, idempotency_key, order_counter, mock_psp_transaction, customer_login_code
+    kashrut_authority, delivery_zone, staff_user, audit_event, setting, idempotency_key, order_counter, mock_psp_transaction, customer_login_code, interest_signup
     RESTART IDENTITY CASCADE`);
 
   await db.transaction(async (tx) => {

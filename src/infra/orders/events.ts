@@ -7,7 +7,8 @@ import { formatAgorot } from "@/domain/money/format";
 import { type TemplateKey, type TemplateVars, renderTemplate, templateParams } from "@/domain/notifications/templates";
 import { type Effect, type OrderEvent, type TransitionContext, transition } from "@/domain/order/machine";
 import type * as schema from "../db/schema";
-import { auditEvent, cart, customer, deliverySlot, notification, order, orderLine, orderStatusEvent, stockItem, stockMovement } from "../db/schema";
+import { auditEvent, cart, customer, deliverySlot, notification, order, orderLine, orderStatusEvent, productVariant, stockItem, stockMovement } from "../db/schema";
+import { notifyBackInStock } from "../interest/signups";
 
 type Database = PostgresJsDatabase<typeof schema>;
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -80,8 +81,10 @@ export async function applyOrderEvent(tx: Tx, input: ApplyEventInput): Promise<A
   });
 
   for (const effect of result.effects) {
-    if (effect === "RELEASE_SLOT_AND_STOCK") await releaseSlotAndStock(tx, updated);
-    else if (effect === "RESTORE_CART" && updated.cartId) {
+    if (effect === "RELEASE_SLOT_AND_STOCK") {
+      await releaseSlotAndStock(tx, updated);
+      await notifyRestockFor(tx, updated.id, input.appUrl, now);
+    } else if (effect === "RESTORE_CART" && updated.cartId) {
       await tx.update(cart).set({ convertedOrderId: null, status: "OPEN" }).where(eq(cart.id, updated.cartId));
     } else if (effect === "CONVERT_CART" && updated.cartId) {
       await tx
@@ -90,6 +93,7 @@ export async function applyOrderEvent(tx: Tx, input: ApplyEventInput): Promise<A
         .where(eq(cart.id, updated.cartId));
     } else if (effect === "RESTOCK") {
       await restock(tx, updated, input.actorId ?? null);
+      await notifyRestockFor(tx, updated.id, input.appUrl, now);
     } else if (effect === "TRIM_OVER_TOLERANCE_LINE") {
       // The butcher trims to the upper limit and weighs again.
       await tx.update(orderLine).set({ pendingActualG: null }).where(eq(orderLine.orderId, updated.id));
@@ -145,6 +149,16 @@ async function releaseSlotAndStock(tx: Tx, o: typeof order.$inferSelect) {
  * An order cancelled after picking started: release what's still reserved and, if the weighed
  * meat was already taken out of stock, put it back — a cut steak can still be sold.
  */
+/** Stock this order held is free again: anyone waiting for one of its products hears, if it is really orderable now. */
+async function notifyRestockFor(tx: Tx, orderId: string, appUrl: string, now: Date) {
+  const products = await tx
+    .selectDistinct({ productId: productVariant.productId })
+    .from(orderLine)
+    .innerJoin(productVariant, eq(productVariant.id, orderLine.variantId))
+    .where(eq(orderLine.orderId, orderId));
+  for (const { productId } of products) await notifyBackInStock(tx, { productId, appUrl, now });
+}
+
 async function restock(tx: Tx, o: typeof order.$inferSelect, staffId: string | null) {
   const lines = await tx
     .select({ line: orderLine, productId: sql<string>`(select product_id from product_variant where id = ${orderLine.variantId})` })

@@ -50,6 +50,13 @@
       "when": 1789329944196,
       "tag": "0006_customer_login_code",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789330335563,
+      "tag": "0007_interest_signup",
+      "breakpoints": true
     }
   ]
 }

@@ -10,6 +10,7 @@ import { extendHold, holdSlot, releaseHold, setDeliveryCity } from "@/infra/cart
 import type { SlotDay } from "@/infra/cart/repository";
 import { cx } from "../../cx";
 import { Button } from "../../primitives/Button";
+import { InterestForm } from "../InterestForm";
 import { useProblemText } from "../useProblemText";
 
 export interface ZoneInfo {
@@ -88,7 +89,7 @@ function CityForm({ initial, servedCities, onDone }: { initial: string; servedCi
   const t = useTranslations("shop.cart");
   const problemText = useProblemText();
   const [value, setValue] = useState(initial);
-  const [error, setError] = useState<{ text: string; notServed: boolean } | null>(null);
+  const [error, setError] = useState<{ text: string; notServed: boolean; city: string } | null>(null);
   const [pending, start] = useTransition();
   const inputId = useId();
   const listId = useId();
@@ -99,15 +100,16 @@ function CityForm({ initial, servedCities, onDone }: { initial: string; servedCi
       try {
         const r = await setDeliveryCity(value);
         if (r.ok) onDone();
-        else setError({ text: problemText(r.problem), notServed: r.problem.key === "CITY_NOT_SERVED" || r.problem.key === "ZONE_PAUSED" });
+        else setError({ text: problemText(r.problem), notServed: r.problem.key === "CITY_NOT_SERVED" || r.problem.key === "ZONE_PAUSED", city: value.trim() });
       } catch {
-        setError({ text: problemText({ key: "NETWORK" }), notServed: false });
+        setError({ text: problemText({ key: "NETWORK" }), notServed: false, city: "" });
       }
     });
 
   return (
-    <form
-      className="flex flex-col gap-2"
+    <div className="flex flex-col gap-3">
+      <form
+        className="flex flex-col gap-2"
       onSubmit={(e) => {
         e.preventDefault();
         submit();
@@ -151,7 +153,10 @@ function CityForm({ initial, servedCities, onDone }: { initial: string; servedCi
           )}
         </div>
       )}
-    </form>
+      </form>
+      {/* Outside the city form: forms can't nest. */}
+      {error?.notServed && error.city && <InterestForm key={error.city} target={{ kind: "AREA", city: error.city }} />}
+    </div>
   );
 }
 

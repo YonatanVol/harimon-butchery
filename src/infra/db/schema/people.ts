@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { createdAt, hebrewText, updatedAt } from "./columns";
 import { deliveryZone } from "./delivery";
 import { staffRole } from "./enums";
@@ -82,4 +82,27 @@ export const customerLoginCode = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index("customer_login_code_phone_idx").on(t.phoneE164, t.createdAt), check("customer_login_code_attempts", sql`${t.attempts} >= 0`)],
+);
+
+/**
+ * "Tell me when…" sign-ups: a sold-out product coming back, or deliveries starting in a city we don't
+ * serve yet. `subject` is the product id or the city name as typed. Notified once, then kept for counts.
+ */
+export const interestSignup = pgTable(
+  "interest_signup",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: text("kind").notNull(),
+    subject: text("subject").notNull(),
+    phoneE164: text("phone_e164").notNull(),
+    locale: text("locale").notNull().default("he"),
+    notifiedAt: timestamp("notified_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("interest_signup_unique").on(t.kind, t.subject, t.phoneE164),
+    index("interest_signup_pending_idx").on(t.kind, t.subject, t.notifiedAt),
+    check("interest_signup_kind", sql`${t.kind} IN ('RESTOCK', 'AREA')`),
+    check("interest_signup_locale", sql`${t.locale} IN ('he', 'en')`),
+  ],
 );

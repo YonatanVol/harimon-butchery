@@ -23,7 +23,9 @@ export type TemplateKey =
   | "order.cancelled_by_shop"
   | "order.cancelled_by_shop_refunded"
   | "order.reauth_required"
-  | "auth.otp";
+  | "auth.otp"
+  | "interest.restocked"
+  | "interest.area_opened";
 
 export type TemplateVars = Partial<{
   firstName: string;
@@ -42,6 +44,9 @@ export type TemplateVars = Partial<{
   refundAmount: string;
   reason: string;
   code: string;
+  productUrl: string;
+  city: string;
+  shopUrl: string;
 }>;
 
 export interface TemplateAction {
@@ -82,6 +87,8 @@ const he: Record<TemplateKey, Body> = {
   "order.reauth_required": (v) =>
     `${v.firstName}, תוקף ההקפאה בכרטיס להזמנה ${v.orderNumber} פג לפני שהספקנו לשקול. כדי שנמשיך — אשרו תשלום מחדש:\n${v.trackingUrl}`,
   "auth.otp": (v) => `קוד הכניסה שלך לקצביית הרימון: ${v.code}\nהקוד בתוקף ל-5 דקות. לא לשתף עם אף אחד.`,
+  "interest.restocked": (v) => `ביקשתם שנעדכן: ${v.productName} חזר למלאי בקצביית הרימון.\nזו הודעה חד-פעמית.\n${v.productUrl}`,
+  "interest.area_opened": (v) => `ביקשתם שנעדכן: קצביית הרימון מגיעה עכשיו גם ל${v.city}. אפשר להזמין משלוח:\n${v.shopUrl}`,
 };
 
 const en: Record<TemplateKey, Body> = {
@@ -113,6 +120,8 @@ const en: Record<TemplateKey, Body> = {
   "order.reauth_required": (v) =>
     `${v.firstName}, the hold on your card for order ${v.orderNumber} expired before we could weigh it. To continue, please approve payment again:\n${v.trackingUrl}`,
   "auth.otp": (v) => `Your Harimon Butchery login code: ${v.code}\nValid for 5 minutes. Don't share it with anyone.`,
+  "interest.restocked": (v) => `You asked us to tell you: ${v.productName} is back in stock at Harimon Butchery.\nThis is a one-time message.\n${v.productUrl}`,
+  "interest.area_opened": (v) => `You asked us to tell you: Harimon Butchery now delivers to ${v.city}. Order here:\n${v.shopUrl}`,
 };
 
 export const TEMPLATE_KEYS = Object.keys(he) as TemplateKey[];
@@ -148,6 +157,8 @@ export const TEMPLATE_PARAM_ORDER: Record<TemplateKey, Array<keyof TemplateVars>
   "order.cancelled_by_shop_refunded": ["firstName", "orderNumber", "reason", "refundAmount"],
   "order.reauth_required": ["firstName", "orderNumber", "trackingUrl"],
   "auth.otp": ["code"],
+  "interest.restocked": ["productName", "productUrl"],
+  "interest.area_opened": ["city", "shopUrl"],
 };
 
 export function templateParams(key: TemplateKey, vars: TemplateVars): string[] {

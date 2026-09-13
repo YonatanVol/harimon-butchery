@@ -223,7 +223,6 @@
       "addToCart": "Add to cart",
       "outOfStock": "Out of stock",
       "outOfStockRestock": "Out of stock — back {date}",
-      "notifyMe": "Notify me when it's back",
       "aging": "Dry-aged for {days} days",
       "handling": "Good to know",
       "more": "More {category}",
@@ -379,6 +378,27 @@
           "TOO_MANY_ATTEMPTS": "Too many tries for this code — ask for a new one",
           "NETWORK": "Can't reach the server. Check the network and try again."
         }
+      }
+    },
+    "interest": {
+      "restockTitle": "Tell me when it's back",
+      "areaTitle": "Tell me when you deliver to {city}",
+      "oneMessage": "We'll send one WhatsApp message when it happens, and won't use the number for anything else.",
+      "submit": "Notify me",
+      "saving": "Saving…",
+      "phoneMissing": "Enter a mobile number",
+      "restockJoined": "Done — we'll message you when {product} is back in stock.",
+      "restockAlready": "This number is already on the list — we'll tell you when {product} is back.",
+      "areaJoined": "Noted — we'll message you when we start delivering to {city}.",
+      "areaAlready": "This number is already on the list for {city}.",
+      "problems": {
+        "PHONE_INVALID": "That number isn't valid — please check it",
+        "PHONE_NOT_MOBILE": "We need a mobile number (starting 05) to message you",
+        "NOT_FOUND": "This product is no longer available",
+        "IN_STOCK": "Good news — it's already back in stock. Refresh the page to order",
+        "CITY_SERVED": "We already deliver there — check the city name in your cart",
+        "CITY_INVALID": "Enter the city name",
+        "NETWORK": "Can't reach the server. Check the network and try again."
       }
     }
   },
