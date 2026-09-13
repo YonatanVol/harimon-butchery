@@ -105,3 +105,14 @@ describe("formatAgorot", () => {
     expect(formatAgorot(agorot(46500), "en")).toBe("₪465");
   });
 });
+
+describe("price change percentage", () => {
+  it("is signed basis points, rounded half up in size", async () => {
+    const { percentChangeBp } = await import("@/domain/money/change");
+    const { agorot } = await import("@/domain/money/agorot");
+    expect(percentChangeBp(agorot(16_900), agorot(18_900))).toBe(1183);
+    expect(percentChangeBp(agorot(18_900), agorot(16_900))).toBe(-1058);
+    expect(percentChangeBp(agorot(10_000), agorot(10_000))).toBe(0);
+    expect(percentChangeBp(agorot(3), agorot(4))).toBe(3333);
+  });
+});

@@ -621,7 +621,9 @@
       "logout": "Sign out",
       "deliveries": "Deliveries",
       "stock": "Stock",
-      "zones": "Zones & windows"
+      "zones": "Zones & windows",
+      "catalog": "Catalog",
+      "audit": "Log"
     },
     "board": {
       "title": "Today's board",
@@ -1056,6 +1058,97 @@
         "CITY_IN_OTHER_ZONE": "{city} already belongs to {zone}",
         "INVALID_MONEY": "Not a valid amount — e.g. 35 or 35.50",
         "NETWORK": "Can't reach the server. Try again."
+      }
+    },
+    "catalog": {
+      "title": "Catalog",
+      "summary": "{total} products · {hidden} hidden · {blocked} can't be shown · {noPhoto} without a photo",
+      "product": "Product",
+      "kashrut": "Kashrut",
+      "attention": "Needs attention",
+      "price": "Price",
+      "onSite": "On the site",
+      "perKg": "/ kg",
+      "perPackage": "/ package",
+      "flags": {
+        "noKashrut": "Kashrut details missing",
+        "certificateExpired": "Certificate expired",
+        "noPhoto": "No photo"
+      },
+      "show": "Show on site",
+      "hide": "Hide",
+      "shown": "Shown to customers",
+      "hidden": "Hidden",
+      "saving": "Saving…",
+      "editPrice": "Change price",
+      "priceTitle": "Price: {name}",
+      "newPricePerKg": "New price per kg (₪)",
+      "newPricePerPackage": "New price per package (₪)",
+      "preview": "{before} → {after}",
+      "confirmBig": "Yes, the change ({pct}) is right — not a typo",
+      "confirmBigFirst": "Big change — tick that you've checked it",
+      "unchanged": "The price hasn't changed",
+      "priceHelp": "The new price shows on the site and in open carts at once. Orders already placed keep their price. The change is logged.",
+      "savePrice": "Save price {price}",
+      "save": "Save",
+      "close": "Close",
+      "problems": {
+        "NOT_PERMITTED": "You don't have permission to edit the catalog",
+        "NOT_PERMITTED_PRICE": "Only managers change prices",
+        "NOT_FOUND": "Product not found",
+        "NO_KASHRUT": "A product can't be shown without kashrut details",
+        "CERTIFICATE_EXPIRED": "The kashrut certificate expired on {date} — it can't be shown until renewed",
+        "CERTIFICATE_EXPIRED_SHORT": "Kashrut certificate expired — can't be shown until renewed",
+        "INVALID_PRICE": "Not a valid price — e.g. 169 or 169.90",
+        "PRICE_CHANGED_MEANWHILE": "Someone changed the price to {current} meanwhile. Close and reopen",
+        "NETWORK": "Can't reach the server. Try again."
+      }
+    },
+    "audit": {
+      "title": "Activity log",
+      "intro": "Every change staff made to prices, stock, orders and deliveries — who, what and when. The log can't be edited.",
+      "filter": "Filter",
+      "empty": "Nothing to show",
+      "older": "Older activity",
+      "deletedItem": "a deleted item",
+      "unknownStaff": "Staff member",
+      "units": "{count, plural, one {1 unit} other {# units}}",
+      "groups": {
+        "all": "All",
+        "money": "Money",
+        "orders": "Orders",
+        "catalog": "Catalog",
+        "stock": "Stock",
+        "delivery": "Delivery"
+      },
+      "actors": {
+        "CUSTOMER": "Customer",
+        "SYSTEM": "System",
+        "PSP": "Payment provider"
+      },
+      "actions": {
+        "price": "{product}: price {before} → {after} ({pct})",
+        "publish": "{product}: shown on the site",
+        "unpublish": "{product}: hidden from the site",
+        "stock_received": "{product}: goods received, {before} → {after}",
+        "stock_spoilage": "{product}: spoilage, {before} → {after}",
+        "stock_count_correction": "{product}: count, {before} → {after}",
+        "zone": "{zone}: zone settings updated",
+        "blackoutAdd": "Closure added on {date}: {reason}",
+        "blackoutRemove": "Closure removed on {date}: {reason}",
+        "slots": "Windows updated: {added} new, {closing} closed",
+        "changeWindow": "Order {order}: delivery window changed",
+        "giveFree": "Order {order}: {amount} given free (over the range)",
+        "orderEvent": "Order {order}: {event} {amount}"
+      },
+      "events": {
+        "CANCELLED_BY_SHOP": "cancelled by the shop",
+        "CAPTURE_FAILED": "charge failed",
+        "FORCE_DISPATCHED": "dispatched unpaid",
+        "REFUND_REQUESTED": "refund requested",
+        "REFUSED": "customer refused",
+        "RETURNED_TO_SHOP": "returned to shop",
+        "SAVED_CARD_CHARGED": "saved card charged"
       }
     }
   }

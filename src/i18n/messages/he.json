@@ -621,7 +621,9 @@
       "logout": "יציאה",
       "deliveries": "משלוחים",
       "stock": "מלאי",
-      "zones": "אזורים ומועדים"
+      "zones": "אזורים ומועדים",
+      "catalog": "קטלוג",
+      "audit": "יומן"
     },
     "board": {
       "title": "לוח היום",
@@ -1056,6 +1058,97 @@
         "CITY_IN_OTHER_ZONE": "{city} כבר שייכת לאזור {zone}",
         "INVALID_MONEY": "סכום לא תקין — למשל 35 או 35.50",
         "NETWORK": "אין חיבור לשרת. נסו שוב."
+      }
+    },
+    "catalog": {
+      "title": "קטלוג",
+      "summary": "{total} מוצרים · {hidden} מוסתרים · {blocked} לא ניתנים להצגה · {noPhoto} בלי תמונה",
+      "product": "מוצר",
+      "kashrut": "כשרות",
+      "attention": "לתשומת לב",
+      "price": "מחיר",
+      "onSite": "באתר",
+      "perKg": "לק״ג",
+      "perPackage": "למארז",
+      "flags": {
+        "noKashrut": "חסרים פרטי כשרות",
+        "certificateExpired": "תעודה פגה",
+        "noPhoto": "אין תמונה"
+      },
+      "show": "הצגה באתר",
+      "hide": "הסתרה",
+      "shown": "מוצג ללקוחות",
+      "hidden": "מוסתר",
+      "saving": "שומר…",
+      "editPrice": "שינוי מחיר",
+      "priceTitle": "מחיר: {name}",
+      "newPricePerKg": "מחיר חדש לק״ג (₪)",
+      "newPricePerPackage": "מחיר חדש למארז (₪)",
+      "preview": "{before} ← {after}",
+      "confirmBig": "כן, השינוי ({pct}) נכון — זו לא טעות הקלדה",
+      "confirmBigFirst": "שינוי גדול — סמנו שבדקתם אותו",
+      "unchanged": "המחיר לא השתנה",
+      "priceHelp": "המחיר החדש מוצג מיד באתר ובסלים פתוחים. הזמנות שכבר בוצעו נשארות במחיר שבו הוזמנו. השינוי נשמר ביומן.",
+      "savePrice": "שמירת מחיר {price}",
+      "save": "שמירה",
+      "close": "סגירה",
+      "problems": {
+        "NOT_PERMITTED": "אין לך הרשאה לערוך את הקטלוג",
+        "NOT_PERMITTED_PRICE": "רק מנהלים משנים מחירים",
+        "NOT_FOUND": "המוצר לא נמצא",
+        "NO_KASHRUT": "אי אפשר להציג מוצר בלי פרטי כשרות",
+        "CERTIFICATE_EXPIRED": "תעודת הכשרות פגה ב-{date} — אי אפשר להציג עד שתחודש",
+        "CERTIFICATE_EXPIRED_SHORT": "תעודת הכשרות פגה — אי אפשר להציג עד שתחודש",
+        "INVALID_PRICE": "מחיר לא תקין — למשל 169 או 169.90",
+        "PRICE_CHANGED_MEANWHILE": "מישהו שינה בינתיים את המחיר ל-{current}. סגרו ופתחו שוב",
+        "NETWORK": "אין חיבור לשרת. נסו שוב."
+      }
+    },
+    "audit": {
+      "title": "יומן פעולות",
+      "intro": "כל שינוי שעשה הצוות במחירים, במלאי, בהזמנות ובמשלוחים — מי, מה ומתי. היומן לא ניתן לעריכה.",
+      "filter": "סינון",
+      "empty": "אין פעולות להצגה",
+      "older": "פעולות ישנות יותר",
+      "deletedItem": "פריט שנמחק",
+      "unknownStaff": "איש צוות",
+      "units": "{count, plural, one {יחידה אחת} other {# יחידות}}",
+      "groups": {
+        "all": "הכול",
+        "money": "כסף",
+        "orders": "הזמנות",
+        "catalog": "קטלוג",
+        "stock": "מלאי",
+        "delivery": "משלוחים"
+      },
+      "actors": {
+        "CUSTOMER": "לקוח",
+        "SYSTEM": "המערכת",
+        "PSP": "חברת הסליקה"
+      },
+      "actions": {
+        "price": "{product}: מחיר {before} ← {after} ({pct})",
+        "publish": "{product}: הוצג באתר",
+        "unpublish": "{product}: הוסתר מהאתר",
+        "stock_received": "{product}: קבלת סחורה, {before} ← {after}",
+        "stock_spoilage": "{product}: פחת, {before} ← {after}",
+        "stock_count_correction": "{product}: ספירה, {before} ← {after}",
+        "zone": "{zone}: הגדרות האזור עודכנו",
+        "blackoutAdd": "נוספה סגירה ל{date}: {reason}",
+        "blackoutRemove": "הוסרה הסגירה של {date}: {reason}",
+        "slots": "המועדים עודכנו: {added} חדשים, {closing} נסגרו",
+        "changeWindow": "הזמנה {order}: מועד המשלוח שונה",
+        "giveFree": "הזמנה {order}: {amount} ניתנו ללא תשלום (מעל הטווח)",
+        "orderEvent": "הזמנה {order}: {event} {amount}"
+      },
+      "events": {
+        "CANCELLED_BY_SHOP": "בוטלה על ידי החנות",
+        "CAPTURE_FAILED": "החיוב נכשל",
+        "FORCE_DISPATCHED": "נשלחה בלי חיוב",
+        "REFUND_REQUESTED": "בקשת החזר",
+        "REFUSED": "הלקוח סירב לקבל",
+        "RETURNED_TO_SHOP": "הוחזרה לחנות",
+        "SAVED_CARD_CHARGED": "חיוב בכרטיס השמור"
       }
     }
   }
