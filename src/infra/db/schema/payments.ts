@@ -115,3 +115,26 @@ export const invoiceCounter = pgTable("invoice_counter", {
   year: integer("year").primaryKey(),
   lastSequence: integer("last_sequence").notNull().default(0),
 });
+
+/**
+ * State of the built-in demo payment gateway. It plays the role a real PSP plays — holding,
+ * charging, refunding — so the whole money flow runs with no credentials. Never used with PAYPLUS.
+ */
+export const mockPspTransaction = pgTable("mock_psp_transaction", {
+  ref: text("ref").primaryKey(),
+  mode: text("mode").notNull(), // AUTHORIZE | CHARGE
+  amountAgorot: agorotCol("amount_agorot").notNull(),
+  status: text("status").notNull().default("CREATED"), // CREATED | APPROVED | DECLINED | VOIDED
+  scenario: text("scenario"),
+  capturedAgorot: agorotCol("captured_agorot").notNull().default(0),
+  refundedAgorot: agorotCol("refunded_agorot").notNull().default(0),
+  tokenRef: text("token_ref"),
+  cardBrand: text("card_brand"),
+  cardLast4: text("card_last4"),
+  declineCode: text("decline_code"),
+  returnUrl: text("return_url").notNull(),
+  orderNumber: text("order_number").notNull(),
+  locale: text("locale").notNull(),
+  createdAt: createdAt(),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+});

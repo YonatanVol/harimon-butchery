@@ -19,7 +19,7 @@ export async function truncateAll(db: TestDb) {
     payment_intent, invoice, invoice_counter, order_status_event, order_line, orders, cart_line, cart,
     slot_hold, delivery_slot, delivery_slot_template, calendar_blackout, address, customer,
     stock_movement, stock_item, product_variant, product_kashrut, product, category,
-    kashrut_authority, delivery_zone, staff_user, audit_event, setting, idempotency_key
+    kashrut_authority, delivery_zone, staff_user, audit_event, setting, idempotency_key, order_counter, mock_psp_transaction
     RESTART IDENTITY CASCADE`);
 }
 
@@ -68,3 +68,54 @@ export async function makeCart(db: TestDb, zoneId: string | null) {
     .returning();
   return row;
 }
+
+export async function makeWeightProduct(
+  db: TestDb,
+  { pricePerKgAgorot = 16900, onHandG = 40_000, slug = `p-${Math.random().toString(36).slice(2, 8)}` } = {},
+) {
+  const [category] = await db
+    .insert(schema.category)
+    .values({ slug: `c-${slug}`, nameHe: "בקר", nameEn: "Beef" })
+    .returning();
+  const [authority] = await db
+    .insert(schema.kashrutAuthority)
+    .values({ slug: `a-${slug}`, nameHe: "בד״ץ בדוי", nameEn: "Fictional", badgeHe: "בדוי", badgeEn: "Fictional", certificateNumber: "X-1", certificateValidUntil: "2030-01-01" })
+    .returning();
+  const [p] = await db
+    .insert(schema.product)
+    .values({
+      slug,
+      categoryId: category.id,
+      nameHe: "אנטריקוט",
+      nameEn: "Entrecote",
+      shortDescHe: "תיאור",
+      shortDescEn: "Description",
+      animal: "BEEF",
+      pricingMode: "WEIGHT",
+      pricePerKgAgorot,
+      minOrderG: 250,
+      maxOrderG: 5000,
+      stepG: 250,
+      defaultOrderG: 1000,
+      toleranceBp: 1000,
+    })
+    .returning();
+  await db.insert(schema.productKashrut).values({ productId: p.id, authorityId: authority.id, shechita: "BEIT_YOSEF", glatt: "GLATT_CHALAK", nikur: "MENUKAR", salted: "SALTED", passover: "KOSHER_LEPESACH" });
+  const [variant] = await db.insert(schema.productVariant).values({ productId: p.id, sku: `${slug}-std`, nameHe: "רגיל", nameEn: "Standard", isDefault: true }).returning();
+  await db.insert(schema.stockItem).values({ productId: p.id, onHandG, lowThresholdG: 3000 });
+  return { product: p, variant };
+}
+
+export const validDetails = {
+  firstName: "דנה",
+  lastName: "כהן",
+  phone: "054-123 4567",
+  email: "",
+  street: "אבן גבירול",
+  houseNumber: "120",
+  entrance: "",
+  floor: "3",
+  apartment: "12",
+  intercom: "",
+  deliveryNotes: "",
+};

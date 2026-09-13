@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "reserved_weight_g" integer DEFAULT 0 NOT NULL;
