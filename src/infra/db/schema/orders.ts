@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   check,
   index,
@@ -227,6 +228,8 @@ export const orderStatusEvent = pgTable(
     actorId: uuid("actor_id"),
     payload: jsonb("payload"),
     createdAt: createdAt(),
+    /** Insertion order: events in one request share a timestamp, and the timeline must still read in order. */
+    seq: bigint("seq", { mode: "number" }).generatedAlwaysAsIdentity(),
   },
   (t) => [index("order_event_order_idx").on(t.orderId, t.createdAt)],
 );

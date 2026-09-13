@@ -24,7 +24,7 @@ export async function loadTrackedOrder(orderNumber: string, token: string) {
 
   const [lines, events, intents] = await Promise.all([
     db.select().from(orderLine).where(eq(orderLine.orderId, row.order.id)).orderBy(asc(orderLine.sortOrder)),
-    db.select().from(orderStatusEvent).where(eq(orderStatusEvent.orderId, row.order.id)).orderBy(asc(orderStatusEvent.createdAt)),
+    db.select().from(orderStatusEvent).where(eq(orderStatusEvent.orderId, row.order.id)).orderBy(asc(orderStatusEvent.createdAt), asc(orderStatusEvent.seq)),
     db.select().from(paymentIntent).where(eq(paymentIntent.orderId, row.order.id)).orderBy(desc(paymentIntent.createdAt)),
   ]);
   return { ...row, lines, events, intent: intents.find((i) => i.status === "AUTHORIZED") ?? intents[0] ?? null };

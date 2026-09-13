@@ -74,10 +74,12 @@ export function createMockProvider(db: Database, appUrl: string): PaymentProvide
       const [tx] = await db.select().from(mockPspTransaction).where(eq(mockPspTransaction.ref, transactionRef));
       if (!tx || tx.status !== "APPROVED") return { ok: false, code: "404", reason: "PROVIDER_ERROR" };
       if (tx.scenario === "APPROVE_CAPTURE_FAILS") return { ok: false, code: "J5-EXP", reason: "HOLD_EXPIRED" };
-      if (tx.capturedAgorot > 0) return { ok: false, code: "DUP", reason: "ALREADY_CAPTURED" };
+      // A hold is captured once; asking again returns that capture instead of charging twice (as PayPlus does).
+      if (tx.capturedAgorot > 0) return { ok: true, captureRef: transactionRef };
       if (amountAgorot > tx.amountAgorot) return { ok: false, code: "AMT", reason: "AMOUNT_EXCEEDS_HOLD" };
       await db.update(mockPspTransaction).set({ capturedAgorot: amountAgorot }).where(eq(mockPspTransaction.ref, transactionRef));
-      return { ok: true, captureRef: ref("cap") };
+      // Like PayPlus, refunds go to the reference the capture returns. The demo keeps one record, so it is the same.
+      return { ok: true, captureRef: transactionRef };
     },
 
     async voidAuthorization({ transactionRef }) {

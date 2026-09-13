@@ -9,6 +9,7 @@ import { formatGrams, grams } from "@/domain/weight/grams";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { db } from "@/infra/db/client";
+import { activeNotifier } from "@/infra/notify/providers";
 import { rescheduleOptions } from "@/infra/orders/customer";
 import { loadStaffOrder } from "@/infra/staff/orderDetail";
 import { requireStaff } from "@/infra/staff/session";
@@ -220,7 +221,7 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
 
       <section className="bg-bone-50 ring-bone-300 rounded-2xl p-5 ring-1">
         <h2 className="text-lg font-bold">{t("staff.order.messages")}</h2>
-        <p className="text-warn-600 mt-1 text-sm font-medium">{t("staff.order.demoMessages")}</p>
+        {activeNotifier().demo && <p className="text-warn-600 mt-1 text-sm font-medium">{t("staff.order.demoMessages")}</p>}
         <ul className="mt-3 flex flex-col gap-3">
           {messages.map((m) => (
             <li key={m.id} className="bg-bone-100 rounded-xl p-3">
