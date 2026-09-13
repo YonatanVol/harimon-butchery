@@ -58,6 +58,15 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
   const time = (d: Date) => format.dateTime(d, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
   const addr = o.addressSnapshot as { street: string; houseNumber: string; city: string; apartment?: string | null; floor?: string | null };
   const captured = o.capturedAgorot != null;
+  // After a cancellation, decline or expiry the page says what happened to the money — never "held" any more.
+  const stopped = ["CANCELLED_BY_CUSTOMER", "CANCELLED_BY_SHOP", "AUTH_DECLINED", "AUTH_EXPIRED"].includes(o.status);
+  const moneyOutcome = data.returnedOnCancelAgorot > 0
+    ? t("stopped.refunded", { amount: money(data.returnedOnCancelAgorot) })
+    : data.holdState === "RELEASED"
+      ? t("stopped.released", { amount: money(o.authorizationCeilingAgorot) })
+      : data.holdState === "HELD"
+        ? t("stopped.lapsing", { amount: money(o.authorizationCeilingAgorot) })
+        : t("stopped.nothing");
   const g = (n: number) => formatGrams(grams(n), locale);
   const pendingLine = o.status === "AWAITING_CUSTOMER_APPROVAL" ? lines.find((l) => l.pendingActualG) : undefined;
   const pendingBounds = pendingLine ? toleranceBounds(grams(pendingLine.estimatedG!), pendingLine.toleranceBp!) : null;
@@ -78,7 +87,9 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
         <p className="text-char-500 text-sm tabular-nums">{t("title", { number: o.orderNumber })}</p>
         <h1 className="text-4xl font-bold tracking-tight">{t(`status.${o.status}`)}</h1>
         <p className="text-lg font-medium">
-          {captured
+          {stopped
+            ? moneyOutcome
+            : captured
             ? t("finalSummary", { final: money(o.capturedAgorot), hold: money(o.authorizationCeilingAgorot) })
             : t("holdSummary", { hold: money(o.authorizationCeilingAgorot) })}
         </p>
@@ -101,7 +112,12 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
           <Reschedule target={{ by: "customer", orderNumber: o.orderNumber, token }} windows={windows.map((w) => ({ id: w.id, startsAt: w.startsAt.toISOString(), endsAt: w.endsAt.toISOString() }))} />
         )}
         {o.status === "AUTHORIZED" && (
-          <CancelOrder orderNumber={o.orderNumber} token={token} paidAmount={intent?.purpose === "CHARGE" ? money(intent.amountAgorot) : null} />
+          <CancelOrder
+            orderNumber={o.orderNumber}
+            token={token}
+            paidAmount={intent?.purpose === "CHARGE" ? money(intent.amountAgorot) : null}
+            heldAmount={intent?.purpose === "AUTHORIZE" ? money(intent.amountAgorot) : null}
+          />
         )}
       </div>
 
@@ -139,10 +155,14 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
               <dt>{t("estimateTotal")}</dt>
               <dd><bdi className="tabular-nums">{money(o.estimateTotalAgorot)}</bdi></dd>
             </div>
-            <div className="flex justify-between">
-              <dt>{t("holdLine")}</dt>
-              <dd><bdi className="font-semibold tabular-nums">{money(o.authorizationCeilingAgorot)}</bdi></dd>
-            </div>
+            {stopped ? (
+              <p className="font-semibold">{moneyOutcome}</p>
+            ) : (
+              <div className="flex justify-between">
+                <dt>{t("holdLine")}</dt>
+                <dd><bdi className="font-semibold tabular-nums">{money(o.authorizationCeilingAgorot)}</bdi></dd>
+              </div>
+            )}
             {intent?.cardLast4 && (
               <div className="text-char-500 flex justify-between">
                 <dt />

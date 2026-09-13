@@ -589,7 +589,14 @@
       "rescheduleBodyChange": "To arrange with the customer (e.g. when their window was closed). Only free windows are shown; if the meat is already cut, only ones that keep the cold chain. The customer gets a message with the new time.",
       "rescheduleNoneChange": "No suitable free window. You can cancel the order under manager decisions.",
       "rescheduleDone": "Window updated and the customer was messaged.",
-      "cancelBodyPaid": "You can cancel here until the butcher starts preparing your order. The amount paid ({amount}) will be refunded to your card."
+      "cancelBodyPaid": "You can cancel here until the butcher starts preparing your order. The amount paid ({amount}) will be refunded to your card.",
+      "cancelBodyHeld": "You can cancel here until the butcher starts preparing your order. Your card won't be charged, and the {amount} hold is released."
+    },
+    "stopped": {
+      "refunded": "The amount charged ({amount}) was refunded to your card",
+      "released": "Not charged — the {amount} hold was released",
+      "lapsing": "Not charged — the {amount} hold will drop off with your card company within a few days",
+      "nothing": "Not charged"
     }
   },
   "staff": {
