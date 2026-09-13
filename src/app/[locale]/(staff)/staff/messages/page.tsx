@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { db } from "@/infra/db/client";
 import { notification, order } from "@/infra/db/schema";
+import { dispatchQueued } from "@/infra/notify/dispatch";
 import { activeNotifier } from "@/infra/notify/providers";
 import { requireStaff } from "@/infra/staff/session";
 import { cx } from "@/ui/cx";
@@ -30,6 +31,8 @@ export default async function MessagesPage({ params, searchParams }: PageProps<"
   const t = await getTranslations("staff.messages");
   const format = await getFormatter();
   const notifier = activeNotifier();
+  // Anything a request queued but didn't get to send (a crash, a restart) goes out before the log is shown.
+  await dispatchQueued(db, notifier, { limit: 50 });
 
   const q = typeof sp.q === "string" ? sp.q.trim().slice(0, 40) : "";
   const status = STATUSES.find((s) => s === sp.status) ?? null;
