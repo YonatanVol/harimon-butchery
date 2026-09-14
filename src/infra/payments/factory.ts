@@ -3,9 +3,10 @@ import type { PaymentProvider } from "@/domain/payments/provider";
 import { db } from "../db/client";
 import { createMockProvider } from "./mock";
 import { createPayPlusProvider } from "./payplus";
+import { resolveAppUrl } from "../runtimeEnv";
 
 export function appUrl() {
-  return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  return resolveAppUrl();
 }
 
 /** PayPlus settings from the environment, or the list of what is missing. */
@@ -23,7 +24,7 @@ export function payplusConfigFromEnv(env = process.env) {
       cashierUid: env.PAYPLUS_CASHIER_UID!,
       // Sandbox unless production is asked for by name.
       sandbox: env.PAYPLUS_ENV !== "production",
-      callbackUrl: `${(env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "")}/api/payments/payplus/callback`,
+      callbackUrl: `${resolveAppUrl(env)}/api/payments/payplus/callback`,
     },
   };
 }
