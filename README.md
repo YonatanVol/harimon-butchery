@@ -69,6 +69,7 @@ Staff area: http://localhost:3000/he/staff/login — every demo staff member's P
 ## Docs
 
 - `docs/PLAN.md` — the approved product and architecture plan
-- `docs/adr/` — architecture decisions with evidence
+- `docs/adr/` — architecture decisions with evidence (0004: why production uses node-postgres on Supabase's
+  transaction pooler, port 6543)
 - `CONSTRAINTS.md` — the quality bar
 - `CLAUDE.md` — coding conventions

@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type {
   CaptureResult,
   DeclineReason,
@@ -13,7 +13,7 @@ import type {
 import type * as schema from "../db/schema";
 import { mockPspOperation, mockPspTransaction } from "../db/schema";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 
 /** Test cards on the demo gateway page. Each drives one real branch of the money flow. */
 export const MOCK_SCENARIOS = [

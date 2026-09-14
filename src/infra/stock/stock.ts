@@ -1,5 +1,5 @@
 import { asc, desc, eq, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { can, type StaffRole } from "@/domain/auth/permissions";
 import { availabilityOf } from "@/domain/catalog/availability";
 import { MAX_STOCK_CHANGE_G, MAX_STOCK_CHANGE_UNITS } from "@/domain/catalog/stockLimits";
@@ -7,7 +7,7 @@ import type * as schema from "../db/schema";
 import { auditEvent, category, product, staffUser, stockItem, stockMovement } from "../db/schema";
 import { notifyBackInStock } from "../interest/signups";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 type Staff = { id: string; role: string };
 
 export type StockChange =

@@ -4,9 +4,9 @@ import type { ShopLocation } from "@/domain/delivery/jewishCalendar";
 import { type PlannedSlot, planSlots } from "@/domain/delivery/slots";
 import type * as schema from "../db/schema";
 import { calendarBlackout, deliverySlot, deliverySlotTemplate, deliveryZone, setting } from "../db/schema";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 
 export async function shopSettings(db: Database) {
   const rows = await db.select().from(setting);

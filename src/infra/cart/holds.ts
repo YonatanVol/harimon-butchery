@@ -1,10 +1,10 @@
 import { and, eq, gt, isNull, ne, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { slotAvailability } from "@/domain/delivery/slots";
 import type * as schema from "../db/schema";
 import { deliverySlot, deliveryZone, slotHold } from "../db/schema";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 
 export const HOLD_MINUTES = 15;
 

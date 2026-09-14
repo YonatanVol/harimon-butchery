@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { availabilityOf } from "@/domain/catalog/availability";
 import { normalizeIsraeliMobile } from "@/domain/checkout/details";
 import { normalizeCity, resolveZone } from "@/domain/delivery/zones";
@@ -7,7 +7,7 @@ import { renderTemplate, templateParams, type TemplateKey, type TemplateVars } f
 import type * as schema from "../db/schema";
 import { customer, deliveryZone, interestSignup, notification, product, stockItem } from "../db/schema";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 // Callable inside an order transaction (stock returning on a cancellation) or on its own.
 type Tx = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
 

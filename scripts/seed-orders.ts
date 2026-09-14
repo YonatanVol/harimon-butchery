@@ -3,7 +3,7 @@
  * payment, weighing, capture, delivery — so the data can never disagree with the code that runs the shop.
  */
 import { and, asc, desc, eq, gt, lt, lte, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { israelDateOf, toIsoDate } from "../src/domain/delivery/israelTime";
 import { holdSlotForCart } from "../src/infra/cart/holds";
 import * as s from "../src/infra/db/schema";
@@ -16,7 +16,7 @@ import { placeOrder } from "../src/infra/orders/placeOrder";
 import * as w from "../src/infra/orders/weighing";
 import { createMockProvider, decideMockPayment, type MockScenario } from "../src/infra/payments/mock";
 
-type Database = PostgresJsDatabase<typeof s>;
+type Database = NodePgDatabase<typeof s>;
 type Staff = { id: string; role: string };
 
 type Target =

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rejectTransactionPooler, resolveAppUrl, resolveIdleTimeout, resolvePoolMax } from "@/infra/runtimeEnv";
+import { resolveAppUrl, resolveIdleTimeout, resolvePoolMax } from "@/infra/runtimeEnv";
 
 describe("resolveAppUrl", () => {
   it("prefers APP_URL and drops a trailing slash", () => {
@@ -27,20 +27,9 @@ describe("resolvePoolMax", () => {
   });
 });
 
-describe("rejectTransactionPooler", () => {
-  it("refuses Supabase's transaction pooler with the fix in the message", () => {
-    expect(() => rejectTransactionPooler("postgresql://postgres.abc:pw@aws-0-eu-central-1.pooler.supabase.com:6543/postgres")).toThrow(/port 5432/);
-  });
-  it("accepts the session pooler, local databases and unparseable values", () => {
-    expect(() => rejectTransactionPooler("postgresql://postgres.abc:pw@aws-0-eu-central-1.pooler.supabase.com:5432/postgres")).not.toThrow();
-    expect(() => rejectTransactionPooler("postgres://me@localhost:6543/meatstore_dev")).not.toThrow();
-    expect(() => rejectTransactionPooler("not a url")).not.toThrow();
-  });
-});
-
 describe("resolveIdleTimeout", () => {
-  it("closes idle connections quickly on Vercel only", () => {
-    expect(resolveIdleTimeout({ VERCEL: "1" })).toBe(20);
-    expect(resolveIdleTimeout({})).toBeUndefined();
+  it("closes idle connections quickly on Vercel", () => {
+    expect(resolveIdleTimeout({ VERCEL: "1" })).toBe(5);
+    expect(resolveIdleTimeout({})).toBe(30);
   });
 });

@@ -1,5 +1,5 @@
 import { asc, eq, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { can, type StaffRole } from "@/domain/auth/permissions";
 import { israelDateOf, toIsoDate } from "@/domain/delivery/israelTime";
 import { agorot } from "@/domain/money/agorot";
@@ -7,7 +7,7 @@ import { percentChangeBp } from "@/domain/money/change";
 import type * as schema from "../db/schema";
 import { auditEvent, category, kashrutAuthority, product, productKashrut } from "../db/schema";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 type Staff = { id: string; role: string };
 
 export type CatalogProblem =

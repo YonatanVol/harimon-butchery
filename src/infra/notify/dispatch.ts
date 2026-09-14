@@ -1,11 +1,11 @@
 import { and, asc, eq, ne, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { maskCode } from "@/domain/auth/otp";
 import type { Notifier } from "@/domain/notifications/notifier";
 import type * as schema from "../db/schema";
 import { notification, notificationSuppression } from "../db/schema";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 
 /**
  * Sends queued messages, one row at a time under a skip-locked lock so two workers never send the
