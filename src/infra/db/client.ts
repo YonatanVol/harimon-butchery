@@ -1,6 +1,7 @@
 import "server-only";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { resolvePoolMax } from "../runtimeEnv";
 import * as schema from "./schema";
 
 declare global {
@@ -13,7 +14,7 @@ function connect() {
   // `prepare: false` keeps us compatible with Supabase's transaction pooler in production.
   // Small per process: builds prerender with several workers and serverless runs many instances, all sharing
   // Postgres's connection limit. Money flows use two connections at once with the demo gateway (see ADR 0003).
-  return postgres(url, { max: Number(process.env.DB_POOL_MAX) || 10, prepare: false });
+  return postgres(url, { max: resolvePoolMax(), prepare: false });
 }
 
 // Reuse one pool across hot reloads in development.
