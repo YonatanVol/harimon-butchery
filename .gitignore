@@ -52,3 +52,6 @@ next-env.d.ts
 # end-to-end
 /test-results/
 /playwright-report/
+
+# Playwright runs against a deployed shop
+/test-results-live/
