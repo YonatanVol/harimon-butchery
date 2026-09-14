@@ -1,10 +1,10 @@
 import { and, eq, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { PaymentProvider } from "@/domain/payments/provider";
 import type * as schema from "../db/schema";
 import { paymentIntent, paymentRefund } from "../db/schema";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export type ReturnedPayments = { ok: true; refundedAgorot: number; holdReleased: boolean; holdLeftToLapse: boolean };

@@ -1,12 +1,12 @@
 import { and, desc, eq, lt } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { DeclineReason, PaymentLookup, PaymentProvider } from "@/domain/payments/provider";
 import { holdSlotForCart } from "../cart/holds";
 import type * as schema from "../db/schema";
 import { auditEvent, order, paymentIntent, paymentRefund } from "../db/schema";
 import { applyOrderEvent } from "./events";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 
 /** How long we treat a card hold as valid before refusing to capture on it. Conservative; see ADR. */
 export const HOLD_VALID_DAYS = 5;

@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { can, type StaffRole } from "@/domain/auth/permissions";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
@@ -28,7 +28,7 @@ import {
 import { checkStaffPin } from "../staff/pinCheck";
 import { applyOrderEvent } from "./events";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Staff = { id: string; role: string };
 

@@ -1,12 +1,12 @@
 import { eq, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import * as schema from "@/infra/db/schema";
 
 export function connectTestDb(max = 25) {
   const url = process.env.DATABASE_URL_TEST!;
   if (!/meatstore_test/.test(url)) throw new Error(`Refusing to run integration tests against ${url}`);
-  const client = postgres(url, { max, onnotice: () => {} });
+  const client = new Pool({ connectionString: url, max });
   const db = drizzle(client, { schema, casing: "snake_case" });
   return { db, close: () => client.end() };
 }

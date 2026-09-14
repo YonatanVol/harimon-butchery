@@ -1,10 +1,10 @@
 import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schema from "../db/schema";
 import { staffUser } from "../db/schema";
 import { verifyPin } from "./pin";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 
 export const MAX_PIN_ATTEMPTS = 5;
 export const PIN_LOCK_MINUTES = 5;

@@ -1,6 +1,6 @@
 import { randomInt } from "node:crypto";
 import { and, desc, eq, gt, isNull } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { isWellFormedCode, OTP_LENGTH, OTP_MAX_ATTEMPTS, OTP_SEND_WINDOW_SECONDS, OTP_TTL_SECONDS, sendAllowed } from "@/domain/auth/otp";
 import { normalizeIsraeliMobile } from "@/domain/checkout/details";
 import { renderTemplate, templateParams } from "@/domain/notifications/templates";
@@ -8,7 +8,7 @@ import { keyedHash, sameHash } from "../auth/signed";
 import type * as schema from "../db/schema";
 import { customer, customerLoginCode, notification } from "../db/schema";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 
 export type LoginProblem =
   | { key: "PHONE_INVALID" }

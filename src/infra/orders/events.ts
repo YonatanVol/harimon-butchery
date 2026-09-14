@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { and, eq, isNull, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { formatIsraelTime, israelDateOf, toIsoDate } from "@/domain/delivery/israelTime";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
@@ -10,7 +10,7 @@ import type * as schema from "../db/schema";
 import { auditEvent, cart, customer, deliverySlot, notification, order, orderLine, orderStatusEvent, productVariant, stockItem, stockMovement } from "../db/schema";
 import { notifyBackInStock } from "../interest/signups";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 const statusTimestamp: Partial<Record<string, keyof typeof order.$inferInsert>> = {

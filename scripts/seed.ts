@@ -4,8 +4,8 @@
  */
 import { existsSync } from "node:fs";
 import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import * as s from "../src/infra/db/schema";
 import { generateSlots } from "../src/infra/delivery/generateSlots";
 import { hashPin } from "../src/infra/staff/pin";
@@ -17,7 +17,7 @@ const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is not set");
 
 // More than one connection: money flows hold a transaction while the demo gateway records its side on another.
-const client = postgres(url, { max: 4, onnotice: () => {} });
+const client = new Pool({ connectionString: url, max: 4 });
 const db = drizzle(client, { schema: s, casing: "snake_case" });
 
 /** Shown on the staff login screen in demo mode. */

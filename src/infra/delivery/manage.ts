@@ -1,5 +1,5 @@
 import { and, asc, eq, gte, inArray, lt, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { can, type StaffRole } from "@/domain/auth/permissions";
 import { addDays, fromIsoDate, israelDateOf, toIsoDate } from "@/domain/delivery/israelTime";
 import { normalizeCity } from "@/domain/delivery/zones";
@@ -8,7 +8,7 @@ import { auditEvent, calendarBlackout, customer, deliverySlot, deliveryZone, ord
 import { notifyAreaOpened } from "../interest/signups";
 import { applyWindows, planWindows } from "./generateSlots";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 type Staff = { id: string; role: string };
 
 export type SlotsProblem =

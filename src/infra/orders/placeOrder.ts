@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { and, asc, eq, gt, isNull, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { availabilityOf } from "@/domain/catalog/availability";
 import { type LineProblem, quoteCart, validateQuantity, validateWeight } from "@/domain/cart/cart";
 import { type CheckoutDetails, type DetailsErrors, validateDetails } from "@/domain/checkout/details";
@@ -32,7 +32,7 @@ import {
 import { expireIfAbandoned } from "./authorization";
 import { applyOrderEvent } from "./events";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 
 export type PlaceOrderProblem =
   | { key: "DETAILS_INVALID"; errors: DetailsErrors }

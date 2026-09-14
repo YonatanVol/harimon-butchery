@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { and, asc, eq, gt, isNotNull, lt, lte, ne, sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { can, type StaffRole } from "@/domain/auth/permissions";
 import { slotAvailability } from "@/domain/delivery/slots";
 import { agorot } from "@/domain/money/agorot";
@@ -15,7 +15,7 @@ import { type OrderStatus, transition } from "@/domain/order/machine";
 import { applyOrderEvent, notifyAboutOrder } from "./events";
 import { PaymentReturnFailed, returnPayments } from "./returnPayments";
 
-type Database = PostgresJsDatabase<typeof schema>;
+type Database = NodePgDatabase<typeof schema>;
 
 export type CustomerProblem =
   | { key: "NOT_FOUND" }
