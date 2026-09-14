@@ -57,8 +57,9 @@ Staff area: http://localhost:3000/he/staff/login — every demo staff member's P
 
 - Product photos are licensed stock (Unsplash, Pexels, Pixabay, one public-domain Wikimedia image), chosen by hand;
   sources and licences are in `public/catalog/CREDITS.json`. Some are near matches rather than the exact cut (for
-  example the dry-aged steaks), and 11 products still show the designed placeholder tile: brisket, osso buco, flank,
-  beef cheeks, chicken backs, turkey drumstick, turkey wings, lamb neck, merguez, beef tongue and the Passover bundle.
+  example the dry-aged steaks; the beef tongue is shown cooked and sliced), and 5 products still show the designed
+  placeholder tile because no licensed photo matched without looking like pork or breaking kashrut: chicken backs,
+  turkey wings, lamb neck, merguez and the Passover bundle.
 - Code 128 barcodes are structurally tested but not yet checked with a physical scanner.
 - A 404 page's first HTML (before JavaScript) is Next.js's bare error shell; the localized page renders on load.
 - Cold-chain and handling rules are sensible defaults and deserve a domain expert's review before real use.
