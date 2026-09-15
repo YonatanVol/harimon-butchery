@@ -22,5 +22,7 @@ export default defineConfig({
     { name: "he-desktop", use: { viewport: { width: 1280, height: 800 }, locale: "he-IL" } },
     { name: "he-mobile", use: { ...devices["Pixel 7"], channel: "chrome", locale: "he-IL" }, testMatch: /(rtl-gate|checkout)\.spec\.ts/ },
     { name: "en-desktop", use: { viewport: { width: 1280, height: 800 }, locale: "en-IL" }, testMatch: /(rtl-gate|checkout)\.spec\.ts/ },
+    { name: "iphone-15", use: { ...devices["iPhone 15"], browserName: "chromium", channel: "chrome", locale: "he-IL" }, testMatch: /rtl-gate\.spec\.ts/ },
+    { name: "galaxy-s24", use: { ...devices["Galaxy S24"], channel: "chrome", locale: "he-IL" }, testMatch: /rtl-gate\.spec\.ts/ },
   ],
 });
