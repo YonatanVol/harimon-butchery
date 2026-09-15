@@ -44,9 +44,9 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
   if (!data) {
     return (
       <div className="mx-auto flex max-w-xl flex-col items-start gap-4 px-4 py-24 sm:px-6">
-        <h1 className="text-3xl font-bold">{t("notFoundTitle")}</h1>
+        <h1 className="font-display text-4xl font-light">{t("notFoundTitle")}</h1>
         <p className="font-reading text-char-700 text-lg">{t("notFoundBody")}</p>
-        <Link href="/" className="bg-char-900 text-bone-50 inline-flex min-h-12 items-center rounded-lg px-6 font-medium">
+        <Link href="/" className="bg-char-900 text-bone-50 inline-flex min-h-12 items-center rounded-[2px] px-6 font-medium">
           {(await getTranslations("shop.notFound"))("back")}
         </Link>
       </div>
@@ -75,7 +75,7 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
       {sp.placed === "1" && (
-        <div role="status" className="bg-ok-600/10 ring-ok-600/25 mb-8 rounded-2xl p-5 ring-1">
+        <div role="status" className="bg-ok-600/10 ring-ok-600/25 mb-8 rounded-[3px] p-5 ring-1">
           <p className="text-ok-600 text-lg font-bold">{t("placedTitle")}</p>
           <p className="font-reading text-char-700">
             {t("placedBody", { phone: c.phoneE164.replace(/^\+972/, "0").replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3") })}
@@ -85,7 +85,7 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
 
       <header className="flex flex-col gap-2">
         <p className="text-char-500 text-sm tabular-nums">{t("title", { number: o.orderNumber })}</p>
-        <h1 className="text-4xl font-bold tracking-tight">{t(`status.${o.status}`)}</h1>
+        <h1 className="font-display text-4xl font-light md:text-5xl">{t(`status.${o.status}`)}</h1>
         <p className="text-lg font-medium">
           {stopped
             ? moneyOutcome
@@ -134,7 +134,7 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
       </ol>
 
       <div className="mt-10 grid gap-6 md:grid-cols-2">
-        <section className="bg-bone-100 rounded-2xl p-5">
+        <section className="bg-bone-100 rounded-[3px] p-5">
           <h2 className="text-char-500 text-sm font-medium">{t("delivery")}</h2>
           {slot && (
             <p className="mt-1 text-lg font-semibold">
@@ -149,7 +149,7 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
             {addr.apartment ? `/${addr.apartment}` : ""}, {addr.city}
           </p>
         </section>
-        <section className="bg-bone-100 rounded-2xl p-5">
+        <section className="bg-bone-100 rounded-[3px] p-5">
           <dl className="flex flex-col gap-2 text-sm">
             <div className="flex justify-between">
               <dt>{t("estimateTotal")}</dt>
@@ -176,7 +176,7 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
       <section className="mt-10">
         <h2 className="text-xl font-bold">{t("lines")}</h2>
         {o.goodwillAgorot > 0 && (
-          <p className="bg-ok-600/10 text-ok-600 mt-3 rounded-xl p-3 font-medium">{t("goodwill", { amount: money(o.goodwillAgorot) })}</p>
+          <p className="bg-ok-600/10 text-ok-600 mt-3 rounded-[3px] p-3 font-medium">{t("goodwill", { amount: money(o.goodwillAgorot) })}</p>
         )}
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">

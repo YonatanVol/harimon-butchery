@@ -108,7 +108,7 @@ export function CustomerLogin() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="050-000-0000"
-            className="bg-bone-50 ring-bone-300 focus-visible:ring-wine-600 min-h-14 rounded-xl px-4 text-start text-xl tabular-nums ring-1 outline-none focus-visible:ring-2"
+            className="bg-bone-50 ring-bone-300 focus-visible:ring-wine-600 min-h-14 rounded-[3px] px-4 text-start text-xl tabular-nums ring-1 outline-none focus-visible:ring-2"
           />
           <p className="text-char-700 text-sm">{t("phoneHelp")}</p>
         </div>
@@ -132,7 +132,7 @@ export function CustomerLogin() {
   return (
     <div className="flex flex-col gap-4">
       {sent.demoCode && (
-        <p className="bg-warn-600/10 ring-warn-600/30 rounded-xl p-3 ring-1" role="status">
+        <p className="bg-warn-600/10 ring-warn-600/30 rounded-[3px] p-3 ring-1" role="status">
           {t("demoCode")} <bdi dir="ltr" className="font-bold tracking-widest tabular-nums">{sent.demoCode}</bdi>
         </p>
       )}
@@ -158,7 +158,7 @@ export function CustomerLogin() {
             // Pasted, typed or autofilled — the sixth digit signs in without another tap.
             if (digits.length === OTP_LENGTH) verify(digits);
           }}
-          className="bg-bone-50 ring-bone-300 focus-visible:ring-wine-600 min-h-16 w-full max-w-xs rounded-xl px-4 text-center text-3xl tracking-[0.5em] tabular-nums ring-1 outline-none focus-visible:ring-2"
+          className="bg-bone-50 ring-bone-300 focus-visible:ring-wine-600 min-h-16 w-full max-w-xs rounded-[3px] px-4 text-center text-3xl tracking-[0.5em] tabular-nums ring-1 outline-none focus-visible:ring-2"
         />
         <p className="text-char-700 text-sm" aria-live="polite">
           {pending && busy === "verify" ? t("verifying") : t("codeHelp")}

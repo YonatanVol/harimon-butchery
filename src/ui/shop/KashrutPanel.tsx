@@ -31,8 +31,8 @@ export async function KashrutPanel({ kashrut, authority, locale }: { kashrut: Ka
   ];
 
   return (
-    <section aria-labelledby="kashrut-title" className="bg-bone-100 ring-bone-300 rounded-2xl p-5 ring-1">
-      <h2 id="kashrut-title" className="text-lg font-semibold">
+    <section aria-labelledby="kashrut-title" className="border-bone-300 border-t pt-5">
+      <h2 id="kashrut-title" className="font-display text-xl">
         {t("panelTitle")}
       </h2>
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">

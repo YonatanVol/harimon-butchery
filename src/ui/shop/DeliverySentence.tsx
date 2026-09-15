@@ -4,7 +4,7 @@ import type { Locale } from "@/i18n/routing";
 import { nextDeliveryForDefaultZone } from "@/infra/delivery/nextDelivery";
 
 /** "Today: Rosh Hashana — no deliveries · Next delivery in Tel Aviv: tomorrow 08:00–11:00, order by …" */
-export async function DeliverySentence() {
+export async function DeliverySentence({ tone = "dark" }: { tone?: "dark" | "light" } = {}) {
   const info = await nextDeliveryForDefaultZone();
   if (!info) return null;
   const locale = (await getLocale()) as Locale;
@@ -22,7 +22,7 @@ export async function DeliverySentence() {
   const zone = locale === "he" ? info.zoneNameHe : info.zoneNameEn;
 
   return (
-    <p className="text-bone-200 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    <p className={`${tone === "dark" ? "text-bone-200" : "text-char-700"} flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-sm`}>
       <span aria-hidden className="bg-ok-600 size-2 rounded-full" />
       {info.todayClosed && <span>{t("todayClosed", { reason: locale === "he" ? info.todayClosed.he : info.todayClosed.en })}</span>}
       {info.next ? (

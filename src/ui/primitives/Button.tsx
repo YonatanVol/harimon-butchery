@@ -21,8 +21,8 @@ export interface ButtonProps extends NativeProps {
 }
 
 const variants = {
-  primary: "bg-wine-600 text-bone-50 hover:bg-wine-700 active:bg-wine-700",
-  secondary: "bg-bone-50 text-char-900 ring-1 ring-inset ring-char-900/20 hover:bg-bone-100",
+  primary: "bg-char-900 text-bone-50 hover:bg-char-800 active:bg-char-700",
+  secondary: "bg-transparent text-char-900 ring-1 ring-inset ring-char-900/30 hover:ring-char-900",
   ghost: "text-char-900 hover:bg-bone-200/60",
   danger: "bg-bad-600 text-bone-50 hover:brightness-95",
 };
@@ -57,7 +57,7 @@ export function Button({
         aria-busy={pendingLabel ? true : undefined}
         aria-describedby={disabledReason ? reasonId : undefined}
         className={cx(
-          "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors",
+          "inline-flex items-center justify-center gap-2 rounded-[2px] font-semibold transition-colors",
           "focus-visible:outline-wine-500 focus-visible:outline-2 focus-visible:outline-offset-2",
           "disabled:cursor-not-allowed",
           sizes[size],

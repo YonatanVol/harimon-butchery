@@ -37,7 +37,7 @@ export default async function OccasionPage({ params }: PageProps<"/[locale]/o/[o
         </Link>
       </nav>
       <header className="mt-2 mb-8 flex flex-col gap-2">
-        <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+        <h1 className="font-display text-4xl font-light md:text-6xl">
           {t("occasion.title", { occasion: t(`occasion.${occasion}`) })}
         </h1>
         <p className="font-reading text-char-700 text-lg">{t(`occasion.${occasion}_desc`)}</p>

@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import { ViewTransition } from "react";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
 import { formatGrams, grams } from "@/domain/weight/grams";
@@ -6,62 +7,84 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { ProductCard as ProductCardData } from "@/infra/db/queries/catalog";
 import { cx } from "../cx";
-import { Badge } from "../primitives/Badge";
 import { AvailabilityChip } from "./AvailabilityChip";
 import { ProductImage } from "./ProductImage";
 
-export async function ProductCard({ product: p, priority }: { product: ProductCardData; priority?: boolean }) {
+/**
+ * A cut on the counter: tall photograph, serif name, one line of facts, the price.
+ * The photograph morphs into the product page's hero on navigation (View Transitions).
+ */
+export async function ProductCard({
+  product: p,
+  priority,
+  sizes = "(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw",
+}: {
+  product: ProductCardData;
+  priority?: boolean;
+  sizes?: string;
+}) {
   const locale = (await getLocale()) as Locale;
   const t = await getTranslations("shop");
-  const name = locale === "he" ? p.nameHe : p.nameEn;
+  const he = locale === "he";
+  const name = he ? p.nameHe : p.nameEn;
   const out = p.availability.kind === "OUT";
 
   const price =
     p.pricingMode === "WEIGHT"
-      ? t("card.perKg", { price: formatAgorot(agorot(p.pricePerKgAgorot!), locale) })
-      : t("card.perPackage", { price: formatAgorot(agorot(p.packagePriceAgorot!), locale) });
+      ? formatAgorot(agorot(p.pricePerKgAgorot!), locale)
+      : formatAgorot(agorot(p.packagePriceAgorot!), locale);
+
+  const facts = [
+    p.agingDays ? t("card.aged", { days: p.agingDays }) : null,
+    he ? p.cutOriginHe : p.cutOriginEn,
+    p.pricingMode === "WEIGHT" && p.avgPieceG ? t("card.piece", { weight: formatGrams(grams(p.avgPieceG), locale) }) : null,
+  ].filter(Boolean);
 
   return (
-    <article className="group relative flex w-full flex-col overflow-hidden rounded-2xl bg-bone-50 ring-1 ring-bone-300 transition-shadow hover:shadow-lg hover:ring-bone-300">
-      <ProductImage
-        src={p.image}
-        alt={name}
-        animal={p.animal!}
-        label={name}
-        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-        priority={priority}
-        className={cx("aspect-[4/3] transition-opacity", out && "opacity-60")}
-      />
-      <div className="absolute inset-x-3 top-3 flex flex-wrap gap-1.5">
-        {p.isBestSeller && <Badge tone="wine" className="bg-bone-50/95">{t("card.bestSeller")}</Badge>}
-        {p.agingDays ? <Badge className="bg-bone-50/95">{t("card.aged", { days: p.agingDays })}</Badge> : null}
+    <article className="group relative flex w-full flex-col gap-3">
+      <div className="relative overflow-hidden rounded-[3px]">
+        <ViewTransition name={`product-photo-${p.slug}`}>
+          <ProductImage
+            src={p.image}
+            alt={name}
+            animal={p.animal!}
+            label={name}
+            sizes={sizes}
+            priority={priority}
+            className={cx(
+              "aspect-[4/5] [&_img]:transition-transform [&_img]:duration-[1200ms] [&_img]:ease-[cubic-bezier(.2,.7,.2,1)] group-hover:[&_img]:scale-[1.04]",
+              out && "opacity-60",
+            )}
+          />
+        </ViewTransition>
+        {p.isBestSeller && (
+          <span className="bg-bone-50/90 text-char-900 absolute top-3 start-3 rounded-[2px] px-2 py-1 text-[11px] font-semibold tracking-wide">
+            {t("card.bestSeller")}
+          </span>
+        )}
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="text-lg leading-snug font-semibold">
-          <Link
-            href={`/p/${p.slug}`}
-            className="after:absolute after:inset-0 focus-visible:outline-none after:rounded-2xl focus-visible:after:outline-2 focus-visible:after:outline-wine-500"
-          >
+      <div className="flex flex-1 flex-col gap-1">
+        <h3 className="font-display text-[22px] leading-tight">
+          <Link href={`/p/${p.slug}`} className="after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-wine-600">
             {name}
           </Link>
         </h3>
-        <p className="text-char-700 font-reading line-clamp-2 text-sm">{locale === "he" ? p.shortDescHe : p.shortDescEn}</p>
-        <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
-          <Badge>{locale === "he" ? p.authorityBadgeHe : p.authorityBadgeEn}</Badge>
-          {p.glatt === "GLATT_CHALAK" && <Badge tone="wine">{t("kashrut.GLATT_CHALAK")}</Badge>}
-          {p.passover === "KOSHER_LEPESACH" && <Badge>{t("kashrut.KOSHER_LEPESACH")}</Badge>}
+        {facts.length > 0 && <p className="text-char-500 line-clamp-1 text-[13px]">{facts.join(" · ")}</p>}
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+          <bdi className="text-[15px] font-semibold tabular-nums">
+            {price}
+            <span className="text-char-500 font-normal">
+              {" "}
+              {p.pricingMode === "WEIGHT" ? t("card.perKgUnit") : t("card.perPackageUnit")}
+            </span>
+          </bdi>
+          {p.availability.kind !== "IN_STOCK" && <AvailabilityChip availability={p.availability} />}
         </div>
-        <div className="flex items-end justify-between gap-2 pt-2">
-          <div className="flex flex-col">
-            <bdi className="text-lg font-semibold tabular-nums">{price}</bdi>
-            {p.pricingMode === "WEIGHT" && p.avgPieceG ? (
-              <span className="text-char-500 text-xs">
-                {t("card.piece", { weight: formatGrams(grams(p.avgPieceG), locale) })}
-              </span>
-            ) : null}
-          </div>
-          <AvailabilityChip availability={p.availability} />
-        </div>
+        <p className="text-char-500 text-xs">
+          {[he ? p.authorityBadgeHe : p.authorityBadgeEn, p.glatt === "GLATT_CHALAK" ? t("kashrut.GLATT_CHALAK") : null, p.passover === "KOSHER_LEPESACH" ? t("kashrut.KOSHER_LEPESACH") : null]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
       </div>
     </article>
   );

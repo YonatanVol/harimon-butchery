@@ -112,7 +112,7 @@ export function CheckoutForm({
           aria-invalid={err ? true : undefined}
           aria-describedby={err ? `${id}-err` : opts.hint ? `${id}-hint` : undefined}
           className={cx(
-            "bg-bone-50 min-h-12 rounded-lg border px-3 text-base outline-none focus:ring-2",
+            "bg-bone-50 min-h-12 rounded-[2px] border px-3 text-base outline-none focus:ring-2",
             err ? "border-bad-600 focus:ring-bad-600" : "border-bone-300 focus:ring-wine-500",
             opts.dir === "ltr" && "text-end",
           )}
@@ -140,7 +140,7 @@ export function CheckoutForm({
       className="flex flex-col gap-8"
     >
       {formProblem && (
-        <p ref={problemRef} tabIndex={-1} role="alert" className="bg-bad-600/10 text-bad-600 rounded-xl p-4 font-medium outline-none">
+        <p ref={problemRef} tabIndex={-1} role="alert" className="bg-bad-600/10 text-bad-600 rounded-[3px] p-4 font-medium outline-none">
           {formProblem}
         </p>
       )}
@@ -157,7 +157,7 @@ export function CheckoutForm({
 
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-4 text-xl font-bold">{t("addressTitle")}</legend>
-        <div className="bg-bone-100 flex items-center justify-between rounded-lg px-3 py-2">
+        <div className="bg-bone-100 flex items-center justify-between rounded-[2px] px-3 py-2">
           <span>
             <span className="text-char-500 text-sm">{t("city")}: </span>
             <span className="font-medium">{city}</span>
@@ -183,7 +183,7 @@ export function CheckoutForm({
             maxLength={300}
             rows={2}
             placeholder={t("deliveryNotesPlaceholder")}
-            className="bg-bone-50 focus:ring-wine-500 rounded-lg border border-bone-300 p-3 outline-none focus:ring-2"
+            className="bg-bone-50 focus:ring-wine-500 rounded-[2px] border border-bone-300 p-3 outline-none focus:ring-2"
           />
         </label>
       </fieldset>

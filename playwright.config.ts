@@ -40,6 +40,9 @@ export default defineConfig({
   projects: [
     { name: "he-desktop", use: { viewport: { width: 1280, height: 800 }, locale: "he-IL" }, testIgnore: /staff-tablet/ },
     { name: "he-mobile", use: { ...devices["Pixel 7"], channel: "chrome", locale: "he-IL" }, testMatch: /(rtl-gate|checkout)\.spec\.ts/ },
+    // Phone sizes and user agents; both run in Chrome here (no WebKit download), so Safari-only quirks aren't covered.
+    { name: "iphone-15", use: { ...devices["iPhone 15"], browserName: "chromium", channel: "chrome", locale: "he-IL" }, testMatch: /rtl-gate\.spec\.ts/ },
+    { name: "galaxy-s24", use: { ...devices["Galaxy S24"], channel: "chrome", locale: "he-IL" }, testMatch: /rtl-gate\.spec\.ts/ },
     { name: "he-tablet-pack", use: { viewport: { width: 1180, height: 820 }, hasTouch: true, locale: "he-IL" }, testMatch: /staff-tablet\.spec\.ts/ },
     { name: "en-desktop", use: { viewport: { width: 1280, height: 800 }, locale: "en-IL" }, testMatch: /(rtl-gate|checkout)\.spec\.ts/ },
   ],

@@ -22,9 +22,9 @@ export default async function KashrutPage({ params }: PageProps<"/[locale]/kashr
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{t("pageTitle")}</h1>
+      <h1 className="font-display text-4xl font-light md:text-6xl">{t("pageTitle")}</h1>
       <p className="font-reading text-char-700 mt-3 text-lg">{t("pageLead")}</p>
-      <p role="note" className="border-warn-600 bg-warn-600/10 mt-6 rounded-xl border-s-4 p-4 text-sm">
+      <p role="note" className="border-warn-600 bg-warn-600/10 mt-6 rounded-[3px] border-s-4 p-4 text-sm">
         {t("pageDemo")}
       </p>
 
@@ -34,7 +34,7 @@ export default async function KashrutPage({ params }: PageProps<"/[locale]/kashr
           const date = format.dateTime(new Date(`${a.certificateValidUntil}T12:00:00Z`), { dateStyle: "long" });
           const count = products.filter((p) => p.authoritySlug === a.slug).length;
           return (
-            <li key={a.id} className="bg-bone-50 ring-bone-300 flex flex-col gap-3 rounded-2xl p-6 ring-1">
+            <li key={a.id} className="bg-bone-50 ring-bone-300 flex flex-col gap-3 rounded-[3px] p-6 ring-1">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="text-2xl font-bold">{he ? a.nameHe : a.nameEn}</h2>
                 <bdi className="text-char-500 text-sm tabular-nums">{a.certificateNumber}</bdi>

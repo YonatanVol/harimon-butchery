@@ -43,6 +43,12 @@ export interface PurchaseSelection {
   note: string;
 }
 
+/** What the sticky buy bar repeats: the running total and whether it is an estimate. */
+export interface PurchaseSummary {
+  total: string;
+  isEstimate: boolean;
+}
+
 const MAX_PACKAGES_PER_ORDER = 10;
 
 export function PurchasePanel({
@@ -52,7 +58,7 @@ export function PurchasePanel({
 }: {
   product: PurchaseProduct;
   outOfStockLabel: string;
-  renderAction?: (selection: PurchaseSelection, disabledReason: string | null) => React.ReactNode;
+  renderAction?: (selection: PurchaseSelection, disabledReason: string | null, summary: PurchaseSummary) => React.ReactNode;
 }) {
   const t = useTranslations("shop.product");
   const locale = useLocale() as Locale;
@@ -117,8 +123,8 @@ export function PurchasePanel({
                 <label
                   key={v.id}
                   className={cx(
-                    "has-focus-visible:outline-wine-500 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 text-sm font-medium ring-1 ring-inset has-focus-visible:outline-2 has-focus-visible:outline-offset-2",
-                    on ? "bg-char-900 text-bone-50 ring-char-900" : "bg-bone-50 ring-bone-300 hover:bg-bone-100",
+                    "has-focus-visible:outline-wine-600 inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-[2px] px-4 text-sm font-medium ring-1 ring-inset transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2",
+                    on ? "bg-char-900 text-bone-50 ring-char-900" : "bg-transparent ring-bone-300 hover:ring-char-900",
                   )}
                 >
                   <input
@@ -173,11 +179,11 @@ export function PurchasePanel({
             )}
             <div className="text-end">
               <div className="text-char-500 text-xs">{quote.hasWeightLines ? t("estimate") : t("exact")}</div>
-              <bdi className="block text-3xl font-bold tabular-nums">{formatAgorot(quote.estimateTotal, locale)}</bdi>
+              <bdi className="font-display block text-4xl tabular-nums">{formatAgorot(quote.estimateTotal, locale)}</bdi>
               {pieces !== null && <span className="text-char-500 text-sm">{t("pieces", { count: pieces })}</span>}
             </div>
           </div>
-          <p className="bg-bone-100 text-char-700 font-reading rounded-lg p-3 text-sm">
+          <p className="border-bone-300 text-char-700 border-s-2 ps-3 text-sm leading-relaxed">
             {quote.hasWeightLines
               ? t("holdSentence", { hold: formatAgorot(quote.authorizationCeiling, locale), tolerance: percent })
               : t("packageSentence")}
@@ -194,13 +200,16 @@ export function PurchasePanel({
             rows={2}
             maxLength={300}
             placeholder={t("notesPlaceholder")}
-            className="bg-bone-50 focus:ring-wine-500 rounded-lg border border-bone-300 p-3 text-sm outline-none focus:ring-2"
+            className="bg-bone-50 focus:border-char-900 rounded-[2px] border border-bone-300 p-3 text-sm outline-none"
           />
         </label>
       )}
 
       {renderAction
-        ? renderAction(selection, out ? outOfStockLabel : null)
+        ? renderAction(selection, out ? outOfStockLabel : null, {
+            total: formatAgorot(quote.estimateTotal, locale),
+            isEstimate: quote.hasWeightLines,
+          })
         : out && (
             <p role="status" className="bg-bad-600/10 text-bad-600 rounded-lg p-3 font-medium">
               {outOfStockLabel}

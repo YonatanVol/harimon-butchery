@@ -1,4 +1,5 @@
 import { setRequestLocale } from "next-intl/server";
+import { BottomTabBar } from "@/ui/shop/BottomTabBar";
 import { SiteFooter } from "@/ui/shop/SiteFooter";
 import { SiteHeader } from "@/ui/shop/SiteHeader";
 
@@ -12,6 +13,7 @@ export default async function ShopLayout({ children, params }: LayoutProps<"/[lo
         {children}
       </main>
       <SiteFooter />
+      <BottomTabBar />
     </>
   );
 }

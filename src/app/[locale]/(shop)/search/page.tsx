@@ -32,16 +32,16 @@ export default async function SearchPage({ params, searchParams }: PageProps<"/[
           defaultValue={q}
           autoFocus={!q}
           placeholder={t("nav.searchPlaceholder")}
-          className="bg-bone-50 focus:ring-wine-500 min-h-12 flex-1 rounded-lg border border-bone-300 px-4 text-base outline-none focus:ring-2"
+          className="bg-bone-50 focus:ring-wine-500 min-h-12 flex-1 rounded-[2px] border border-bone-300 px-4 text-base outline-none focus:ring-2"
         />
-        <button type="submit" className="bg-char-900 text-bone-50 min-h-12 rounded-lg px-6 font-medium">
+        <button type="submit" className="bg-char-900 text-bone-50 min-h-12 rounded-[2px] px-6 font-medium">
           {t("nav.searchSubmit")}
         </button>
       </form>
 
       {q ? (
         <>
-          <h1 className="mt-8 text-3xl font-bold tracking-tight">
+          <h1 className="font-display mt-8 text-4xl font-light">
             {results.length ? t("search.resultsFor", { query: q }) : t("search.empty", { query: q })}
           </h1>
           {results.length > 0 ? (
@@ -58,7 +58,7 @@ export default async function SearchPage({ params, searchParams }: PageProps<"/[
           )}
         </>
       ) : (
-        <h1 className="mt-8 text-3xl font-bold tracking-tight">{t("search.prompt")}</h1>
+        <h1 className="font-display mt-8 text-4xl font-light">{t("search.prompt")}</h1>
       )}
 
       {results.length === 0 && (

@@ -20,7 +20,7 @@ export function InterestForm({ target }: { target: Target }) {
 
   if (done) {
     return (
-      <p role="status" className="bg-ok-600/10 text-ok-600 rounded-lg p-3 font-medium">
+      <p role="status" className="bg-ok-600/10 text-ok-600 rounded-[2px] p-3 font-medium">
         {target.kind === "RESTOCK"
           ? t(done === "already" ? "restockAlready" : "restockJoined", { product: target.productName })
           : t(done === "already" ? "areaAlready" : "areaJoined", { city: target.city })}
@@ -30,7 +30,7 @@ export function InterestForm({ target }: { target: Target }) {
 
   return (
     <form
-      className="bg-bone-100 flex flex-col gap-2 rounded-xl p-4"
+      className="bg-bone-100 flex flex-col gap-2 rounded-[3px] p-4"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
@@ -56,7 +56,7 @@ export function InterestForm({ target }: { target: Target }) {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="050-000-0000"
-          className="bg-bone-50 focus:ring-wine-500 min-h-11 min-w-0 flex-1 rounded-lg border border-bone-300 px-3 text-start tabular-nums outline-none focus:ring-2"
+          className="bg-bone-50 focus:ring-wine-500 min-h-11 min-w-0 flex-1 rounded-[2px] border border-bone-300 px-3 text-start tabular-nums outline-none focus:ring-2"
         />
         <Button type="submit" variant="secondary" disabledReason={phone.replace(/\D/g, "").length < 9 ? t("phoneMissing") : null} pendingLabel={pending ? t("saving") : null}>
           {t("submit")}

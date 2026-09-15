@@ -36,12 +36,12 @@ export default async function CartPage({ params }: PageProps<"/[locale]/cart">) 
     const categories = (await listCategories()).slice(0, 3);
     return (
       <div className="mx-auto flex max-w-3xl flex-col items-start gap-4 px-4 py-20 sm:px-6">
-        <h1 className="text-4xl font-bold tracking-tight">{t("cart.empty")}</h1>
+        <h1 className="font-display text-4xl font-light md:text-5xl">{t("cart.empty")}</h1>
         <p className="font-reading text-char-700 text-lg">{t("cart.emptyBody")}</p>
         <ul className="flex flex-wrap gap-2">
           {categories.map((c) => (
             <li key={c.id}>
-              <Link href={`/c/${c.slug}`} className="bg-char-900 text-bone-50 inline-flex min-h-12 items-center rounded-lg px-6 font-medium">
+              <Link href={`/c/${c.slug}`} className="bg-char-900 text-bone-50 inline-flex min-h-12 items-center rounded-[2px] px-6 font-medium">
                 {locale === "he" ? c.nameHe : c.nameEn}
               </Link>
             </li>
@@ -71,7 +71,7 @@ export default async function CartPage({ params }: PageProps<"/[locale]/cart">) 
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <h1 className="text-4xl font-bold tracking-tight">{t("cart.title")}</h1>
+      <h1 className="font-display text-4xl font-light md:text-5xl">{t("cart.title")}</h1>
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-8">
           <ul className="divide-bone-300 border-bone-300 divide-y border-y">
@@ -142,7 +142,7 @@ export default async function CartPage({ params }: PageProps<"/[locale]/cart">) 
           />
         </div>
 
-        <aside aria-labelledby="summary-title" className="bg-bone-100 ring-bone-300 sticky top-32 flex flex-col gap-4 rounded-2xl p-5 ring-1">
+        <aside aria-labelledby="summary-title" className="bg-bone-100 ring-bone-300 sticky top-32 flex flex-col gap-4 rounded-[3px] p-5 ring-1">
           <h2 id="summary-title" className="sr-only">
             {t("cart.estimateTotal")}
           </h2>
@@ -166,7 +166,7 @@ export default async function CartPage({ params }: PageProps<"/[locale]/cart">) 
               </dd>
             </div>
             {quote.freeDeliveryGap !== null && (
-              <p className="text-wine-700 bg-wine-600/10 rounded-lg px-3 py-2 text-sm">{t("cart.freeGap", { amount: money(quote.freeDeliveryGap) })}</p>
+              <p className="text-wine-700 bg-wine-600/10 rounded-[2px] px-3 py-2 text-sm">{t("cart.freeGap", { amount: money(quote.freeDeliveryGap) })}</p>
             )}
             <div className="border-bone-300 flex justify-between gap-4 border-t pt-3 text-lg font-bold">
               <dt>{quote.hasWeightLines ? t("cart.estimateTotal") : t("cart.exactTotal")}</dt>
@@ -189,7 +189,7 @@ export default async function CartPage({ params }: PageProps<"/[locale]/cart">) 
             )}
           </dl>
           {quote.minOrderGap !== null && (
-            <p className="text-warn-600 bg-warn-600/10 rounded-lg px-3 py-2 text-sm font-medium">{t("cart.minGap", { amount: money(quote.minOrderGap) })}</p>
+            <p className="text-warn-600 bg-warn-600/10 rounded-[2px] px-3 py-2 text-sm font-medium">{t("cart.minGap", { amount: money(quote.minOrderGap) })}</p>
           )}
           {blocker ? (
             <Button size="lg" fullWidth disabledReason={blocker}>
@@ -198,7 +198,7 @@ export default async function CartPage({ params }: PageProps<"/[locale]/cart">) 
           ) : (
             <Link
               href="/checkout"
-              className="bg-wine-600 text-bone-50 hover:bg-wine-700 inline-flex min-h-16 w-full items-center justify-center rounded-lg px-6 text-center text-lg font-medium"
+              className="bg-wine-600 text-bone-50 hover:bg-wine-700 inline-flex min-h-16 w-full items-center justify-center rounded-[2px] px-6 text-center text-lg font-medium"
             >
               {quote.hasWeightLines
                 ? t("cart.checkoutHold", { amount: money(quote.authorizationCeiling) })

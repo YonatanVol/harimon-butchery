@@ -14,6 +14,8 @@ const cardColumns = {
   nameEn: product.nameEn,
   shortDescHe: product.shortDescHe,
   shortDescEn: product.shortDescEn,
+  cutOriginHe: product.cutOriginHe,
+  cutOriginEn: product.cutOriginEn,
   animal: product.animal,
   pricingMode: product.pricingMode,
   pricePerKgAgorot: product.pricePerKgAgorot,
