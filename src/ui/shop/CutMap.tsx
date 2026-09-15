@@ -1,3 +1,4 @@
+import NextLink from "next/link";
 import type { CutAnimal } from "@/domain/catalog/cutRegions";
 import { cx } from "../cx";
 
@@ -120,7 +121,7 @@ export function CutMap({
   const d = drawings[animal];
   const guide = Boolean(hrefFor);
   return (
-    <svg viewBox="0 0 480 270" role="img" aria-label={title} className={cx("text-char-900 w-full overflow-visible", className)}>
+    <svg viewBox="0 0 480 270" role={guide ? "group" : "img"} aria-label={title} className={cx("text-char-900 w-full overflow-visible", className)}>
       <title>{title}</title>
       <g fill="none" stroke="currentColor" strokeLinejoin="round" strokeLinecap="round">
         {d.regions.map((r) => {
@@ -144,9 +145,9 @@ export function CutMap({
           ));
           const href = hrefFor?.(r.id);
           return href ? (
-            <a key={r.id} href={href} className="group/region cursor-pointer" aria-label={labels[r.id]}>
+            <NextLink key={r.id} href={href} className="group/region cursor-pointer" aria-label={labels[r.id]}>
               {shapes}
-            </a>
+            </NextLink>
           ) : (
             <g key={r.id}>{shapes}</g>
           );

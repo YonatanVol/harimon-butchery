@@ -10,6 +10,8 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { addToCart } from "@/infra/cart/actions";
 import { cx } from "../cx";
+import { QuantityStepper } from "../primitives/QuantityStepper";
+import { cappedAt, gramsFor, scaleLine } from "@/domain/recipes/scale";
 import { announceCartChange } from "./CartButton";
 import { useProblemText } from "./useProblemText";
 
@@ -30,30 +32,6 @@ export interface KitchenMeat {
   quantity?: number | undefined;
   noteHe?: string | undefined;
   noteEn?: string | undefined;
-}
-
-const FRACTIONS: Record<string, number> = { "½": 0.5, "¼": 0.25, "¾": 0.75 };
-
-/** Scales the first quantity in an ingredient line ("2 בצלים" → "3 בצלים"). Lines without a number stay as written. */
-export function scaleLine(line: string, factor: number): string {
-  if (factor === 1) return line;
-  return line.replace(/(\d+(?:[.,]\d+)?)|[½¼¾]/, (match) => {
-    const value = FRACTIONS[match] ?? Number(match.replace(",", "."));
-    const scaled = value * factor;
-    const nice = scaled >= 10 ? Math.round(scaled) : Math.round(scaled * 4) / 4;
-    const whole = Math.floor(nice);
-    const frac = nice - whole;
-    const fracChar = frac === 0.5 ? "½" : frac === 0.25 ? "¼" : frac === 0.75 ? "¾" : "";
-    return fracChar ? `${whole > 0 ? whole : ""}${fracChar}` : String(nice);
-  });
-}
-
-/** Grams the butcher can actually cut for this many servings: rounded to the product's step and kept within its limits. */
-export function gramsFor(m: KitchenMeat, servings: number): number {
-  const step = m.stepG ?? 250;
-  const raw = (m.gramsPerServing ?? 0) * servings;
-  const rounded = Math.max(step, Math.round(raw / step) * step);
-  return Math.min(m.maxOrderG ?? rounded, Math.max(m.minOrderG ?? 0, rounded));
 }
 
 function WakeLockToggle() {
@@ -134,7 +112,7 @@ export function StepTimer({ minutes }: { minutes: number }) {
             setNow(Date.now());
             setEndsAt(Date.now() + minutes * 60_000);
           }}
-          className="border-bone-300 hover:border-char-900 inline-flex min-h-9 items-center gap-1.5 border px-3 text-sm"
+          className="border-bone-300 hover:border-char-900 inline-flex min-h-11 items-center gap-1.5 border px-3 text-sm"
         >
           <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
             <circle cx="12" cy="13" r="7" />
@@ -147,7 +125,7 @@ export function StepTimer({ minutes }: { minutes: number }) {
           <span role="timer" aria-live="off" className="font-display text-2xl tabular-nums" dir="ltr">
             {mm}:{ss}
           </span>
-          <button type="button" onClick={() => setEndsAt(null)} className="text-char-500 hover:text-char-900 min-h-9 px-2 text-sm underline underline-offset-4">
+          <button type="button" onClick={() => setEndsAt(null)} className="text-char-500 hover:text-char-900 min-h-11 px-3 text-sm underline underline-offset-4">
             {t("timerStop")}
           </button>
         </>
@@ -199,26 +177,42 @@ export function RecipeKitchen({
     }),
   ).estimateTotal;
 
+  const busy = useRef(false);
   const addAll = () => {
+    if (busy.current) return;
+    busy.current = true;
     setResult(null);
     startTransition(async () => {
+      const added: string[] = [];
+      const failed: string[] = [];
       let count: number | undefined;
       for (const m of orderable) {
+        const name = he ? m.nameHe : m.nameEn;
         try {
           const a = amountOf(m);
-          const r = await addToCart({ variantId: m.variantId, requestedG: a.requestedG, quantity: a.quantity, note: "", locale });
-          if (!r.ok) {
-            setResult({ ok: false, text: `${he ? m.nameHe : m.nameEn}: ${problemText(r.problem)}` });
-            return;
-          }
-          count = r.count;
+          const r = await addToCart({
+            variantId: m.variantId,
+            requestedG: a.requestedG,
+            quantity: a.quantity,
+            note: (he ? m.noteHe : m.noteEn) ?? "",
+            locale,
+          });
+          if (r.ok) {
+            added.push(name);
+            count = r.count;
+          } else failed.push(`${name}: ${problemText(r.problem)}`);
         } catch {
-          setResult({ ok: false, text: problemText({ key: "NETWORK" }) });
-          return;
+          failed.push(`${name}: ${problemText({ key: "NETWORK" })}`);
         }
       }
-      announceCartChange(count);
-      setResult({ ok: true, text: t("addedAll", { count: orderable.length }) });
+      busy.current = false;
+      if (added.length) announceCartChange(count);
+      if (failed.length === 0) setResult({ ok: true, text: t("addedAll", { count: added.length }) });
+      else
+        setResult({
+          ok: false,
+          text: added.length ? t("addedSome", { added: added.join(", "), failed: failed.join(" · ") }) : failed.join(" · "),
+        });
     });
   };
 
@@ -226,30 +220,8 @@ export function RecipeKitchen({
     <div className="flex flex-col gap-8">
       <div className="border-bone-300 flex flex-wrap items-center justify-between gap-4 border-y py-4">
         <div className="flex items-center gap-3">
-          <span className="text-char-500 text-sm" id="servings-label">
-            {t("servings")}
-          </span>
-          <div className="flex items-center" role="group" aria-labelledby="servings-label">
-            <button
-              type="button"
-              onClick={() => setServings((s) => Math.max(1, s - 1))}
-              aria-label={t("fewer")}
-              className="border-bone-300 hover:border-char-900 grid size-11 place-items-center border text-lg"
-            >
-              −
-            </button>
-            <output aria-live="polite" className="font-display w-12 text-center text-2xl tabular-nums">
-              {servings}
-            </output>
-            <button
-              type="button"
-              onClick={() => setServings((s) => Math.min(24, s + 1))}
-              aria-label={t("more")}
-              className="border-bone-300 hover:border-char-900 grid size-11 place-items-center border text-lg"
-            >
-              +
-            </button>
-          </div>
+          <span className="text-char-500 text-sm">{t("servings")}</span>
+          <QuantityStepper label={t("servings")} value={servings} max={24} onChange={setServings} maxReason={t("maxServings", { max: 24 })} />
         </div>
         <WakeLockToggle />
       </div>
@@ -269,6 +241,9 @@ export function RecipeKitchen({
                   </Link>
                   {(he ? m.noteHe : m.noteEn) && <p className="text-char-500 text-sm">{he ? m.noteHe : m.noteEn}</p>}
                   {m.out && <p className="text-bad-600 text-sm">{t("outNow")}</p>}
+                  {!m.out && m.pricingMode === "WEIGHT" && cappedAt(m, servings) && (
+                    <p className="text-warn-600 text-sm">{t("capped", { max: formatGrams(grams(m.maxOrderG ?? 0), locale) })}</p>
+                  )}
                 </div>
                 <bdi className="shrink-0 font-semibold tabular-nums">
                   {a.requestedG !== null ? formatGrams(grams(a.requestedG), locale) : `× ${a.quantity}`}
@@ -283,6 +258,7 @@ export function RecipeKitchen({
               type="button"
               onClick={addAll}
               aria-busy={pending || undefined}
+              aria-disabled={pending || undefined}
               className="bg-char-900 text-bone-50 hover:bg-char-800 min-h-14 rounded-[2px] px-6 text-base font-semibold"
             >
               {pending ? t("adding") : t("addAll", { total: formatAgorot(estimate, locale) })}

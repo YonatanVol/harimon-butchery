@@ -32,7 +32,7 @@ export function BottomTabBar() {
   return (
     <nav
       aria-label={t("tabBar")}
-      className="bg-bone-50/92 border-bone-300 pb-safe fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur-md md:hidden"
+      className="bg-bone-50/92 border-bone-300 pb-safe px-safe fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur-md md:hidden"
     >
       <ul className="mx-auto grid max-w-md grid-cols-5">
         {tabs.map((tab) => {

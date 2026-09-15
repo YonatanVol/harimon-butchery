@@ -131,6 +131,15 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* iOS Safari zooms into any field under 16px; phones get 16px fields. Unlayered on purpose so it beats text-sm utilities. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 @layer base {
   h1,
   h2,
@@ -142,15 +151,6 @@ body {
   :focus-visible {
     outline: 3px solid var(--color-wine-600);
     outline-offset: 2px;
-  }
-
-  /* iOS Safari zooms into any field under 16px; phones get 16px fields. */
-  @media (max-width: 767px) {
-    input:not([type="checkbox"]):not([type="radio"]),
-    select,
-    textarea {
-      font-size: 16px;
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -200,10 +200,12 @@ body {
   /* Sections fade up as they scroll into view — only where the browser can tie animation to scrolling
      (Chrome, Samsung Internet, Safari 26). Elsewhere they simply show. */
   @supports (animation-timeline: view()) {
-    .reveal {
-      animation: reveal linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 40%;
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal {
+        animation: reveal linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 40%;
+      }
     }
   }
 
@@ -213,11 +215,14 @@ body {
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+}
 
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  .bottom-safe {
-    bottom: env(safe-area-inset-bottom);
-  }
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Keeps fixed bars and the header clear of the notch when an iPhone is turned sideways. */
+@utility px-safe {
+  padding-left: env(safe-area-inset-left); /* rtl-ok: the notch sits on a physical side, whatever the language */
+  padding-right: env(safe-area-inset-right); /* rtl-ok */
 }

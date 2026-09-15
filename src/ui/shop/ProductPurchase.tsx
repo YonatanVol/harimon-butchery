@@ -28,6 +28,7 @@ export function ProductPurchase({ product, outOfStockLabel }: { product: Purchas
   const confirmRef = useRef<HTMLDivElement>(null);
   const inlineRef = useRef<HTMLDivElement>(null);
   const [inlineVisible, setInlineVisible] = useState(true);
+  const [footerVisible, setFooterVisible] = useState(false);
   const name = locale === "he" ? product.nameHe : product.nameEn;
   const out = product.availability.kind === "OUT";
 
@@ -36,10 +37,22 @@ export function ProductPurchase({ product, outOfStockLabel }: { product: Purchas
     if (!el || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver(([entry]) => setInlineVisible(entry.isIntersecting), { rootMargin: "0px 0px -80px 0px" });
     io.observe(el);
-    return () => io.disconnect();
+    // At the end of the page the bar steps aside so it never covers the footer's last lines.
+    const footer = document.querySelector("footer");
+    const fo = footer ? new IntersectionObserver(([entry]) => setFooterVisible(entry.isIntersecting)) : null;
+    if (footer && fo) fo.observe(footer);
+    return () => {
+      io.disconnect();
+      fo?.disconnect();
+    };
   }, []);
+  const hideBar = inlineVisible || footerVisible;
 
+  const busy = useRef(false);
   const add = (selection: PurchaseSelection) => {
+    // One request at a time: a second tap while the first is still running would add the amount twice.
+    if (busy.current) return;
+    busy.current = true;
     setError(null);
     setAdded(null);
     startTransition(async () => {
@@ -57,6 +70,8 @@ export function ProductPurchase({ product, outOfStockLabel }: { product: Purchas
         requestAnimationFrame(() => confirmRef.current?.focus());
       } catch {
         setError(problemText({ key: "NETWORK" }));
+      } finally {
+        busy.current = false;
       }
     });
   };
@@ -115,12 +130,12 @@ export function ProductPurchase({ product, outOfStockLabel }: { product: Purchas
 
           {!out && (
             <div
-              aria-hidden={inlineVisible}
-              inert={inlineVisible}
+              aria-hidden={hideBar}
+              inert={hideBar}
               className={cx(
-                "bg-bone-100/95 border-bone-300 fixed inset-x-0 z-30 border-t backdrop-blur-md transition-[translate,opacity] duration-300 lg:hidden",
+                "bg-bone-100/95 border-bone-300 px-safe fixed inset-x-0 z-30 border-t backdrop-blur-md transition-[translate,opacity] duration-300 lg:hidden",
                 "bottom-[calc(3.5rem+env(safe-area-inset-bottom))] md:bottom-0 md:pb-safe",
-                inlineVisible ? "pointer-events-none translate-y-4 opacity-0" : "translate-y-0 opacity-100",
+                hideBar ? "pointer-events-none translate-y-4 opacity-0" : "translate-y-0 opacity-100",
               )}
             >
               <div className="mx-auto flex max-w-2xl items-center gap-4 px-4 py-2.5">
@@ -134,6 +149,7 @@ export function ProductPurchase({ product, outOfStockLabel }: { product: Purchas
                   type="button"
                   onClick={() => add(selection)}
                   aria-busy={pending || undefined}
+                  aria-disabled={pending || undefined}
                   className="bg-char-900 text-bone-50 hover:bg-char-800 min-h-12 flex-1 rounded-[2px] px-4 text-[15px] font-semibold"
                 >
                   {pending ? t("cart.adding") : t("product.addToCart")}

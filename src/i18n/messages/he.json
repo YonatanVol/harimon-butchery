@@ -597,7 +597,10 @@
       "ingredients": "עוד צריך",
       "timerStart": "טיימר {m} דק׳",
       "timerStop": "עצירה",
-      "timerDone": "הזמן עבר"
+      "timerDone": "הזמן עבר",
+      "addedSome": "נוסף לסל: {added}. לא נוסף: {failed}",
+      "maxServings": "עד {max} סועדים במתכון אחד",
+      "capped": "מקסימום {max} בהזמנה אחת — זו הכמות שתיכנס לסל"
     }
   },
   "orders": {

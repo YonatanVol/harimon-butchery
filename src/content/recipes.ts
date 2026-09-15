@@ -1805,8 +1805,8 @@ export const recipes: Recipe[] = [
     ],
     steps: [
       {
-        he: "הכשרה קודם לכול, ובלי לדלג: כבד אינו מוכשר במליחה, ולכן חובה לצלות אותו על אש גלויה לפני כל בישול. שטפו את הכבדים, סדרו אותם על רשת ייעודית מעל להבה או גחלים, וצלו תוך הפיכה עד שהם צלויים לגמרי ואין בהם סימני דם. שטפו במים קרים. רק עכשיו הכבדים מוכנים לבישול.",
-        en: "Kasher first, and don't skip it: liver can't be kashered by salting, so it must be broiled over an open flame before any cooking. Rinse the livers, lay them on a grate kept for this purpose over a flame or hot coals, and broil, turning, until cooked right through with no trace of blood. Rinse under cold water. Only now are the livers ready to cook.",
+        he: "הכשרה קודם לכול, ובלי לדלג: כבד אינו מוכשר במליחה, ולכן חובה לצלות אותו על אש גלויה לפני כל בישול. שטפו את הכבדים, פזרו עליהם מעט מלח גס, סדרו אותם על רשת ייעודית מעל להבה או גחלים, וצלו תוך הפיכה עד שהם צלויים לגמרי ואין בהם סימני דם. שטפו במים קרים. רק עכשיו הכבדים מוכנים לבישול.",
+        en: "Kasher first, and don't skip it: liver can't be kashered by salting, so it must be broiled over an open flame before any cooking. Rinse the livers, sprinkle them lightly with coarse salt, lay them on a grate kept for this purpose over a flame or hot coals, and broil, turning, until cooked right through with no trace of blood. Rinse under cold water. Only now are the livers ready to cook.",
         minutes: 8,
       },
       {

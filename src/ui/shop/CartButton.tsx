@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Link } from "@/i18n/navigation";
 import { cx } from "../cx";
 
@@ -12,35 +12,58 @@ export function announceCartChange(count?: number) {
   window.dispatchEvent(new CustomEvent(CART_CHANGED_EVENT, { detail: { count } }));
 }
 
+/**
+ * One shared cart count for every badge on the page: a single request on load and after each change,
+ * however many components show it.
+ */
+const cartStore = (() => {
+  let count: number | null = null;
+  let bumped = 0;
+  let started = false;
+  let snapshot: { count: number | null; bumped: number } = { count, bumped };
+  const listeners = new Set<() => void>();
+  const emit = () => {
+    snapshot = { count, bumped };
+    listeners.forEach((l) => l());
+  };
+  const load = () =>
+    fetch("/api/cart", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { count: number } | null) => {
+        if (data) {
+          count = data.count;
+          emit();
+        }
+      })
+      .catch(() => {});
+  const start = () => {
+    if (started) return;
+    started = true;
+    load();
+    window.addEventListener(CART_CHANGED_EVENT, (e) => {
+      const next = (e as CustomEvent<{ count?: number }>).detail?.count;
+      bumped += 1;
+      if (typeof next === "number") {
+        count = next;
+        emit();
+      } else load();
+    });
+  };
+  return {
+    subscribe(listener: () => void) {
+      start();
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    get: () => snapshot,
+  };
+})();
+
+const serverSnapshot: { count: number | null; bumped: number } = { count: null, bumped: 0 };
+
 /** The cart's item count, kept in step with every add/remove on the page. */
 export function useCartCount() {
-  const [count, setCount] = useState<number | null>(null);
-  const [bumped, setBumped] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = () =>
-      fetch("/api/cart", { cache: "no-store" })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data: { count: number } | null) => {
-          if (!cancelled && data) setCount(data.count);
-        })
-        .catch(() => {});
-    load();
-    const onChange = (e: Event) => {
-      const next = (e as CustomEvent<{ count?: number }>).detail?.count;
-      setBumped((n) => n + 1);
-      if (typeof next === "number") setCount(next);
-      else load();
-    };
-    window.addEventListener(CART_CHANGED_EVENT, onChange);
-    return () => {
-      cancelled = true;
-      window.removeEventListener(CART_CHANGED_EVENT, onChange);
-    };
-  }, []);
-
-  return { count, bumped };
+  return useSyncExternalStore(cartStore.subscribe, cartStore.get, () => serverSnapshot);
 }
 
 export const CartIcon = ({ className }: { className?: string }) => (

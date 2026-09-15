@@ -34,7 +34,7 @@ export async function SiteHeader() {
   );
 
   return (
-    <header className="bg-bone-100/90 sticky top-0 z-30 backdrop-blur-md [padding-top:env(safe-area-inset-top)]">
+    <header className="bg-bone-100/90 px-safe sticky top-0 z-30 backdrop-blur-md [padding-top:env(safe-area-inset-top)]">
       <a
         href="#main"
         className="bg-char-900 text-bone-50 sr-only z-50 rounded-md focus:not-sr-only focus:absolute focus:start-3 focus:top-3 focus:px-3 focus:py-2"

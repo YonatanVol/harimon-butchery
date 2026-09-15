@@ -597,7 +597,10 @@
       "ingredients": "You'll also need",
       "timerStart": "{m} min timer",
       "timerStop": "Stop",
-      "timerDone": "Time's up"
+      "timerDone": "Time's up",
+      "addedSome": "Added to cart: {added}. Not added: {failed}",
+      "maxServings": "Up to {max} servings per recipe",
+      "capped": "Up to {max} per order — that is what goes into the cart"
     }
   },
   "orders": {

@@ -47,7 +47,7 @@ export function ProductGallery({ children, labels, className }: { children: Reac
           </div>
         ))}
       </div>
-      <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
+      <div className="absolute inset-x-0 bottom-1 flex justify-center">
         {slides.map((_, i) => (
           <button
             key={i}
@@ -55,7 +55,7 @@ export function ProductGallery({ children, labels, className }: { children: Reac
             onClick={() => go(i)}
             aria-label={labels[i]}
             aria-current={i === index || undefined}
-            className="grid h-6 min-w-6 place-items-center"
+            className="grid min-h-11 min-w-11 place-items-center"
           >
             <span
               className={cx(

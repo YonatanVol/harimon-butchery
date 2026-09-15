@@ -200,7 +200,7 @@ export function PurchasePanel({
             rows={2}
             maxLength={300}
             placeholder={t("notesPlaceholder")}
-            className="bg-bone-50 focus:border-char-900 rounded-[2px] border border-bone-300 p-3 text-sm outline-none"
+            className="bg-bone-50 focus:border-char-900 rounded-[2px] border border-bone-300 p-3 text-base outline-none md:text-sm"
           />
         </label>
       )}
