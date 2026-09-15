@@ -13,9 +13,13 @@ const TAILWIND_PHYSICAL =
 const CSS_PHYSICAL =
   /\b(?:margin-left|margin-right|padding-left|padding-right|border-left|border-right|text-align:\s*(?:left|right)|float:\s*(?:left|right)|(?<![\w-])left:|(?<![\w-])right:)/;
 
+/** Written content (recipes, product facts) is prose — "250 ml", "turn left" — never class names, so it's not scanned. */
+const PROSE_DIRS = new Set([path.join(ROOT, "content")]);
+
 function* walk(dir: string): Generator<string> {
   for (const name of readdirSync(dir)) {
     const full = path.join(dir, name);
+    if (PROSE_DIRS.has(full)) continue;
     if (statSync(full).isDirectory()) yield* walk(full);
     else if (/\.(tsx|ts|css)$/.test(name)) yield full;
   }

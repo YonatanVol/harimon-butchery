@@ -1,17 +1,24 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { ViewTransition } from "react";
+import { factsFor } from "@/content/productFacts";
+import { recipesForProduct } from "@/content/recipes";
+import { placementOf, REGIONS } from "@/domain/catalog/cutRegions";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
+import { formatGrams, grams } from "@/domain/weight/grams";
 import { Link } from "@/i18n/navigation";
 import { type Locale, routing } from "@/i18n/routing";
 import { getCategory, getProduct, listProductSlugs } from "@/infra/db/queries/catalog";
-import { Badge } from "@/ui/primitives/Badge";
 import { AvailabilityChip, formatRestock } from "@/ui/shop/AvailabilityChip";
+import { CutMap } from "@/ui/shop/CutMap";
 import { KashrutPanel } from "@/ui/shop/KashrutPanel";
 import { ProductCard } from "@/ui/shop/ProductCard";
+import { ProductGallery } from "@/ui/shop/ProductGallery";
 import { ProductImage } from "@/ui/shop/ProductImage";
 import { ProductPurchase } from "@/ui/shop/ProductPurchase";
+import { RecipeCard } from "@/ui/shop/RecipeCard";
 
 export const revalidate = 60;
 
@@ -25,10 +32,34 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/p/[slug]
   const data = await getProduct(slug);
   if (!data) return {};
   const he = locale === "he";
+  const title = he ? data.product.nameHe : data.product.nameEn;
+  const description = he ? data.product.shortDescHe : data.product.shortDescEn;
   return {
-    title: he ? data.product.nameHe : data.product.nameEn,
-    description: he ? data.product.shortDescHe : data.product.shortDescEn,
+    title,
+    description,
+    openGraph: { title, description, images: data.product.image ? [{ url: data.product.image }] : undefined },
   };
+}
+
+const DONENESS = [
+  { key: "RARE", tempC: 50, swatch: "#8f2d2a" },
+  { key: "MEDIUM_RARE", tempC: 54, swatch: "#b24a3d" },
+  { key: "MEDIUM", tempC: 60, swatch: "#c7796a" },
+  { key: "MEDIUM_WELL", tempC: 65, swatch: "#b08878" },
+  { key: "WELL_DONE", tempC: 70, swatch: "#8b6b5c" },
+] as const;
+
+function Meter({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-char-500 w-14 text-sm">{label}</span>
+      <span className="flex gap-1" role="img" aria-label={`${label}: ${value}/5`}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <span key={n} className={n <= value ? "bg-char-900 h-1.5 w-5" : "bg-bone-300 h-1.5 w-5"} />
+        ))}
+      </span>
+    </div>
+  );
 }
 
 export default async function ProductPage({ params }: PageProps<"/[locale]/p/[slug]">) {
@@ -42,6 +73,11 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
   const he = locale === "he";
   const { product: p, kashrut, authority, variants, availability } = data;
   const name = he ? p.nameHe : p.nameEn;
+  const facts = factsFor(p.slug);
+  const placement = placementOf(p.slug);
+  const recipes = recipesForProduct(p.slug).slice(0, 3);
+  const categoryName = he ? data.categoryNameHe : data.categoryNameEn;
+  const origin = he ? p.cutOriginHe : p.cutOriginEn;
 
   const more = ((await getCategory(data.categorySlug))?.products ?? []).filter((x) => x.id !== p.id).slice(0, 4);
 
@@ -52,61 +88,92 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
         : t("product.outOfStock")
       : "";
 
+  const regionLabels = placement
+    ? Object.fromEntries((REGIONS[placement.animal] as readonly string[]).map((r) => [r, t(`cuts.region.${placement.animal}.${r}`)]))
+    : {};
+  const mapTitle = placement ? t("product.mapTitle", { name, animal: t(`cuts.animal.${placement.animal}`) }) : "";
+
+  const stats: { value: string; label: string }[] = [];
+  if (p.agingDays) stats.push({ value: String(p.agingDays), label: t("product.facts.agingDays") });
+  if (facts?.thicknessCm?.length) stats.push({ value: t("product.facts.cm", { cm: facts.thicknessCm.join("–") }), label: t("product.facts.thickness") });
+  if (facts?.servingG && p.pricingMode === "WEIGHT") stats.push({ value: formatGrams(grams(facts.servingG), locale), label: t("product.facts.perPerson") });
+  if (facts?.donenessC) stats.push({ value: `${facts.donenessC}°`, label: t("product.facts.coreTemp") });
+  if (facts && stats.length < 4) stats.push({ value: he ? facts.cookTimeHe : facts.cookTimeEn, label: t("product.facts.cookTime") });
+
+  const photo = (
+    <ViewTransition name={`product-photo-${p.slug}`}>
+      <ProductImage src={p.image} alt={name} animal={p.animal} label={name} sizes="(min-width: 1024px) 55vw, 100vw" priority className="aspect-[4/5] sm:rounded-[3px] lg:aspect-[5/6]" />
+    </ViewTransition>
+  );
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <nav aria-label="breadcrumb" className="text-char-500 flex flex-wrap gap-2 text-sm">
-        <Link href="/" className="hover:text-char-900 underline-offset-4 hover:underline">
+    <div className="mx-auto max-w-7xl sm:px-6">
+      <nav aria-label="breadcrumb" className="text-char-500 flex flex-wrap gap-2 px-4 py-4 text-sm sm:px-0">
+        <Link href="/" className="hover:text-char-900">
           {t("product.breadcrumbHome")}
         </Link>
         <span aria-hidden>/</span>
-        <Link href={`/c/${data.categorySlug}`} className="hover:text-char-900 underline-offset-4 hover:underline">
-          {he ? data.categoryNameHe : data.categoryNameEn}
+        <Link href={`/c/${data.categorySlug}`} className="hover:text-char-900">
+          {categoryName}
         </Link>
       </nav>
 
-      <div className="mt-4 grid gap-8 lg:grid-cols-2 lg:gap-12">
-        <div className="flex flex-col gap-4">
-          <ProductImage
-            src={p.image}
-            alt={name}
-            animal={p.animal}
-            label={name}
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            priority
-            className="aspect-[4/3] rounded-3xl"
-          />
-          <div className="hidden lg:block">
-            <KashrutPanel kashrut={kashrut} authority={authority} locale={locale} />
-          </div>
+      <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
+        <div className="lg:sticky lg:top-32 lg:self-start">
+          <ProductGallery labels={[t("product.gallery.photo", { name }), ...(placement ? [t("product.gallery.map")] : [])]}>
+            {photo}
+            {placement && (
+              <div className="bg-bone-50 flex aspect-[4/5] items-center px-4 sm:rounded-[3px] lg:aspect-[5/6]">
+                <CutMap animal={placement.animal} active={placement.regions} labels={regionLabels} title={mapTitle} />
+              </div>
+            )}
+          </ProductGallery>
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-7 px-4 sm:px-0">
           <header className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <AvailabilityChip availability={availability} />
-              {kashrut.glatt === "GLATT_CHALAK" && <Badge tone="wine">{t("kashrut.GLATT_CHALAK")}</Badge>}
-              {kashrut.passover === "KOSHER_LEPESACH" && <Badge>{t("kashrut.KOSHER_LEPESACH")}</Badge>}
-              {p.agingDays ? <Badge>{t("card.aged", { days: p.agingDays })}</Badge> : null}
+            <p className="text-brass-700 text-xs font-semibold tracking-[0.08em]">
+              {[categoryName, p.agingDays ? t("card.aged", { days: p.agingDays }) : null, kashrut.glatt === "GLATT_CHALAK" ? t("kashrut.GLATT_CHALAK") : null]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+            <h1 className="rise-1 font-display text-[44px] leading-[1.02] font-light md:text-6xl">{name}</h1>
+            {he && (
+              <p className="text-char-500 -mt-1 text-sm" lang="en">
+                {p.nameEn}
+              </p>
+            )}
+            <p className="rise-2 text-char-700 text-lg leading-relaxed">{he ? p.longDescHe : p.longDescEn}</p>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <bdi className="text-xl font-semibold tabular-nums">
+                {p.pricingMode === "WEIGHT"
+                  ? t("card.perKg", { price: formatAgorot(agorot(p.pricePerKgAgorot!), locale) })
+                  : t("card.perPackage", { price: formatAgorot(agorot(p.packagePriceAgorot!), locale) })}
+              </bdi>
+              {availability.kind !== "IN_STOCK" && <AvailabilityChip availability={availability} />}
             </div>
-            <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{name}</h1>
-            {he && <p className="text-char-500 -mt-2 text-sm" lang="en">{p.nameEn}</p>}
-            <bdi className="text-2xl font-semibold tabular-nums">
-              {p.pricingMode === "WEIGHT"
-                ? t("card.perKg", { price: formatAgorot(agorot(p.pricePerKgAgorot!), locale) })
-                : t("card.perPackage", { price: formatAgorot(agorot(p.packagePriceAgorot!), locale) })}
-            </bdi>
-            <p className="font-reading text-char-700 text-lg">{he ? p.longDescHe : p.longDescEn}</p>
           </header>
 
+          {stats.length > 0 && (
+            <dl className="border-bone-300 grid grid-cols-2 border-y sm:grid-cols-4">
+              {stats.slice(0, 4).map((s, i) => (
+                <div key={s.label} className={`flex flex-col gap-0.5 py-4 ${i % 2 === 1 ? "ps-4 sm:ps-0" : ""} sm:border-bone-300 sm:px-3 sm:first:ps-0 sm:not-first:border-s`}>
+                  <dt className="text-char-500 order-2 text-xs">{s.label}</dt>
+                  <dd className="order-1 text-lg font-semibold tabular-nums">{s.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
           {p.pricingMode === "PACKAGE" && (
-            <div className="bg-bone-100 rounded-2xl p-4">
-              <h2 className="text-char-700 text-sm font-medium">{t("product.contents")}</h2>
+            <div className="border-bone-300 border-s-2 ps-4">
+              <h2 className="text-char-500 text-sm">{t("product.contents")}</h2>
               <p className="mt-1 font-medium">{he ? p.packageContentsHe : p.packageContentsEn}</p>
             </div>
           )}
 
           {p.handlingFlags.includes("REQUIRES_BROILING_TZLIYA") && (
-            <div role="note" className="border-warn-600 bg-warn-600/10 rounded-xl border-s-4 p-4">
+            <div role="note" className="border-warn-600 bg-warn-600/10 border-s-4 p-4">
               <p className="text-warn-600 text-sm font-semibold">{t("product.handling")}</p>
               <p className="mt-1">{t("flags.REQUIRES_BROILING_TZLIYA")}</p>
             </div>
@@ -138,51 +205,119 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
             }}
           />
 
-          <dl className="grid gap-4 border-t border-bone-300 pt-6 sm:grid-cols-2">
-            {(he ? p.cutOriginHe : p.cutOriginEn) && (
-              <div>
-                <dt className="text-char-500 text-sm">{t("product.origin")}</dt>
-                <dd className="mt-1 font-medium">{he ? p.cutOriginHe : p.cutOriginEn}</dd>
-              </div>
-            )}
-            {p.agingDays ? (
-              <div>
-                <dt className="text-char-500 text-sm">{t("product.agingLabel")}</dt>
-                <dd className="mt-1 font-medium">{t("product.aging", { days: p.agingDays })}</dd>
-              </div>
-            ) : null}
-            <div className="sm:col-span-2">
-              <dt className="text-char-500 text-sm">{t("product.cooking")}</dt>
-              <dd className="font-reading mt-1">{he ? p.cookingHe : p.cookingEn}</dd>
-            </div>
-            {p.handlingFlags
-              .filter((f) => f !== "REQUIRES_BROILING_TZLIYA")
-              .map((f) => (
-                <div key={f}>
-                  <dt className="text-char-500 text-sm">{t("product.handling")}</dt>
-                  <dd className="mt-1 font-medium">{t(`flags.${f}`)}</dd>
-                </div>
-              ))}
-          </dl>
+          {facts && (
+            <aside className="bg-bone-50 border-bone-300 flex flex-col gap-2 border p-5">
+              <span aria-hidden className="bg-brass-500 h-px w-8" />
+              <h2 className="font-display text-xl">{t("product.tipTitle")}</h2>
+              <p className="text-char-700 leading-relaxed">{he ? facts.tipHe : facts.tipEn}</p>
+            </aside>
+          )}
 
-          <div className="lg:hidden">
-            <KashrutPanel kashrut={kashrut} authority={authority} locale={locale} />
-          </div>
+          {p.handlingFlags.filter((f) => f !== "REQUIRES_BROILING_TZLIYA").length > 0 && (
+            <ul className="text-char-700 flex flex-col gap-1 text-sm">
+              {p.handlingFlags
+                .filter((f) => f !== "REQUIRES_BROILING_TZLIYA")
+                .map((f) => (
+                  <li key={f}>· {t(`flags.${f}`)}</li>
+                ))}
+            </ul>
+          )}
         </div>
       </div>
 
-      {more.length > 0 && (
-        <section className="mt-16" aria-labelledby="more-title">
-          <h2 id="more-title" className="text-2xl font-bold tracking-tight">
-            {t("product.more", { category: he ? data.categoryNameHe : data.categoryNameEn })}
+      {/* Where it comes from, and how to cook it. */}
+      <section className="reveal mt-20 grid gap-10 px-4 sm:px-0 lg:grid-cols-2 lg:gap-14" aria-labelledby="cook-title">
+        {placement ? (
+          <div className="hidden flex-col gap-4 lg:flex">
+            <h2 className="font-display text-3xl">{t("product.whereTitle")}</h2>
+            {origin && <p className="text-char-700">{origin}</p>}
+            <div className="bg-bone-50 border-bone-300 border p-6">
+              <CutMap animal={placement.animal} active={placement.regions} labels={regionLabels} title={mapTitle} />
+            </div>
+            <Link href={`/cuts#${placement.animal.toLowerCase()}-${placement.regions[0]}`} className="text-wine-600 hover:text-char-900 w-fit text-sm">
+              {t("product.toGuide")}
+            </Link>
+          </div>
+        ) : (
+          origin && (
+            <div className="hidden flex-col gap-3 lg:flex">
+              <h2 className="font-display text-3xl">{t("product.whereTitle")}</h2>
+              <p className="text-char-700 text-lg">{origin}</p>
+            </div>
+          )
+        )}
+
+        <div className="flex flex-col gap-6">
+          <h2 id="cook-title" className="font-display text-3xl">
+            {t("product.cooking")}
           </h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {more.map((x) => (
-              <ProductCard key={x.id} product={x} />
+          <p className="text-char-700 text-lg leading-relaxed">{he ? p.cookingHe : p.cookingEn}</p>
+          {facts && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {facts.methods.map((m) => (
+                  <span key={m} className="border-bone-300 inline-flex min-h-9 items-center border px-3 text-sm">
+                    {t(`product.method.${m}`)}
+                  </span>
+                ))}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Meter value={facts.fat} label={t("product.facts.fat")} />
+                <Meter value={facts.tenderness} label={t("product.facts.tenderness")} />
+              </div>
+            </>
+          )}
+          {facts?.donenessC && (p.animal === "BEEF" || p.animal === "LAMB" || p.animal === "VEAL") && (
+            <div className="flex flex-col gap-3">
+              <h3 className="text-char-500 text-sm">{t("product.donenessTitle")}</h3>
+              <ol className="border-bone-300 grid grid-cols-5 border">
+                {DONENESS.map((d) => {
+                  const on = Math.abs(d.tempC - facts.donenessC!) <= 2;
+                  return (
+                    <li key={d.key} className={`flex flex-col items-center gap-1.5 px-1 py-3 text-center ${on ? "bg-bone-50" : ""}`} aria-current={on || undefined}>
+                      <span className="size-5 rounded-full" style={{ background: d.swatch }} aria-hidden />
+                      <span className={`text-[11px] leading-tight sm:text-xs ${on ? "font-semibold" : ""}`}>{t(`product.doneness.${d.key}`)}</span>
+                      <span className="text-char-500 text-[11px] tabular-nums" dir="ltr">
+                        {d.tempC}°C
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          )}
+          <KashrutPanel kashrut={kashrut} authority={authority} locale={locale} />
+        </div>
+      </section>
+
+      {recipes.length > 0 && (
+        <section className="reveal mt-20 px-4 sm:px-0" aria-labelledby="recipes-title">
+          <h2 id="recipes-title" className="font-display text-3xl">
+            {t("product.recipesTitle", { name })}
+          </h2>
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {recipes.map((r) => (
+              <RecipeCard key={r.slug} recipe={r} locale={locale} />
             ))}
           </div>
         </section>
       )}
+
+      {more.length > 0 && (
+        <section className="reveal mt-20" aria-labelledby="more-title">
+          <h2 id="more-title" className="font-display px-4 text-3xl sm:px-0">
+            {t("product.more", { category: categoryName })}
+          </h2>
+          <div className="scrollbar-none mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+            {more.map((x) => (
+              <div key={x.id} className="w-[64%] shrink-0 snap-start sm:w-auto">
+                <ProductCard product={x} sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 64vw" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      <div aria-hidden className="h-6 lg:hidden" />
     </div>
   );
 }

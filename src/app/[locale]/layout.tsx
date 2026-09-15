@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Assistant, Heebo } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Assistant, Frank_Ruhl_Libre } from "next/font/google";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -7,9 +7,10 @@ import { brand } from "@/config/brand";
 import { localeDirection, routing } from "@/i18n/routing";
 import "../globals.css";
 
-const heebo = Heebo({
+const frank = Frank_Ruhl_Libre({
   subsets: ["hebrew", "latin"],
-  variable: "--font-heebo",
+  weight: ["300", "400", "500"],
+  variable: "--font-frank",
   display: "swap",
 });
 
@@ -18,6 +19,14 @@ const assistant = Assistant({
   variable: "--font-assistant",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Content runs under the iPhone notch and home indicator; the shell pads itself with safe-area insets.
+  viewportFit: "cover",
+  themeColor: "#f3f0ea",
+};
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -46,7 +55,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={localeDirection[locale]}
-      className={`${heebo.variable} ${assistant.variable}`}
+      className={`${frank.variable} ${assistant.variable}`}
     >
       <body className="min-h-dvh">
         {brand.isDemo && (

@@ -7,7 +7,8 @@ const CITY = { he: "תל אביב", en: "Tel Aviv" } as const;
 async function cartReadyForCheckout(page: Page, lang: Lang) {
   const m = messages(lang);
   await page.goto(`/${lang}/p/beef-fillet`);
-  await page.getByRole("button", { name: m.shop.product.addToCart }).click();
+  // The sticky buy bar repeats this button on phones; the panel's own button comes first.
+  await page.getByRole("button", { name: m.shop.product.addToCart, exact: true }).first().click();
   await expect(page.getByText(m.shop.cart.added)).toBeVisible();
 
   await page.goto(`/${lang}/cart`);
@@ -82,7 +83,8 @@ test("a city we don't serve says so and takes a phone number for when we do", as
   const lang = langOf(info);
   const m = messages(lang);
   await page.goto(`/${lang}/p/beef-fillet`);
-  await page.getByRole("button", { name: m.shop.product.addToCart }).click();
+  // The sticky buy bar repeats this button on phones; the panel's own button comes first.
+  await page.getByRole("button", { name: m.shop.product.addToCart, exact: true }).first().click();
   await expect(page.getByText(m.shop.cart.added)).toBeVisible();
   await page.goto(`/${lang}/cart`);
   const city = lang === "he" ? "נתניה" : "Netanya";

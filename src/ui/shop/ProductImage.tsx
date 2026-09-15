@@ -5,17 +5,17 @@ import { AnimalGlyph } from "./AnimalGlyph";
 type Animal = "BEEF" | "VEAL" | "LAMB" | "CHICKEN" | "TURKEY" | "MIXED";
 
 const grounds: Record<Animal, string> = {
-  BEEF: "from-wine-700 to-char-900",
-  VEAL: "from-wine-600 to-char-900",
-  LAMB: "from-char-700 to-char-900",
-  CHICKEN: "from-[#8a5a2b] to-char-900",
-  TURKEY: "from-[#6b4a2e] to-char-900",
-  MIXED: "from-char-800 to-wine-700",
+  BEEF: "bg-bone-200",
+  VEAL: "bg-bone-200",
+  LAMB: "bg-bone-200",
+  CHICKEN: "bg-bone-200",
+  TURKEY: "bg-bone-200",
+  MIXED: "bg-bone-200",
 };
 
 /**
- * The product photo, or — until photography exists — a deliberate typographic tile
- * (never a broken-image icon).
+ * The product photo, or — where no licensed photo exists yet — a quiet marble tile with the animal's line mark
+ * and the name in the display face (never a broken-image icon).
  */
 export function ProductImage({
   src,
@@ -46,17 +46,17 @@ export function ProductImage({
       role="img"
       aria-label={alt}
       className={cx(
-        "relative flex flex-col items-center justify-center gap-3 overflow-hidden bg-gradient-to-br text-bone-100",
+        "text-char-700 relative flex flex-col items-center justify-center gap-3 overflow-hidden",
         grounds[animal],
         className,
       )}
     >
       <div
         aria-hidden
-        className="absolute inset-0 opacity-[0.07] [background-image:radial-gradient(currentColor_1px,transparent_1px)] [background-size:14px_14px]"
+        className="border-bone-300 absolute inset-3 border"
       />
-      <AnimalGlyph animal={animal} className="relative size-[28%] max-h-24 min-h-10 opacity-80" />
-      <span className="relative max-w-[80%] text-center text-sm leading-snug font-medium tracking-wide opacity-90">
+      <AnimalGlyph animal={animal} className="text-brass-700 relative size-[24%] max-h-20 min-h-10 opacity-70" />
+      <span className="font-display relative max-w-[80%] text-center text-lg leading-snug">
         {label}
       </span>
     </div>

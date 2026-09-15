@@ -53,7 +53,7 @@ export function ExtraApproval({
   };
 
   return (
-    <section id="approve-extra" className="border-warn-600 bg-warn-600/10 scroll-mt-32 rounded-2xl border-s-8 p-5">
+    <section id="approve-extra" className="border-warn-600 bg-warn-600/10 scroll-mt-32 rounded-[3px] border-s-8 p-5">
       <h2 className="text-xl font-bold">{t("extraTitle", { product: productName })}</h2>
       <p className="font-reading mt-1 text-lg">{t("extraBody", { actual: actualWeight, requested: requestedWeight, extra: extraAmount })}</p>
       <p className="text-char-700 mt-1 text-sm">
@@ -81,7 +81,7 @@ export function CancelOrder({ orderNumber, token, paidAmount, heldAmount }: { or
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <section className="bg-bone-100 rounded-2xl p-5">
+    <section className="bg-bone-100 rounded-[3px] p-5">
       <h2 className="font-semibold">{t("cancelTitle")}</h2>
       <p className="text-char-700 text-sm">{paidAmount ? t("cancelBodyPaid", { amount: paidAmount }) : heldAmount ? t("cancelBodyHeld", { amount: heldAmount }) : t("cancelBody")}</p>
       {confirming ? (
@@ -127,7 +127,7 @@ export function Reschedule({ target, windows }: { target: RescheduleTarget; wind
   const time = (iso: string) => format.dateTime(new Date(iso), { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 
   return (
-    <section id="reschedule" className="border-wine-600 bg-wine-600/5 scroll-mt-32 rounded-2xl border-s-8 p-5">
+    <section id="reschedule" className="border-wine-600 bg-wine-600/5 scroll-mt-32 rounded-[3px] border-s-8 p-5">
       <h2 className="text-xl font-bold">{t(`rescheduleTitle${copy}` as never)}</h2>
       <p className="font-reading text-char-700 mt-1">{t(`rescheduleBody${copy}` as never)}</p>
       {windows.length === 0 ? (
@@ -152,7 +152,7 @@ export function Reschedule({ target, windows }: { target: RescheduleTarget; wind
                   });
                 }}
                 className={cx(
-                  "bg-bone-50 ring-bone-300 hover:bg-bone-100 flex min-h-16 w-full flex-col items-start justify-center rounded-xl px-4 text-start ring-1 disabled:opacity-60",
+                  "bg-bone-50 ring-bone-300 hover:bg-bone-100 flex min-h-16 w-full flex-col items-start justify-center rounded-[3px] px-4 text-start ring-1 disabled:opacity-60",
                   picked === w.id && "ring-wine-600 ring-2",
                 )}
               >

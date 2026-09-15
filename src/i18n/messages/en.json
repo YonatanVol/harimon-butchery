@@ -76,7 +76,17 @@
       "home": "Home",
       "skipToContent": "Skip to content",
       "switchLocaleShort": "עב",
-      "account": "My account"
+      "account": "My account",
+      "sections": "Sections",
+      "cuts": "Cut guide",
+      "recipes": "Recipes",
+      "kashrut": "Kashrut",
+      "tabBar": "Main navigation",
+      "tabHome": "Home",
+      "tabCuts": "Cuts",
+      "tabRecipes": "Recipes",
+      "tabAccount": "Account",
+      "tabCart": "Cart"
     },
     "footer": {
       "demoTitle": "Demo shop",
@@ -87,14 +97,14 @@
       "rights": "Harimon Butchery · demo project"
     },
     "home": {
-      "eyebrow": "Kosher boutique butcher · home delivery",
-      "headline": "Fresh meat, honestly weighed.",
-      "lead": "We cut to order, weigh every piece and charge the real weight — never more than we promised.",
-      "ctaShop": "Shop all cuts",
+      "eyebrow": "Kosher butcher · cut to order · delivered home",
+      "headline": "Cut to order. Weighed in plain sight.",
+      "lead": "Mehadrin kosher cuts at the thickness you choose. The butcher weighs every piece, and you pay the real weight — never more than you approved.",
+      "ctaShop": "This week's cuts",
       "ctaHow": "How weight pricing works",
       "occasionsTitle": "What are you cooking?",
-      "categoriesTitle": "The butcher's counter",
-      "bestSellersTitle": "Loved this week",
+      "categoriesTitle": "The counter",
+      "bestSellersTitle": "From the counter this week",
       "trustTitle": "Why us",
       "trust1Title": "Charged by real weight",
       "trust1Body": "We hold slightly more than the estimate and charge only what we weighed. The difference is released.",
@@ -112,7 +122,17 @@
       "tomorrow": "tomorrow",
       "todayClosed": "Today: {reason}",
       "nextDelivery": "Next delivery in {zone}: {day} {window} · order by {cutoffDay} {cutoff}",
-      "noDeliverySoon": "No delivery windows available in {zone} in the coming days"
+      "noDeliverySoon": "No delivery windows available in {zone} in the coming days",
+      "heroPhotoAlt": "Raw entrecôte steaks on stone boards",
+      "seeAll": "All cuts",
+      "craftTitle": "The butcher cuts, weighs, and only then charges.",
+      "craftBody": "No two cuts weigh the same. So the price is set by what the scale shows, not by an estimate.",
+      "guideEyebrow": "The cut guide",
+      "guideTitle": "Where does your cut come from?",
+      "guideBody": "Tap a part of the animal to see which cuts come from it, how to cook them and what they cost.",
+      "guideCta": "Open the full guide",
+      "recipesTitle": "What to cook this week",
+      "recipesAll": "{count, plural, one {1 recipe} other {All # recipes}}"
     },
     "occasion": {
       "SHABBAT": "for Shabbat",
@@ -134,7 +154,9 @@
       "piece": "Piece ≈ {weight}",
       "aged": "Aged {days} days",
       "bestSeller": "Favourite",
-      "viewProduct": "View {name}"
+      "viewProduct": "View {name}",
+      "perKgUnit": "/ kg",
+      "perPackageUnit": "per bundle"
     },
     "availability": {
       "IN_STOCK": "In stock",
@@ -231,7 +253,43 @@
       "maxAvailable": "That's all we have in stock right now ({max})",
       "maxPerOrder": "Up to {max} per order",
       "agingLabel": "Ageing",
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "mapTitle": "{animal} cut map, showing {name}",
+      "gallery": {
+        "photo": "Photo: {name}",
+        "map": "Where it sits on the animal"
+      },
+      "facts": {
+        "agingDays": "days aged",
+        "thickness": "thickness",
+        "cm": "{cm} cm",
+        "perPerson": "per person",
+        "coreTemp": "recommended core temp",
+        "cookTime": "cooking time",
+        "fat": "Fat",
+        "tenderness": "Tenderness"
+      },
+      "tipTitle": "From the butcher",
+      "whereTitle": "Where it comes from",
+      "toGuide": "Every cut from this part →",
+      "method": {
+        "GRILL": "Grill",
+        "PAN": "Pan",
+        "OVEN": "Oven",
+        "BRAISE": "Braise",
+        "SMOKE": "Smoke",
+        "SOUP": "Soup",
+        "FRY": "Fry"
+      },
+      "donenessTitle": "Doneness and core temperature",
+      "doneness": {
+        "RARE": "Rare",
+        "MEDIUM_RARE": "Medium rare",
+        "MEDIUM": "Medium",
+        "MEDIUM_WELL": "Medium well",
+        "WELL_DONE": "Well done"
+      },
+      "recipesTitle": "Cook with {name}"
     },
     "search": {
       "title": "Search",
@@ -400,6 +458,149 @@
         "CITY_INVALID": "Enter the city name",
         "NETWORK": "Can't reach the server. Check the network and try again."
       }
+    },
+    "cuts": {
+      "title": "The cut guide",
+      "lead": "Every cut comes from a different part of the animal, and that decides whether it wants a hot grill or six hours in the oven. Pick a part to see what comes from it.",
+      "animals": "Choose an animal",
+      "animal": {
+        "BEEF": "Beef",
+        "LAMB": "Lamb",
+        "CHICKEN": "Chicken",
+        "TURKEY": "Turkey"
+      },
+      "animalIntro": {
+        "BEEF": "The back gives the tender steaks; the legs and chest work hard and reward long cooking.",
+        "LAMB": "Young lamb with delicate fat and a gentle flavour. Ribs for the grill, shoulder for the oven, neck for the pot.",
+        "CHICKEN": "Dark leg meat stays juicy even over high heat; the lean breast wants short, precise cooking.",
+        "TURKEY": "Fresh turkey — bigger and leaner than chicken. Thigh for shawarma, breast for roasting and slicing."
+      },
+      "mapTitle": "{animal} cut map",
+      "mapHint": "Shaded parts are on the counter. Tap one to jump to its cuts.",
+      "region": {
+        "BEEF": {
+          "head": "Cheek and tongue",
+          "neck": "Neck",
+          "chuck": "Chuck",
+          "rib": "Rib",
+          "loin": "Loin",
+          "rump": "Rump",
+          "round": "Round",
+          "brisket": "Brisket",
+          "plate": "Short plate",
+          "flank": "Flank",
+          "shank": "Shank"
+        },
+        "LAMB": {
+          "neck": "Neck",
+          "shoulder": "Shoulder",
+          "rack": "Rack",
+          "loin": "Loin",
+          "leg": "Leg",
+          "breast": "Breast",
+          "shank": "Shank"
+        },
+        "CHICKEN": {
+          "breast": "Breast",
+          "wing": "Wing",
+          "thigh": "Thigh",
+          "drumstick": "Drumstick",
+          "back": "Back"
+        },
+        "TURKEY": {
+          "breast": "Breast",
+          "wing": "Wing",
+          "thigh": "Thigh",
+          "drumstick": "Drumstick",
+          "back": "Back"
+        }
+      },
+      "regionIntro": {
+        "BEEF": {
+          "head": "Muscles that work all day: very long cooking turns them soft and gelatinous.",
+          "neck": "Collagen-rich meat for stews and grinding.",
+          "chuck": "The shoulder: deep flavour, generous marbling. Denver, mock tender and shoulder roast come from here.",
+          "rib": "The most prized part: fat that melts over the fire. Entrecôte and tomahawk.",
+          "loin": "The muscle that barely works, so the most tender. The fillet.",
+          "rump": "Lean and full-flavoured, for steaks and whole roasts.",
+          "round": "Lean, firm hind-leg muscles.",
+          "brisket": "Long fibres that soften after hours in the oven. Brisket for the holidays.",
+          "plate": "Short ribs layered with fat — asado for slow grilling and cholent.",
+          "flank": "A flat cut with a clear grain: hot grill, slice against the grain.",
+          "shank": "Cross-cut with the marrow bone. Osso buco for slow braising."
+        },
+        "LAMB": {
+          "neck": "Bone-in slices for a stew that falls apart.",
+          "shoulder": "For a low oven and time, until the meat leaves the bone.",
+          "rack": "Frenched ribs for a hot grill or oven, pink in the middle.",
+          "loin": "Tender and delicate, for a short roast.",
+          "leg": "A large cut for a festive roast.",
+          "breast": "Rich and fatty, for long cooking.",
+          "shank": "Shank for a slow braise."
+        },
+        "CHICKEN": {
+          "breast": "Lean and quick: schnitzel, pan, grill.",
+          "wing": "Crisp skin and juicy meat, for a hot oven and the grill.",
+          "thigh": "Pargiyot: the most forgiving, juiciest chicken cut.",
+          "drumstick": "For the oven, grill and pot; a family favourite.",
+          "back": "Back and bones give soup its body."
+        },
+        "TURKEY": {
+          "breast": "Lean and delicate, for roasting and slicing.",
+          "wing": "Big wings for long cooking or smoking.",
+          "thigh": "Juicy dark meat, the base of shawarma.",
+          "drumstick": "Turkey drumstick for a low oven and the pot.",
+          "back": "Bones for a clear stock."
+        }
+      }
+    },
+    "recipes": {
+      "title": "Recipes",
+      "lead": "Recipes written for our cuts, with exact amounts per person. Choose how many you're feeding and the meat goes into the cart at the right weight.",
+      "byOccasion": "By occasion",
+      "group": {
+        "SHABBAT": "For Shabbat",
+        "GRILL": "For the grill",
+        "HOLIDAY": "For the holidays",
+        "SLOW_COOK": "Slow cooking",
+        "WEEKNIGHT": "Quick dinners"
+      },
+      "minutes": "{m} min",
+      "hours": "{h} h",
+      "hoursMinutes": "{h} h {m} min",
+      "prep": "Prep",
+      "cook": "Cooking",
+      "rest": "Resting",
+      "difficultyLabel": "Difficulty",
+      "difficulty": {
+        "EASY": "Easy",
+        "MEDIUM": "Medium",
+        "ADVANCED": "Advanced"
+      },
+      "photoAlt": "The cut for this recipe: {cut}, raw",
+      "method": "Method",
+      "doneness": "Core temperatures",
+      "related": "More for the same occasion",
+      "servings": "Servings",
+      "fewer": "Fewer servings",
+      "more": "More servings",
+      "keepScreenOn": "Keep the screen on",
+      "screenOn": "Screen stays on",
+      "fromButcher": "From the butcher",
+      "outNow": "Out of stock now — won't be added",
+      "adding": "Adding to cart…",
+      "addAll": "All the meat to cart · about {total}",
+      "addAllNote": "Amounts are rounded to how the butcher cuts. The final price follows the real weight.",
+      "allOut": "The meat for this recipe is out of stock right now.",
+      "addedAll": "{count, plural, one {The cut is in your cart} other {# cuts are in your cart}}",
+      "goToCart": "Go to cart",
+      "ingredients": "You'll also need",
+      "timerStart": "{m} min timer",
+      "timerStop": "Stop",
+      "timerDone": "Time's up",
+      "addedSome": "Added to cart: {added}. Not added: {failed}",
+      "maxServings": "Up to {max} servings per recipe",
+      "capped": "Up to {max} per order — that is what goes into the cart"
     }
   },
   "orders": {

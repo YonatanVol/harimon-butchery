@@ -35,7 +35,7 @@ export default async function AccountPage({ params }: PageProps<"/[locale]/accou
     return (
       <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-16 sm:px-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">{t("login.title")}</h1>
+          <h1 className="font-display text-4xl font-light md:text-5xl">{t("login.title")}</h1>
           <p className="font-reading text-char-700 mt-2 text-lg">{t("login.body")}</p>
         </div>
         <CustomerLogin />
@@ -51,7 +51,7 @@ export default async function AccountPage({ params }: PageProps<"/[locale]/accou
     <div className="mx-auto flex max-w-4xl flex-col gap-8 px-4 py-12 sm:px-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">{orders[0] ? t("hello", { name: orders[0].firstName }) : t("title")}</h1>
+          <h1 className="font-display text-4xl font-light md:text-5xl">{orders[0] ? t("hello", { name: orders[0].firstName }) : t("title")}</h1>
           <p className="text-char-700 mt-1">
             {t("signedInAs")} <bdi dir="ltr" className="tabular-nums">{display}</bdi>
           </p>
@@ -60,10 +60,10 @@ export default async function AccountPage({ params }: PageProps<"/[locale]/accou
       </header>
 
       {orders.length === 0 ? (
-        <section className="bg-bone-100 flex flex-col items-start gap-4 rounded-2xl p-8">
+        <section className="bg-bone-100 flex flex-col items-start gap-4 rounded-[3px] p-8">
           <h2 className="text-2xl font-bold">{t("emptyTitle")}</h2>
           <p className="font-reading text-char-700 text-lg">{t("emptyBody")}</p>
-          <Link href="/" className="bg-char-900 text-bone-50 inline-flex min-h-12 items-center rounded-lg px-6 font-medium">
+          <Link href="/" className="bg-char-900 text-bone-50 inline-flex min-h-12 items-center rounded-[2px] px-6 font-medium">
             {t("startShopping")}
           </Link>
         </section>
@@ -84,7 +84,7 @@ export default async function AccountPage({ params }: PageProps<"/[locale]/accou
                 <li key={o.orderNumber}>
                   <Link
                     href={`/orders/${o.orderNumber}?t=${o.accessToken}`}
-                    className="bg-bone-50 ring-bone-300 hover:ring-char-900 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-5 ring-1"
+                    className="bg-bone-50 ring-bone-300 hover:ring-char-900 flex flex-wrap items-center justify-between gap-3 rounded-[3px] p-5 ring-1"
                   >
                     <div className="flex min-w-0 flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-2">

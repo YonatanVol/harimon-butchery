@@ -46,7 +46,7 @@ export function DeliveryPanel({
   const [editingCity, setEditingCity] = useState(!zone);
 
   return (
-    <section aria-labelledby="delivery-title" className="bg-bone-50 ring-bone-300 flex flex-col gap-5 rounded-2xl p-5 ring-1">
+    <section aria-labelledby="delivery-title" className="bg-bone-50 ring-bone-300 flex flex-col gap-5 rounded-[3px] p-5 ring-1">
       <h2 id="delivery-title" className="text-xl font-bold">
         {t("deliveryTitle")}
       </h2>
@@ -128,7 +128,7 @@ function CityForm({ initial, servedCities, onDone }: { initial: string; servedCi
           autoComplete="address-level2"
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${inputId}-error` : undefined}
-          className="bg-bone-50 focus:ring-wine-500 min-h-11 min-w-0 flex-1 rounded-lg border border-bone-300 px-3 outline-none focus:ring-2"
+          className="bg-bone-50 focus:ring-wine-500 min-h-11 min-w-0 flex-1 rounded-[2px] border border-bone-300 px-3 outline-none focus:ring-2"
         />
         <datalist id={listId}>
           {servedCities.map((c) => (
@@ -205,7 +205,7 @@ function SlotPicker({ days, held }: { days: SlotDay[]; held: HeldSlot | null }) 
 
       {held && <HoldBanner held={held} time={time} onExpired={() => setExpiredNotice(true)} />}
       {!held && expiredNotice && (
-        <p role="alert" className="bg-warn-600/10 text-warn-600 rounded-lg p-3 font-medium">
+        <p role="alert" className="bg-warn-600/10 text-warn-600 rounded-[2px] p-3 font-medium">
           {t("slotExpired")}
         </p>
       )}
@@ -222,7 +222,7 @@ function SlotPicker({ days, held }: { days: SlotDay[]; held: HeldSlot | null }) 
               aria-selected={selected}
               onClick={() => setDayIndex(i)}
               className={cx(
-                "flex min-h-16 min-w-20 shrink-0 flex-col items-center justify-center rounded-xl px-3 py-2 text-sm ring-1 ring-inset",
+                "flex min-h-16 min-w-20 shrink-0 flex-col items-center justify-center rounded-[3px] px-3 py-2 text-sm ring-1 ring-inset",
                 selected ? "bg-char-900 text-bone-50 ring-char-900" : "bg-bone-50 ring-bone-300 hover:bg-bone-100",
                 !selected && open === 0 && "text-char-500",
               )}
@@ -238,9 +238,9 @@ function SlotPicker({ days, held }: { days: SlotDay[]; held: HeldSlot | null }) 
       <div role="tabpanel" className="flex flex-col gap-2">
         {locale === "he" && <p className="text-char-500 text-xs">{day.hebrewDateHe}</p>}
         {day.closedReason ? (
-          <p className="bg-bone-100 text-char-700 rounded-lg p-4 font-medium">{locale === "he" ? day.closedReason.he : day.closedReason.en}</p>
+          <p className="bg-bone-100 text-char-700 rounded-[2px] p-4 font-medium">{locale === "he" ? day.closedReason.he : day.closedReason.en}</p>
         ) : day.slots.length === 0 ? (
-          <p className="bg-bone-100 text-char-700 rounded-lg p-4">{t("noSlotsDay")}</p>
+          <p className="bg-bone-100 text-char-700 rounded-[2px] p-4">{t("noSlotsDay")}</p>
         ) : (
           <ul className="grid gap-2 sm:grid-cols-2">
             {day.slots.map((s) => {
@@ -266,7 +266,7 @@ function SlotPicker({ days, held }: { days: SlotDay[]; held: HeldSlot | null }) 
                     aria-pressed={isHeld}
                     onClick={() => choose(s.id)}
                     className={cx(
-                      "flex min-h-16 w-full flex-col items-start justify-center gap-0.5 rounded-xl px-4 py-2 text-start ring-1 ring-inset transition-colors",
+                      "flex min-h-16 w-full flex-col items-start justify-center gap-0.5 rounded-[3px] px-4 py-2 text-start ring-1 ring-inset transition-colors",
                       isHeld
                         ? "bg-wine-600 text-bone-50 ring-wine-600"
                         : reason
@@ -324,11 +324,11 @@ function HoldBanner({ held, time, onExpired }: { held: HeldSlot; time: (iso: str
   const clock = `${mm}:${String(ss).padStart(2, "0")}`;
 
   if (expired) {
-    return <p role="alert" className="bg-warn-600/10 text-warn-600 rounded-lg p-3 font-medium">{t("slotExpired")}</p>;
+    return <p role="alert" className="bg-warn-600/10 text-warn-600 rounded-[2px] p-3 font-medium">{t("slotExpired")}</p>;
   }
 
   return (
-    <div className="bg-wine-600/10 ring-wine-600/25 flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 ring-1">
+    <div className="bg-wine-600/10 ring-wine-600/25 flex flex-wrap items-center justify-between gap-3 rounded-[3px] p-4 ring-1">
       <div>
         <p className="font-semibold">
           {t("slotHeld")} ·{" "}

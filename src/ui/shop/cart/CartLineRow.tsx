@@ -96,7 +96,7 @@ export function CartLineRow({ line }: { line: CartLineData }) {
           animal={line.animal}
           label=""
           sizes="96px"
-          className={cx("size-20 rounded-xl sm:size-24", line.unavailable && "opacity-50")}
+          className={cx("size-20 rounded-[3px] sm:size-24", line.unavailable && "opacity-50")}
         />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -119,7 +119,7 @@ export function CartLineRow({ line }: { line: CartLineData }) {
         </div>
 
         {line.unavailable ? (
-          <p className="bg-bad-600/10 text-bad-600 rounded-lg p-2 text-sm font-medium">{t("cart.unavailableLine")}</p>
+          <p className="bg-bad-600/10 text-bad-600 rounded-[2px] p-2 text-sm font-medium">{t("cart.unavailableLine")}</p>
         ) : (
           <div className="flex flex-wrap items-start gap-x-6 gap-y-1">
             {line.pricingMode === "WEIGHT" ? (

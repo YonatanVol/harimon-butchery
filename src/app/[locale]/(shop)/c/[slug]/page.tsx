@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -46,18 +47,25 @@ export default async function CategoryPage({ params }: PageProps<"/[locale]/c/[s
     inStock: p.availability.kind !== "OUT",
   }));
 
+  const name = he ? data.category.nameHe : data.category.nameEn;
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <nav aria-label="breadcrumb" className="text-char-500 text-sm">
-        <Link href="/" className="hover:text-char-900 underline-offset-4 hover:underline">
-          {t("product.breadcrumbHome")}
-        </Link>
-      </nav>
-      <header className="mt-2 mb-8 flex flex-col gap-2">
-        <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{he ? data.category.nameHe : data.category.nameEn}</h1>
-        <p className="font-reading text-char-700 max-w-2xl text-lg">
-          {he ? data.category.descriptionHe : data.category.descriptionEn}
-        </p>
+    <div className="mx-auto max-w-7xl px-4 pb-10 sm:px-6">
+      <header className="bg-char-900 relative isolate -mx-4 mb-10 overflow-hidden sm:mx-0 sm:mt-6 sm:rounded-[4px]">
+        {data.category.image && (
+          <Image src={data.category.image} alt="" fill priority sizes="(min-width: 1280px) 1232px, 100vw" className="motion-safe:animate-settle -z-10 object-cover opacity-80" />
+        )}
+        <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-[#1b1916e6] via-[#1b191680] to-[#1b191633]" />
+        <div className="text-bone-100 flex min-h-64 flex-col justify-end gap-3 px-6 pt-16 pb-8 sm:min-h-80 sm:px-10 sm:pb-10">
+          <nav aria-label="breadcrumb" className="text-bone-300 text-sm">
+            <Link href="/" className="hover:text-bone-50">
+              {t("product.breadcrumbHome")}
+            </Link>
+          </nav>
+          <h1 className="rise-1 font-display text-5xl font-light md:text-7xl">{name}</h1>
+          <span aria-hidden className="bg-brass-500 h-px w-12" />
+          <p className="rise-2 text-bone-200 max-w-2xl text-lg">{he ? data.category.descriptionHe : data.category.descriptionEn}</p>
+        </div>
       </header>
       <CategoryBrowser items={items} />
     </div>

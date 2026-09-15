@@ -156,7 +156,7 @@ export function CategoryBrowser({ items }: { items: BrowsableItem[] }) {
           <select
             value={sort}
             onChange={(e) => update(filters, e.target.value as Sort)}
-            className="bg-bone-50 min-h-10 rounded-lg border border-bone-300 px-3"
+            className="bg-bone-50 min-h-10 rounded-[2px] border border-bone-300 px-3"
           >
             <option value="recommended">{t("sortRecommended")}</option>
             <option value="priceAsc">{t("sortPriceAsc")}</option>
@@ -179,12 +179,12 @@ export function CategoryBrowser({ items }: { items: BrowsableItem[] }) {
           ))}
         </ul>
       ) : (
-        <div className="bg-bone-100 flex flex-col items-start gap-4 rounded-2xl p-6">
+        <div className="bg-bone-100 flex flex-col items-start gap-4 rounded-[3px] p-6">
           <p className="text-lg font-semibold">{t("noResults")}</p>
           <button
             type="button"
             onClick={() => update(EMPTY)}
-            className="bg-char-900 text-bone-50 min-h-11 rounded-lg px-5 text-sm font-medium"
+            className="bg-char-900 text-bone-50 min-h-11 rounded-[2px] px-5 text-sm font-medium"
           >
             {t("clear")}
           </button>
