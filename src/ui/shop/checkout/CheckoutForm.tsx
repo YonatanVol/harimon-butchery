@@ -24,6 +24,8 @@ const EMPTY: CheckoutDetails = {
   apartment: "",
   intercom: "",
   deliveryNotes: "",
+  giftRecipient: "",
+  giftMessage: "",
 };
 
 export function CheckoutForm({
@@ -44,6 +46,13 @@ export function CheckoutForm({
   const [formProblem, setFormProblem] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [redirecting, setRedirecting] = useState(false);
+  const [isGift, setIsGift] = useState(Boolean(draft?.giftRecipient || draft?.giftMessage));
+
+  // Unticking the box clears the gift details, so nothing is sent that the customer can no longer see.
+  const toggleGift = (on: boolean) => {
+    setIsGift(on);
+    if (!on) setValues((v) => ({ ...v, giftRecipient: "", giftMessage: "" }));
+  };
   const problemRef = useRef<HTMLParagraphElement>(null);
 
   const check = validateDetails(values);
@@ -186,6 +195,33 @@ export function CheckoutForm({
             className="bg-bone-50 focus:ring-wine-500 rounded-[2px] border border-bone-300 p-3 outline-none focus:ring-2"
           />
         </label>
+      </fieldset>
+
+      <fieldset className="border-bone-300 flex flex-col gap-3 border-t pt-5">
+        <legend className="sr-only">{t("giftTitle")}</legend>
+        <label className="flex min-h-11 items-center gap-3">
+          <input type="checkbox" checked={isGift} onChange={(e) => toggleGift(e.target.checked)} className="accent-wine-600 size-5" />
+          <span className="font-medium">{t("giftTitle")}</span>
+        </label>
+        {isGift && (
+          <div className="flex flex-col gap-4">
+            <p className="text-char-500 text-sm">{t("giftHelp")}</p>
+            {field("giftRecipient", { label: t("giftRecipient") })}
+            <label className="flex flex-col gap-1" htmlFor="co-giftMessage">
+              <span className="text-char-700 text-sm font-medium">{t("giftMessage")}</span>
+              <textarea
+                id="co-giftMessage"
+                value={values.giftMessage}
+                onChange={set("giftMessage")}
+                maxLength={300}
+                rows={3}
+                placeholder={t("giftMessagePlaceholder")}
+                className="bg-bone-50 focus:ring-wine-500 rounded-[2px] border border-bone-300 p-3 outline-none focus:ring-2"
+              />
+              <span className="text-char-500 text-xs">{t("giftMessageCount", { left: 300 - values.giftMessage.length })}</span>
+            </label>
+          </div>
+        )}
       </fieldset>
 
       <div className="flex flex-col gap-3">

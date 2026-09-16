@@ -12,9 +12,12 @@ import type { Locale } from "@/i18n/routing";
 import { cx } from "../cx";
 import { QuantityStepper } from "../primitives/QuantityStepper";
 import { WeightStepper } from "../primitives/WeightStepper";
+import { PortionCalculator } from "./PortionCalculator";
 
 export interface PurchaseProduct {
   id: string;
+  /** Grams per person for this cut, when we know it — powers the "how much do I need?" calculator. */
+  servingG?: number | null;
   nameHe: string;
   nameEn: string;
   pricingMode: "WEIGHT" | "PACKAGE";
@@ -183,6 +186,13 @@ export function PurchasePanel({
               {pieces !== null && <span className="text-char-500 text-sm">{t("pieces", { count: pieces })}</span>}
             </div>
           </div>
+          {p.pricingMode === "WEIGHT" && p.servingG ? (
+            <PortionCalculator
+              servingG={p.servingG}
+              limits={{ minOrderG: min, maxOrderG: stockMax, stepG: step }}
+              onChange={setRequested}
+            />
+          ) : null}
           <p className="border-bone-300 text-char-700 border-s-2 ps-3 text-sm leading-relaxed">
             {quote.hasWeightLines
               ? t("holdSentence", { hold: formatAgorot(quote.authorizationCeiling, locale), tolerance: percent })

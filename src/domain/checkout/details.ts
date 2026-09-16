@@ -17,6 +17,9 @@ export interface CheckoutDetails {
   apartment: string;
   intercom: string;
   deliveryNotes: string;
+  /** A gift order: the recipient's name and the message for the card. Both optional. */
+  giftRecipient: string;
+  giftMessage: string;
 }
 
 export type FieldError = "REQUIRED" | "PHONE_INVALID" | "PHONE_NOT_MOBILE" | "EMAIL_INVALID" | "TOO_LONG" | "HOUSE_NUMBER_INVALID";
@@ -44,6 +47,8 @@ const LIMITS: Record<keyof CheckoutDetails, number> = {
   apartment: 10,
   intercom: 20,
   deliveryNotes: 300,
+  giftRecipient: 60,
+  giftMessage: 300,
 };
 
 export function validateDetails(d: CheckoutDetails): { ok: true; phoneE164: string } | { ok: false; errors: DetailsErrors } {

@@ -127,6 +127,9 @@ export const order = pgTable(
     assignedDriverId: uuid("assigned_driver_id").references(() => staffUser.id),
     customerNote: text("customer_note"),
     internalNote: text("internal_note"),
+    /** A gift: who it is for and the card message, printed on the delivery note and shown to the butcher. */
+    giftRecipient: text("gift_recipient"),
+    giftMessage: text("gift_message"),
     deliveryAttempts: integer("delivery_attempts").notNull().default(0),
     /** Weight added to the delivery window at placement, so releasing undoes exactly that. */
     reservedWeightG: gramsCol("reserved_weight_g").notNull().default(0),

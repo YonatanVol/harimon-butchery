@@ -601,6 +601,30 @@
       "addedSome": "Added to cart: {added}. Not added: {failed}",
       "maxServings": "Up to {max} servings per recipe",
       "capped": "Up to {max} per order — that is what goes into the cart"
+    },
+    "portions": {
+      "title": "How much do I need?",
+      "people": "People",
+      "fewer": "Fewer people",
+      "more": "More people",
+      "maxPeople": "Up to {max} people per calculation",
+      "appetite": "Appetite",
+      "appetiteOption": {
+        "LIGHT": "Light",
+        "REGULAR": "Regular",
+        "HEARTY": "Hungry"
+      },
+      "withSides": "There are sides and starters too",
+      "result": "{amount} for {people} — the amount above has been updated.",
+      "raisedToMin": "That is the smallest order for this cut ({min}).",
+      "loweredToMax": "That is the largest amount in one order ({max})."
+    },
+    "ask": {
+      "cta": "Ask the butcher on WhatsApp",
+      "message": "Hi, a question about {name}: {url}",
+      "demoTitle": "Demo shop — nothing is sent",
+      "demoBody": "In a real shop this button would open WhatsApp with this message to the butcher. There is no real number here, so this is what would have been sent:",
+      "close": "Close"
     }
   },
   "orders": {
@@ -683,7 +707,13 @@
     "pendingBody": "We haven't received confirmation from the payment page. If you closed it by mistake, you can pick up where you left off.",
     "resumePayment": "Back to the payment page",
     "backToCart": "Back to cart",
-    "needCart": "To check out you need a cart with a city, a held delivery time and the minimum order."
+    "needCart": "To check out you need a cart with a city, a held delivery time and the minimum order.",
+    "giftTitle": "This order is a gift",
+    "giftHelp": "We print a card and pack it with the order. No price appears on the card.",
+    "giftRecipient": "Recipient name",
+    "giftMessage": "What the card should say",
+    "giftMessagePlaceholder": "e.g. Mazal tov! Have a delicious Shabbat.",
+    "giftMessageCount": "{left} characters left"
   },
   "pay": {
     "title": "Demo payment gateway",
@@ -905,7 +935,10 @@
       "stuckTitle": "The charge never finished",
       "stuckCheck": "Check the charge again",
       "stuckHelp": "The charge was sent to the payment provider and no answer came back. Checking again finds a charge that already went through, or makes it once — never twice.",
-      "stuckDone": "The charge was checked and recorded."
+      "stuckDone": "The charge was checked and recorded.",
+      "giftTitle": "Gift",
+      "giftTo": "For {name}",
+      "giftHint": "Print the card from the delivery note and pack it with the order."
     },
     "pack": {
       "title": "Weighing & packing",
@@ -1448,7 +1481,9 @@
       "kashrutStatement": "All products in this delivery are under the supervision of: {authorities}.",
       "fictionalNotice": "The kashrut authorities shown are fictional, for demonstration, and are not a real authority.",
       "keepColdLong": "Refrigerate immediately on arrival. Fresh meat: up to 3 days refrigerated, or freeze.",
-      "demoNotice": "Demo shop — this document is not a tax invoice and no real sale took place."
+      "demoNotice": "Demo shop — this document is not a tax invoice and no real sale took place.",
+      "giftTitle": "Gift card",
+      "giftTo": "For {name}"
     }
   }
 }

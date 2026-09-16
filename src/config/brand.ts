@@ -8,4 +8,6 @@ export const brand = {
     en: "Fresh kosher meat and poultry, delivered",
   },
   isDemo: true,
+  /** The shop's WhatsApp number in E.164, for "ask the butcher". Empty while this is a demo brand. */
+  whatsappE164: "" as string,
 } as const;

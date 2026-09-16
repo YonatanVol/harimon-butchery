@@ -118,6 +118,8 @@ export const validDetails = {
   apartment: "12",
   intercom: "",
   deliveryNotes: "",
+  giftRecipient: "",
+  giftMessage: "",
 };
 
 /** A package product (fixed price per unit), e.g. a ₪149 family chicken bundle. */
