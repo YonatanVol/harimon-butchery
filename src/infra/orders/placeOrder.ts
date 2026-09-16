@@ -246,6 +246,8 @@ export async function placeOrder(
           authorizationCeilingAgorot: quote.authorizationCeiling,
           vatRateBp: ISRAEL_VAT_BP,
           customerNote: d.deliveryNotes.trim() || null,
+          giftRecipient: d.giftRecipient?.trim() || null,
+          giftMessage: d.giftMessage?.trim() || null,
           reservedWeightG: orderWeightG,
           placedAt: now,
         })

@@ -80,6 +80,14 @@ export default async function DeliveryNote({ params }: PageProps<"/[locale]/staf
           )}
         </section>
 
+        {(o.giftRecipient || o.giftMessage) && (
+          <section className="break-inside-avoid border-2 border-black p-3">
+            <p className="text-sm font-semibold">{t("giftTitle")}</p>
+            {o.giftRecipient && <p className="text-lg font-bold">{t("giftTo", { name: o.giftRecipient })}</p>}
+            {o.giftMessage && <p className="mt-1 whitespace-pre-line">{o.giftMessage}</p>}
+          </section>
+        )}
+
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b-2 border-black text-sm">

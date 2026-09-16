@@ -23,6 +23,8 @@ const detailsSchema = z.object({
   apartment: z.string(),
   intercom: z.string(),
   deliveryNotes: z.string(),
+  giftRecipient: z.string().default(""),
+  giftMessage: z.string().default(""),
 });
 
 export async function submitCheckout(details: CheckoutDetails, locale: "he" | "en"): Promise<PlaceOrderResult> {

@@ -152,7 +152,7 @@ export async function seedDemoOrders(db: Database, appUrl: string) {
       `place #${i} ${plan.recipe} ${plan.zone}`,
       await placeOrder(db, provider, {
         cartId: cart.id,
-        details: { ...person, email: "", entrance: "", intercom: "", deliveryNotes: plan.deliveryNote ?? "" },
+        details: { ...person, email: "", entrance: "", intercom: "", deliveryNotes: plan.deliveryNote ?? "", giftRecipient: "", giftMessage: "" },
         locale: "he",
         appUrl,
       }),

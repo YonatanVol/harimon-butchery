@@ -11,6 +11,8 @@ import { formatGrams, grams } from "@/domain/weight/grams";
 import { Link } from "@/i18n/navigation";
 import { type Locale, routing } from "@/i18n/routing";
 import { getCategory, getProduct, listProductSlugs } from "@/infra/db/queries/catalog";
+import { appUrl } from "@/infra/payments/factory";
+import { AskButcher } from "@/ui/shop/AskButcher";
 import { AvailabilityChip, formatRestock } from "@/ui/shop/AvailabilityChip";
 import { CutMap } from "@/ui/shop/CutMap";
 import { KashrutPanel } from "@/ui/shop/KashrutPanel";
@@ -193,6 +195,7 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
               defaultOrderG: p.defaultOrderG,
               toleranceBp: p.toleranceBp,
               avgPieceG: p.avgPieceG,
+              servingG: facts?.servingG ?? null,
               packagePriceAgorot: p.packagePriceAgorot,
               variants: variants.map((v) => ({
                 id: v.id,
@@ -204,6 +207,8 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
               availability,
             }}
           />
+
+          <AskButcher productName={name} productUrl={`${appUrl()}/${locale}/p/${p.slug}`} />
 
           {facts && (
             <aside className="bg-bone-50 border-bone-300 flex flex-col gap-2 border p-5">

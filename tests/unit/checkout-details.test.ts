@@ -14,6 +14,8 @@ const valid: CheckoutDetails = {
   apartment: "12",
   intercom: "1234",
   deliveryNotes: "",
+  giftRecipient: "",
+  giftMessage: "",
 };
 
 describe("Israeli mobile numbers", () => {
@@ -73,5 +75,17 @@ describe("notification templates", () => {
         expect(body.length).toBeGreaterThan(20);
       }
     }
+  });
+});
+
+describe("gift fields", () => {
+  it("are optional", () => {
+    expect(validateDetails({ ...valid, giftRecipient: "", giftMessage: "" }).ok).toBe(true);
+    expect(validateDetails({ ...valid, giftRecipient: "סבתא רחל", giftMessage: "מזל טוב!" }).ok).toBe(true);
+  });
+  it("are limited in length", () => {
+    const long = validateDetails({ ...valid, giftMessage: "א".repeat(301) });
+    expect(long.ok).toBe(false);
+    if (!long.ok) expect(long.errors.giftMessage).toBe("TOO_LONG");
   });
 });

@@ -4,6 +4,7 @@ import { holdSlotForCart } from "@/infra/cart/holds";
 import { cart, cartLine, deliverySlot, notification, order, orderLine, orderStatusEvent, paymentIntent, slotHold, stockItem } from "@/infra/db/schema";
 import { resolveAuthorization } from "@/infra/orders/authorization";
 import { placeOrder } from "@/infra/orders/placeOrder";
+import { loadPrintOrder } from "@/infra/staff/print";
 import { createMockProvider, decideMockPayment } from "@/infra/payments/mock";
 import { connectTestDb, makeCart, makeSlot, makeWeightProduct, makeZone, truncateAll, validDetails } from "./support/db";
 
@@ -142,5 +143,34 @@ describe("placing an order and paying (real Postgres, demo gateway)", () => {
     expect(results.filter((r) => r.ok)).toHaveLength(2);
     expect(results.filter((r) => !r.ok).every((r) => !r.ok && r.problem.key === "SLOT_UNAVAILABLE")).toBe(true);
     expect((await db.select().from(deliverySlot).where(eq(deliverySlot.id, slot.id)))[0].reservedOrders).toBe(5);
+  });
+
+  it("a gift order keeps the recipient and the card message for the butcher", async () => {
+    const f = await readyCart();
+    const placed = await placeOrder(db, provider, {
+      cartId: f.cart.id,
+      details: { ...validDetails, giftRecipient: "  סבתא רחל  ", giftMessage: " מזל טוב!\nבתיאבון. " },
+      locale: "he",
+      appUrl: APP,
+    });
+    expect(placed.ok).toBe(true);
+    if (!placed.ok) return;
+
+    const [row] = await db.select().from(order).where(eq(order.id, placed.orderId));
+    expect(row.giftRecipient).toBe("סבתא רחל");
+    expect(row.giftMessage).toBe("מזל טוב!\nבתיאבון.");
+
+    const printed = await loadPrintOrder(placed.orderId);
+    expect(printed?.order.giftRecipient).toBe("סבתא רחל");
+  });
+
+  it("an ordinary order stores no gift", async () => {
+    const f = await readyCart();
+    const placed = await placeOrder(db, provider, { cartId: f.cart.id, details: validDetails, locale: "he", appUrl: APP });
+    expect(placed.ok).toBe(true);
+    if (!placed.ok) return;
+    const [row] = await db.select().from(order).where(eq(order.id, placed.orderId));
+    expect(row.giftRecipient).toBeNull();
+    expect(row.giftMessage).toBeNull();
   });
 });

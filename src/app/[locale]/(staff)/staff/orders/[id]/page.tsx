@@ -193,6 +193,17 @@ export default async function StaffOrderPage({ params }: PageProps<"/[locale]/st
       )}
       {managerActions.length > 0 && <ManagerActions orderId={o.id} actions={managerActions} refundableAgorot={refundableAgorot} />}
 
+      {(o.giftRecipient || o.giftMessage) && (
+        <section className="border-brass-500 bg-bone-50 border-s-4 p-4" aria-labelledby="gift-title">
+          <h2 id="gift-title" className="font-semibold">
+            {t("staff.order.giftTitle")}
+          </h2>
+          {o.giftRecipient && <p className="mt-1">{t("staff.order.giftTo", { name: o.giftRecipient })}</p>}
+          {o.giftMessage && <p className="text-char-700 mt-1 whitespace-pre-line">{o.giftMessage}</p>}
+          <p className="text-char-500 mt-2 text-sm">{t("staff.order.giftHint")}</p>
+        </section>
+      )}
+
       <section className="bg-bone-50 ring-bone-300 rounded-2xl p-5 ring-1">
         <h2 className="text-lg font-bold">{t("staff.order.lines")}</h2>
         <div className="mt-3 overflow-x-auto">
