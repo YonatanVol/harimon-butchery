@@ -13,6 +13,7 @@ import { formatAgorot } from "@/domain/money/format";
 import { toDecimalShekels } from "@/domain/money/wire";
 import { formatGrams, grams } from "@/domain/weight/grams";
 import { Link } from "@/i18n/navigation";
+import { alternatesFor } from "@/i18n/alternates";
 import { type Locale, routing } from "@/i18n/routing";
 import { db } from "@/infra/db/client";
 import { getCategory, getProduct, listProductSlugs } from "@/infra/db/queries/catalog";
@@ -49,6 +50,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/p/[slug]
     title,
     description,
     openGraph: { title, description, images: data.product.image ? [{ url: data.product.image }] : undefined },
+    alternates: alternatesFor(locale, `/p/${slug}`),
   };
 }
 

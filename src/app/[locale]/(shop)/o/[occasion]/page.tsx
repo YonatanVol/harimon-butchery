@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { OCCASIONS, occasionFromSlug, occasionSlug } from "@/domain/catalog/occasions";
 import { Link } from "@/i18n/navigation";
+import { alternatesFor } from "@/i18n/alternates";
 import { routing } from "@/i18n/routing";
 import { listProducts } from "@/infra/db/queries/catalog";
 import { ProductCard } from "@/ui/shop/ProductCard";
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/o/[occas
   const occasion = occasionFromSlug(slug);
   if (!occasion) return {};
   const t = await getTranslations({ locale, namespace: "shop.occasion" });
-  return { title: t("title", { occasion: t(occasion) }) };
+  return { title: t("title", { occasion: t(occasion) }), alternates: alternatesFor(locale, `/o/${slug}`) };
 }
 
 export default async function OccasionPage({ params }: PageProps<"/[locale]/o/[occasion]">) {

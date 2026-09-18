@@ -5,6 +5,7 @@ import { CUT_ANIMALS, REGIONS, slugsInRegion } from "@/domain/catalog/cutRegions
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
 import { Link } from "@/i18n/navigation";
+import { alternatesFor } from "@/i18n/alternates";
 import type { Locale } from "@/i18n/routing";
 import { listProducts } from "@/infra/db/queries/catalog";
 import { CutMap } from "@/ui/shop/CutMap";
@@ -15,7 +16,7 @@ export const revalidate = 60;
 export async function generateMetadata({ params }: PageProps<"/[locale]/cuts">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "shop.cuts" });
-  return { title: t("title"), description: t("lead") };
+  return { title: t("title"), description: t("lead"), alternates: alternatesFor(locale, "/cuts") };
 }
 
 export default async function CutsPage({ params }: PageProps<"/[locale]/cuts">) {

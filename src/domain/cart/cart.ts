@@ -35,14 +35,21 @@ export function validateWeight(req: {
 }
 
 /**
- * The nearest weight the butcher can actually cut: rounded to the cut's step and kept inside its limits.
- * A weight that came off the scale (2,613 g) is not one the shop sells, so ordering "the same again"
- * asks for the closest amount it does.
+ * The nearest weight the butcher can actually cut. A weight that came off the scale (2,613 g) is not one
+ * the shop sells, so ordering "the same again" asks for the closest amount it does.
+ *
+ * The steps are counted from the minimum, exactly as `validateWeight` checks them — a cut whose minimum
+ * is not itself a whole number of steps (300 g in 250 g steps) would otherwise be handed a weight this
+ * very file then refuses.
  */
 export function snapToCut(requestedG: number, limits: { minOrderG: number; maxOrderG: number; stepG: number }): number {
+  const { minOrderG, maxOrderG } = limits;
   const step = Math.max(1, limits.stepG);
-  const rounded = Math.round(requestedG / step) * step;
-  return Math.min(limits.maxOrderG, Math.max(limits.minOrderG, rounded));
+  if (requestedG <= minOrderG) return minOrderG;
+  const steps = Math.round((requestedG - minOrderG) / step);
+  // The largest whole number of steps that still fits under the cut's maximum.
+  const most = Math.floor((maxOrderG - minOrderG) / step);
+  return minOrderG + Math.min(most, Math.max(0, steps)) * step;
 }
 
 export function validateQuantity(req: { quantity: number; availableUnits: number }): LineProblem | null {

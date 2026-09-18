@@ -563,7 +563,7 @@
     },
     "compare": {
       "title": "Compare cuts",
-      "lead": "Two or three cuts side by side: price, price per helping, fat, tenderness, method and time. The butcher's numbers, not marketing's.",
+      "lead": "Up to three cuts side by side: price, price per helping, fat, tenderness, method and time. The butcher's numbers, not marketing's.",
       "slot": "Cut {n}",
       "pick": "Choose a cut",
       "empty": "Choose at least one cut to start.",
@@ -582,7 +582,8 @@
       "origin": "Where it comes from",
       "kashrut": "Kashrut",
       "tip": "The butcher's tip",
-      "cta": "Compare with another cut"
+      "cta": "Compare with another cut",
+      "swipe": "Swipe the table sideways to see the other columns."
     },
     "recipes": {
       "title": "Recipes",
@@ -664,9 +665,11 @@
     "reorder": {
       "cta": "Order this again",
       "adding": "Adding to the cart…",
-      "added": "{count, plural, one {one cut added to the cart} other {# cuts added to the cart}} — at today's prices.",
-      "skipped": "{name} was not added:",
+      "added": "{count, plural, one {one cut from that order is in the cart} other {# cuts from that order are in the cart}} — at today's prices.",
+      "skipped": "We could not add {name}:",
+      "changed": "{name}: the amount changed from {from} to {to}, to a weight the butcher cuts in.",
       "nothing": "None of the cuts in that order are available right now.",
+      "nothingArrived": "Nothing from that order was delivered in the end, so there is nothing to order again.",
       "notFound": "We could not find that order."
     },
     "reviews": {

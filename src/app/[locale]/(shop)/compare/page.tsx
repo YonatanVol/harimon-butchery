@@ -7,6 +7,7 @@ import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
 import { formatGrams, grams } from "@/domain/weight/grams";
 import { Link } from "@/i18n/navigation";
+import { alternatesFor } from "@/i18n/alternates";
 import type { Locale } from "@/i18n/routing";
 import { listCategories, listProducts } from "@/infra/db/queries/catalog";
 import { AvailabilityChip } from "@/ui/shop/AvailabilityChip";
@@ -21,7 +22,7 @@ const SLOTS = 3;
 export async function generateMetadata({ params }: PageProps<"/[locale]/compare">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "shop.compare" });
-  return { title: t("title"), description: t("lead") };
+  return { title: t("title"), description: t("lead"), alternates: alternatesFor(locale, "/compare") };
 }
 
 /** A row of the table: one fact, drawn for each cut, or nothing when no cut has it. */
@@ -34,7 +35,6 @@ function Row({ label, values }: { label: string; values: Array<React.ReactNode> 
       </th>
       {values.map((v, i) => (
         // The cuts keep their column order, so the column position is the identity here.
-        // eslint-disable-next-line react/no-array-index-key
         <td key={i} className="py-3 pe-3 last:pe-0">
           {v ?? <span className="text-char-500">—</span>}
         </td>
@@ -91,11 +91,13 @@ export default async function ComparePage({ params, searchParams }: PageProps<"/
       </header>
 
       <ComparePicker slots={slots} groups={groups} labels={Array.from({ length: SLOTS }, (_, i) => t("compare.slot", { n: i + 1 }))} />
+      {cuts.length > 1 && <p className="text-char-500 mt-3 text-sm sm:hidden">{t("compare.swipe")}</p>}
 
       {cuts.length === 0 ? (
         <p className="text-char-700 mt-10 text-center text-lg">{t("compare.empty")}</p>
       ) : (
-        <div className="scrollbar-none mt-10 overflow-x-auto pb-24">
+        // A scroll region of its own: focusable and named, so it can be scrolled with a keyboard too.
+        <div role="region" aria-label={t("compare.title")} tabIndex={0} className="focus-visible:outline-wine-600 mt-10 overflow-x-auto pb-24 focus-visible:outline-2 focus-visible:outline-offset-4">
           <table className="w-full min-w-[640px] border-collapse text-[15px]">
             <caption className="sr-only">{t("compare.title")}</caption>
             <thead>

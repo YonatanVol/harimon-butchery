@@ -91,4 +91,23 @@ describe("snapToCut", () => {
   it("survives a cut with no step recorded", () => {
     expect(snapToCut(1234, { minOrderG: 100, maxOrderG: 9000, stepG: 0 })).toBe(1234);
   });
+
+  it("only ever returns a weight the cart itself accepts", () => {
+    // Including cuts whose minimum and maximum are not whole steps apart.
+    const shapes = [
+      { minOrderG: 250, maxOrderG: 5000, stepG: 250 },
+      { minOrderG: 300, maxOrderG: 5000, stepG: 250 },
+      { minOrderG: 250, maxOrderG: 4900, stepG: 250 },
+      { minOrderG: 400, maxOrderG: 1000, stepG: 300 },
+    ];
+    for (const limits of shapes) {
+      for (const asked of [0, 1, 99, 613, 2613, 4999, 99_999]) {
+        const snapped = snapToCut(asked, limits);
+        expect(
+          validateWeight({ requestedG: snapped, minG: limits.minOrderG, maxG: limits.maxOrderG, stepG: limits.stepG, availableG: 1_000_000 }),
+          `${asked} in ${JSON.stringify(limits)} became ${snapped}`,
+        ).toBeNull();
+      }
+    }
+  });
 });
