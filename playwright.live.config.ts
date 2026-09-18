@@ -2,14 +2,16 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Runs the browser suite against a deployed shop: `LIVE_URL=https://… npx playwright test -c playwright.live.config.ts`.
- * Skips the tablet specs, which read the database directly. The checkout specs place real demo orders on that shop.
+ * Skips the specs that read the database directly (the tablet and review journeys), since those would be
+ * reading this machine's database while the browser is on the deployed shop. The checkout specs place
+ * real demo orders on that shop.
  */
 const baseURL = process.env.LIVE_URL;
 if (!baseURL) throw new Error("Set LIVE_URL to the deployed shop's address.");
 
 export default defineConfig({
   testDir: "tests/e2e",
-  testIgnore: /staff-tablet/,
+  testIgnore: /(staff-tablet|reviews)\.spec\.ts/,
   workers: 1,
   fullyParallel: false,
   retries: 0,
