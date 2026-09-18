@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { alternatesFor } from "@/i18n/alternates";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { listAuthorities, listProducts } from "@/infra/db/queries/catalog";
 import { cx } from "@/ui/cx";
@@ -9,7 +10,7 @@ export const revalidate = 3600;
 export async function generateMetadata({ params }: PageProps<"/[locale]/kashrut">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "shop.kashrut" });
-  return { title: t("pageTitle") };
+  return { title: t("pageTitle"), alternates: alternatesFor(locale, "/kashrut") };
 }
 
 export default async function KashrutPage({ params }: PageProps<"/[locale]/kashrut">) {

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { alternatesFor } from "@/i18n/alternates";
 import { routing } from "@/i18n/routing";
 import { getCategory, listCategories } from "@/infra/db/queries/catalog";
 import { CategoryBrowser } from "@/ui/shop/CategoryBrowser";
@@ -23,6 +24,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/c/[slug]
   return {
     title: he ? data.category.nameHe : data.category.nameEn,
     description: (he ? data.category.descriptionHe : data.category.descriptionEn) ?? undefined,
+    alternates: alternatesFor(locale, `/c/${slug}`),
   };
 }
 

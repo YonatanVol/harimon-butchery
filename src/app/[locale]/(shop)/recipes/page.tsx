@@ -3,12 +3,13 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { recipes } from "@/content/recipes";
 import { OCCASIONS } from "@/domain/catalog/occasions";
 import type { Locale } from "@/i18n/routing";
+import { alternatesFor } from "@/i18n/alternates";
 import { RecipeCard } from "@/ui/shop/RecipeCard";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/recipes">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "shop.recipes" });
-  return { title: t("title"), description: t("lead") };
+  return { title: t("title"), description: t("lead"), alternates: alternatesFor(locale, "/recipes") };
 }
 
 export default async function RecipesPage({ params }: PageProps<"/[locale]/recipes">) {

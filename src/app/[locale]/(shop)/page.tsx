@@ -1,7 +1,9 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { OCCASIONS, occasionSlug } from "@/domain/catalog/occasions";
 import { REGIONS, slugsInRegion } from "@/domain/catalog/cutRegions";
+import { alternatesFor } from "@/i18n/alternates";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { listCategories, listProducts } from "@/infra/db/queries/catalog";
@@ -11,6 +13,11 @@ import { ProductCard } from "@/ui/shop/ProductCard";
 import { RecipeRail } from "@/ui/shop/RecipeRail";
 
 export const revalidate = 60;
+
+export async function generateMetadata({ params }: PageProps<"/[locale]">): Promise<Metadata> {
+  const { locale } = await params;
+  return { alternates: alternatesFor(locale, "") };
+}
 
 const HERO_PHOTO = "/catalog/products/entrecote.jpg";
 

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { recipeBySlug, recipes } from "@/content/recipes";
 import { Link } from "@/i18n/navigation";
+import { alternatesFor } from "@/i18n/alternates";
 import { type Locale, routing } from "@/i18n/routing";
 import { getProduct } from "@/infra/db/queries/catalog";
 import { formatDuration, RecipeCard, recipePhoto, totalMinutes } from "@/ui/shop/RecipeCard";
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/recipes/
   const he = locale === "he";
   const title = he ? r.titleHe : r.titleEn;
   const description = he ? r.introHe : r.introEn;
-  return { title, description, openGraph: { title, description, images: [{ url: recipePhoto(r) }] } };
+  return { title, description, openGraph: { title, description, images: [{ url: recipePhoto(r) }] }, alternates: alternatesFor(locale, `/recipes/${slug}`) };
 }
 
 export default async function RecipePage({ params }: PageProps<"/[locale]/recipes/[slug]">) {
