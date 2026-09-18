@@ -15,6 +15,8 @@ import { driverAction, refundOrder, shopDecision } from "../src/infra/orders/del
 import { placeOrder } from "../src/infra/orders/placeOrder";
 import * as w from "../src/infra/orders/weighing";
 import { createMockProvider, decideMockPayment, type MockScenario } from "../src/infra/payments/mock";
+import { submitReview } from "../src/infra/reviews/repository";
+import { genericReviews, reviewsBySlug } from "./seed-data/reviews";
 
 type Database = NodePgDatabase<typeof s>;
 type Staff = { id: string; role: string };
@@ -66,6 +68,12 @@ const PEOPLE = [
 const PLAN: Array<{ zone: string; city: string; recipe: keyof typeof RECIPES; target: Target; scenario?: MockScenario; deliveryNote?: string }> = [
   { zone: "tel-aviv", city: "תל אביב", recipe: "shabbat", target: "DELIVERED" },
   { zone: "ramat-gan", city: "רמת גן", recipe: "bundle", target: "DELIVERED" },
+  { zone: "tel-aviv", city: "תל אביב", recipe: "grill", target: "DELIVERED" },
+  { zone: "sharon", city: "הרצליה", recipe: "premium", target: "DELIVERED" },
+  { zone: "rishon-holon", city: "חולון", recipe: "weeknight", target: "DELIVERED" },
+  { zone: "jerusalem", city: "ירושלים", recipe: "holiday", target: "DELIVERED" },
+  { zone: "ramat-gan", city: "רמת גן", recipe: "family", target: "DELIVERED" },
+  { zone: "modiin", city: "מודיעין", recipe: "grill", target: "DELIVERED" },
   { zone: "tel-aviv", city: "תל אביב", recipe: "grill", target: "OUT_FOR_DELIVERY", deliveryNote: "קוד לבניין 1379#" },
   { zone: "sharon", city: "הרצליה", recipe: "family", target: "OUT_FOR_DELIVERY" },
   { zone: "tel-aviv", city: "תל אביב", recipe: "premium", target: "PACKED" },
@@ -84,6 +92,18 @@ const PLAN: Array<{ zone: string; city: string; recipe: keyof typeof RECIPES; ta
   { zone: "sharon", city: "כפר סבא", recipe: "bundle", target: "AUTH_DECLINED", scenario: "DECLINE_INSUFFICIENT" },
   { zone: "tel-aviv", city: "תל אביב", recipe: "shabbat", target: "CANCELLED_BY_CUSTOMER" },
   { zone: "jerusalem", city: "מבשרת ציון", recipe: "grill", target: "CANCELLED_BY_SHOP" },
+
+  // Deliveries that already happened, so the shop has a history of reviews behind it rather than one each.
+  { zone: "tel-aviv", city: "תל אביב", recipe: "premium", target: "DELIVERED" },
+  { zone: "sharon", city: "רעננה", recipe: "shabbat", target: "DELIVERED" },
+  { zone: "ramat-gan", city: "גבעתיים", recipe: "grill", target: "DELIVERED" },
+  { zone: "rishon-holon", city: "ראשון לציון", recipe: "family", target: "DELIVERED" },
+  { zone: "jerusalem", city: "ירושלים", recipe: "weeknight", target: "DELIVERED" },
+  { zone: "modiin", city: "מודיעין", recipe: "shabbat", target: "DELIVERED" },
+  { zone: "tel-aviv", city: "יפו", recipe: "grill", target: "DELIVERED" },
+  { zone: "sharon", city: "כפר סבא", recipe: "holiday", target: "DELIVERED" },
+  { zone: "tel-aviv", city: "תל אביב", recipe: "weeknight", target: "DELIVERED" },
+  { zone: "ramat-gan", city: "רמת גן", recipe: "premium", target: "DELIVERED" },
 ];
 
 export async function seedDemoOrders(db: Database, appUrl: string) {
@@ -241,10 +261,69 @@ export async function seedDemoOrders(db: Database, appUrl: string) {
     );
   }
 
+  const reviews = await seedDemoReviews(db);
+
   // Everything above queued customer messages; send them the way the running app does (mock provider in demo mode).
   const { sent } = await dispatchQueued(db, mockNotifier, { limit: 1000 });
 
-  return { counts, sent };
+  return { counts, sent, reviews };
+}
+
+/**
+ * Demo reviews, written through the same function a customer's review goes through — so they can only
+ * exist for a cut that was really delivered. Most are then published, a couple are left waiting in the
+ * staff queue and one is rejected, so every state on the moderation screen has something in it.
+ */
+async function seedDemoReviews(db: Database) {
+  const delivered = await db
+    .select({ orderId: s.order.id, orderNumber: s.order.orderNumber, phone: s.customer.phoneE164, productId: s.product.id, slug: s.product.slug })
+    .from(s.order)
+    .innerJoin(s.customer, eq(s.customer.id, s.order.customerId))
+    .innerJoin(s.orderLine, eq(s.orderLine.orderId, s.order.id))
+    .innerJoin(s.productVariant, eq(s.productVariant.id, s.orderLine.variantId))
+    .innerJoin(s.product, eq(s.product.id, s.productVariant.productId))
+    .where(eq(s.order.status, "DELIVERED"))
+    .orderBy(asc(s.order.orderNumber), asc(s.product.slug));
+
+  const used: Record<string, number> = {};
+  const written: Array<{ id: string; replyHe?: string }> = [];
+
+  for (const [i, row] of delivered.entries()) {
+    // Leave every fifth cut unreviewed, so the account page has something to invite people to write.
+    if (i % 5 === 4) continue;
+    // Each cut uses each of its own reviews once, then the plain ones once. Never the same words twice.
+    const choices = [...(reviewsBySlug[row.slug] ?? []), ...genericReviews];
+    const n = used[row.slug] ?? 0;
+    used[row.slug] = n + 1;
+    const pick = choices[n];
+    if (!pick) continue;
+
+    const result = await submitReview(db, { phoneE164: row.phone, orderId: row.orderId, productSlug: row.slug, rating: pick.rating, body: pick.he, locale: "he" });
+    if (!result.ok) continue;
+    const [saved] = await db
+      .select({ id: s.productReview.id })
+      .from(s.productReview)
+      .where(and(eq(s.productReview.orderId, row.orderId), eq(s.productReview.productId, row.productId)));
+    if (saved) written.push({ id: saved.id, replyHe: pick.replyHe });
+  }
+
+  const manager = (await db.select().from(s.staffUser).where(eq(s.staffUser.role, "MANAGER")))[0];
+  // Everything is published except the last three: two left waiting for the staff queue, one rejected.
+  const decided = written.slice(0, Math.max(0, written.length - 3));
+  const waiting = written.slice(Math.max(0, written.length - 3));
+
+  for (const r of decided) {
+    await db.update(s.productReview).set({ status: "PUBLISHED", moderatedByStaffId: manager?.id ?? null, moderatedAt: new Date() }).where(eq(s.productReview.id, r.id));
+    if (r.replyHe) await db.update(s.productReview).set({ replyBody: r.replyHe, repliedAt: new Date() }).where(eq(s.productReview.id, r.id));
+  }
+  if (waiting[2]) {
+    await db
+      .update(s.productReview)
+      .set({ status: "REJECTED", moderatedByStaffId: manager?.id ?? null, moderatedAt: new Date(), moderationNote: "הביקורת עסקה במשלוח ולא בנתח — נענה ללקוח ישירות" })
+      .where(eq(s.productReview.id, waiting[2].id));
+  }
+
+  return { published: decided.length, waiting: Math.min(2, waiting.length) };
 }
 
 /**

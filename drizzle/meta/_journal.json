@@ -78,6 +78,13 @@
       "when": 1789523659187,
       "tag": "0010_gift_message",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789719815925,
+      "tag": "0011_product_review",
+      "breakpoints": true
     }
   ]
 }

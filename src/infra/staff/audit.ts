@@ -8,6 +8,7 @@ export const AUDIT_GROUPS = {
   catalog: ["product.price", "product.publish", "product.unpublish"],
   stock: ["stock.%"],
   delivery: ["zone.update", "blackout.add", "blackout.remove", "slots.generate"],
+  reviews: ["review.%"],
 } as const;
 export type AuditGroup = keyof typeof AUDIT_GROUPS;
 

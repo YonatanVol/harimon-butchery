@@ -436,7 +436,12 @@
           "TOO_MANY_ATTEMPTS": "Too many tries for this code — ask for a new one",
           "NETWORK": "Can't reach the server. Check the network and try again."
         }
-      }
+      },
+      "reviewsTitle": "Tell us how it turned out",
+      "reviewsBody": "These are the cuts delivered to you in the last three months that you have not reviewed yet.",
+      "reviewsDelivered": "Delivered {date}",
+      "reviewsWrite": "Write a review",
+      "reviewsClose": "Close"
     },
     "interest": {
       "restockTitle": "Tell me when it's back",
@@ -625,6 +630,45 @@
       "demoTitle": "Demo shop — nothing is sent",
       "demoBody": "In a real shop this button would open WhatsApp with this message to the butcher. There is no real number here, so this is what would have been sent:",
       "close": "Close"
+    },
+    "reviews": {
+      "title": "What customers said",
+      "summary": "{average} out of 5",
+      "count": "{count, plural, one {one review} other {# reviews}}",
+      "ariaAverage": "Average rating {average} out of 5",
+      "ariaRating": "{rating} out of 5 stars",
+      "verified": "Verified purchase",
+      "bar": "{stars, plural, one {one star} other {# stars}}",
+      "reply": "The butcher's reply",
+      "empty": "No one has reviewed this cut yet.",
+      "emptyWho": "Only someone who ordered this cut and had it delivered can write here — so every review comes from a real purchase.",
+      "moderation": "Every review is read before it appears. We do not remove a review for being critical.",
+      "form": {
+        "title": "Review {name}",
+        "orderLine": "From order {order}",
+        "rating": "Your rating",
+        "star": "{count, plural, one {one star} other {# stars}}",
+        "body": "How did it turn out?",
+        "bodyHelp": "How you cooked it, what worked, what you would do differently. {min}–{max} characters.",
+        "remaining": "{count, plural, one {one character left} other {# characters left}}",
+        "submit": "Send review",
+        "sending": "Sending…",
+        "ratingMissing": "Choose a rating",
+        "bodyMissing": "Write at least {min} characters",
+        "nameNote": "Your first name and the initial of your surname will be shown. Your phone number is not.",
+        "sent": "Thank you. Your review will appear on the cut's page once we have read it."
+      },
+      "problems": {
+        "RATING_INVALID": "Choose a rating between one and five stars",
+        "BODY_TOO_SHORT": "Write at least {min} characters",
+        "BODY_TOO_LONG": "Up to {max} characters",
+        "NOT_SIGNED_IN": "Sign in to write a review",
+        "NOT_FOUND": "We could not find that order",
+        "NOT_DELIVERED": "A review can be written once the order has been delivered",
+        "WINDOW_CLOSED": "More than {days} days have passed since delivery",
+        "ALREADY_REVIEWED": "You have already reviewed this cut on this order",
+        "NETWORK": "No connection to the server. Try again."
+      }
     }
   },
   "orders": {
@@ -865,7 +909,8 @@
       "stock": "Stock",
       "zones": "Zones & windows",
       "catalog": "Catalog",
-      "audit": "Log"
+      "audit": "Log",
+      "reviews": "Reviews"
     },
     "board": {
       "title": "Today's board",
@@ -1365,6 +1410,40 @@
         "NETWORK": "Can't reach the server. Try again."
       }
     },
+    "reviews": {
+      "title": "Customer reviews",
+      "intro": "Every review comes from a delivered order. Publish, reject or reply — what you publish appears on the cut's page.",
+      "filter": "Filter",
+      "waiting": "{count, plural, one {one review is waiting} other {# reviews are waiting}}",
+      "allDone": "No reviews are waiting",
+      "empty": "No reviews in this state",
+      "statuses": {
+        "PENDING": "Waiting",
+        "PUBLISHED": "Published",
+        "REJECTED": "Rejected"
+      },
+      "onOrder": "Order {order}",
+      "stars": "{count, plural, one {one star} other {# stars}}",
+      "publish": "Publish",
+      "reject": "Reject",
+      "unpublish": "Take off the site",
+      "note": "Internal note (not shown to the customer)",
+      "noteRequired": "Say why it was rejected (at least 3 characters)",
+      "rejectedNote": "Rejected: {note}",
+      "reply": "The butcher's reply",
+      "replyHelp": "The reply appears under the review, in the shop's name.",
+      "replySave": "Save reply",
+      "replyRemove": "Remove the reply",
+      "saving": "Saving…",
+      "saved": "Saved.",
+      "problems": {
+        "NOT_PERMITTED": "You do not have permission to manage reviews",
+        "NOT_FOUND": "That review was not found",
+        "NETWORK": "No connection to the server. Try again."
+      },
+      "cancel": "Cancel",
+      "noChange": "Nothing changed"
+    },
     "audit": {
       "title": "Activity log",
       "intro": "Every change staff made to prices, stock, orders and deliveries — who, what and when. The log can't be edited.",
@@ -1380,7 +1459,8 @@
         "orders": "Orders",
         "catalog": "Catalog",
         "stock": "Stock",
-        "delivery": "Delivery"
+        "delivery": "Delivery",
+        "reviews": "Reviews"
       },
       "actors": {
         "CUSTOMER": "Customer",
@@ -1416,7 +1496,10 @@
         "capture_retry": "Order {order}: charge retried",
         "capture_reconcile": "Order {order}: unfinished charge checked",
         "payment_late_payment_returned": "Order {order}: late payment on an expired page returned ({amount})",
-        "payment_late_payment_not_returned": "Order {order}: late payment on an expired page NOT returned ({amount}) — handle by hand"
+        "payment_late_payment_not_returned": "Order {order}: late payment on an expired page NOT returned ({amount}) — handle by hand",
+        "review_publish": "A review was published",
+        "review_reject": "A review was rejected",
+        "review_reply": "A review got a reply from the butcher"
       },
       "events": {
         "CANCELLED_BY_SHOP": "cancelled by the shop",

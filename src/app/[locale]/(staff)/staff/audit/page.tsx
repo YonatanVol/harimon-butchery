@@ -69,6 +69,8 @@ export default async function AuditPage({ params, searchParams }: PageProps<"/[l
         return t(`actions.${e.action.replace(".", "_") as "line_weigh"}`, { order: e.order?.number ?? "?", weight: num(a?.actualG) !== null ? qty(a?.actualG, "g") : "", name: String((locale === "he" ? a?.substituteNameHe : a?.substituteNameEn) ?? "") });
       case e.action.startsWith("delivery."):
         return t("actions.delivery", { order: e.order?.number ?? "?", event: t(`deliveryEvents.${e.action.replace("delivery.", "").toUpperCase() as "DELIVERED"}`) });
+      case e.action.startsWith("review."):
+        return t(`actions.${e.action.replace(".", "_") as "review_publish"}`);
       case e.action === "GIVE_EXTRA_FREE":
         return t("actions.giveFree", { order: e.order?.number ?? "?", amount: money(a?.goodwillAgorot) });
       case e.entityType === "order":

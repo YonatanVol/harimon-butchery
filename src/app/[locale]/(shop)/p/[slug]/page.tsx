@@ -2,16 +2,21 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { ViewTransition } from "react";
+import { brand } from "@/config/brand";
 import { factsFor } from "@/content/productFacts";
 import { recipesForProduct } from "@/content/recipes";
 import { placementOf, REGIONS } from "@/domain/catalog/cutRegions";
+import { formatTenths } from "@/domain/catalog/reviews";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
+import { toDecimalShekels } from "@/domain/money/wire";
 import { formatGrams, grams } from "@/domain/weight/grams";
 import { Link } from "@/i18n/navigation";
 import { type Locale, routing } from "@/i18n/routing";
+import { db } from "@/infra/db/client";
 import { getCategory, getProduct, listProductSlugs } from "@/infra/db/queries/catalog";
 import { appUrl } from "@/infra/payments/factory";
+import { reviewsFor, summaryFor } from "@/infra/reviews/repository";
 import { AskButcher } from "@/ui/shop/AskButcher";
 import { AvailabilityChip, formatRestock } from "@/ui/shop/AvailabilityChip";
 import { CutMap } from "@/ui/shop/CutMap";
@@ -21,6 +26,8 @@ import { ProductGallery } from "@/ui/shop/ProductGallery";
 import { ProductImage } from "@/ui/shop/ProductImage";
 import { ProductPurchase } from "@/ui/shop/ProductPurchase";
 import { RecipeCard } from "@/ui/shop/RecipeCard";
+import { ratingJsonLd, ReviewList } from "@/ui/shop/reviews/ReviewList";
+import { RatingLine } from "@/ui/shop/reviews/Stars";
 
 export const revalidate = 60;
 
@@ -82,6 +89,38 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
   const origin = he ? p.cutOriginHe : p.cutOriginEn;
 
   const more = ((await getCategory(data.categorySlug))?.products ?? []).filter((x) => x.id !== p.id).slice(0, 4);
+  const [summary, reviews] = await Promise.all([summaryFor(db, p.id), reviewsFor(db, p.id)]);
+
+  // What search engines and WhatsApp previews read. Only facts that are also on the page.
+  const priceAgorot = p.pricingMode === "WEIGHT" ? p.pricePerKgAgorot! : p.packagePriceAgorot!;
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name,
+    sku: p.slug,
+    description: he ? p.shortDescHe : p.shortDescEn,
+    image: p.image ? [new URL(p.image, appUrl()).toString()] : undefined,
+    category: categoryName,
+    brand: { "@type": "Brand", name: he ? brand.name.he : brand.name.en },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "ILS",
+      price: toDecimalShekels(agorot(priceAgorot)),
+      availability: availability.kind === "OUT" ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+      url: new URL(`/${locale}/p/${p.slug}`, appUrl()).toString(),
+      ...(p.pricingMode === "WEIGHT"
+        ? { priceSpecification: { "@type": "UnitPriceSpecification", priceCurrency: "ILS", price: toDecimalShekels(agorot(priceAgorot)), referenceQuantity: { "@type": "QuantitativeValue", value: 1, unitCode: "KGM" } } }
+        : {}),
+    },
+    aggregateRating: ratingJsonLd(summary),
+    review: reviews.slice(0, 5).map((r) => ({
+      "@type": "Review",
+      author: { "@type": "Person", name: r.displayName },
+      datePublished: r.createdAt.toISOString().slice(0, 10),
+      reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+      reviewBody: r.body,
+    })),
+  };
 
   const outLabel =
     availability.kind === "OUT"
@@ -110,6 +149,8 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
 
   return (
     <div className="mx-auto max-w-7xl sm:px-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd).replace(/</g, "\\u003c") }} />
+
       <nav aria-label="breadcrumb" className="text-char-500 flex flex-wrap gap-2 px-4 py-4 text-sm sm:px-0">
         <Link href="/" className="hover:text-char-900">
           {t("product.breadcrumbHome")}
@@ -154,6 +195,15 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
               </bdi>
               {availability.kind !== "IN_STOCK" && <AvailabilityChip availability={availability} />}
             </div>
+            {summary.count > 0 && (
+              <a href="#reviews-title" className="hover:text-char-900 w-fit">
+                <RatingLine
+                  averageTenths={summary.averageTenths}
+                  count={summary.count}
+                  label={t("reviews.ariaAverage", { average: formatTenths(summary.averageTenths) })}
+                />
+              </a>
+            )}
           </header>
 
           {stats.length > 0 && (
@@ -307,6 +357,13 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
           </div>
         </section>
       )}
+
+      <section className="reveal mt-20 px-4 sm:px-0" aria-labelledby="reviews-title">
+        <h2 id="reviews-title" className="font-display mb-6 scroll-mt-28 text-3xl">
+          {t("reviews.title")}
+        </h2>
+        <ReviewList summary={summary} reviews={reviews} />
+      </section>
 
       {more.length > 0 && (
         <section className="reveal mt-20" aria-labelledby="more-title">

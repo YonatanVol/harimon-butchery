@@ -101,3 +101,5 @@ export const notificationStatus = pgEnum("notification_status", [
   "FAILED",
   "SUPPRESSED",
 ]);
+
+export const reviewStatus = pgEnum("review_status", ["PENDING", "PUBLISHED", "REJECTED"]);

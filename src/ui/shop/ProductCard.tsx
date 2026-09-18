@@ -6,9 +6,11 @@ import { formatGrams, grams } from "@/domain/weight/grams";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { ProductCard as ProductCardData } from "@/infra/db/queries/catalog";
+import { formatTenths } from "@/domain/catalog/reviews";
 import { cx } from "../cx";
 import { AvailabilityChip } from "./AvailabilityChip";
 import { ProductImage } from "./ProductImage";
+import { RatingLine } from "./reviews/Stars";
 
 /**
  * A cut on the counter: tall photograph, serif name, one line of facts, the price.
@@ -70,6 +72,13 @@ export async function ProductCard({
           </Link>
         </h3>
         {facts.length > 0 && <p className="text-char-500 line-clamp-1 text-[13px]">{facts.join(" · ")}</p>}
+        {p.rating && (
+          <RatingLine
+            averageTenths={p.rating.averageTenths}
+            count={p.rating.count}
+            label={t("reviews.ariaAverage", { average: formatTenths(p.rating.averageTenths) })}
+          />
+        )}
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
           <bdi className="text-[15px] font-semibold tabular-nums">
             {price}

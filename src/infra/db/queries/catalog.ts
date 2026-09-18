@@ -1,8 +1,21 @@
 import "server-only";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { type Availability, availabilityOf } from "@/domain/catalog/availability";
+import { averageTenths } from "@/domain/catalog/reviews";
 import { db } from "../client";
-import { category, kashrutAuthority, product, productKashrut, productVariant, stockItem } from "../schema";
+import { category, kashrutAuthority, product, productKashrut, productReview, productVariant, stockItem } from "../schema";
+
+/** Published ratings per cut, counted once and joined onto every product list. */
+const reviewAgg = db
+  .select({
+    productId: productReview.productId,
+    count: sql<number>`count(*)::int`.as("review_count"),
+    total: sql<number>`sum(${productReview.rating})::int`.as("rating_total"),
+  })
+  .from(productReview)
+  .where(eq(productReview.status, "PUBLISHED"))
+  .groupBy(productReview.productId)
+  .as("review_agg");
 
 export type ProductCard = Awaited<ReturnType<typeof listProducts>>[number];
 
@@ -40,11 +53,17 @@ const cardColumns = {
   lowThresholdG: stockItem.lowThresholdG,
   lowThresholdUnits: stockItem.lowThresholdUnits,
   nextRestockDate: stockItem.nextRestockDate,
+  reviewCount: reviewAgg.count,
+  ratingTotal: reviewAgg.total,
 };
 
-type CardRow = { [K in keyof typeof cardColumns]: (typeof cardColumns)[K]["_"]["data"] | null };
+/** Columns carry their value under `data`; the counted ratings come back as an aliased `sql` expression. */
+type SelectedValue<C> = C extends { _: { data: infer D } } ? D : C extends { _: { type: infer T } } ? T : never;
+type CardRow = { [K in keyof typeof cardColumns]: SelectedValue<(typeof cardColumns)[K]> | null };
 
 function withAvailability<T extends CardRow>(row: T) {
+  const reviewCount = row.reviewCount ?? 0;
+  const rating = reviewCount > 0 ? { count: reviewCount, averageTenths: averageTenths(reviewCount, row.ratingTotal ?? 0) } : null;
   const availability: Availability = availabilityOf({
     pricingMode: row.pricingMode!,
     onHandG: row.onHandG ?? 0,
@@ -56,7 +75,7 @@ function withAvailability<T extends CardRow>(row: T) {
     minOrderG: row.minOrderG,
     nextRestockDate: row.nextRestockDate,
   });
-  return { ...row, availability };
+  return { ...row, availability, rating };
 }
 
 function cardQuery() {
@@ -66,7 +85,8 @@ function cardQuery() {
     .innerJoin(category, eq(category.id, product.categoryId))
     .innerJoin(productKashrut, eq(productKashrut.productId, product.id))
     .innerJoin(kashrutAuthority, eq(kashrutAuthority.id, productKashrut.authorityId))
-    .leftJoin(stockItem, eq(stockItem.productId, product.id));
+    .leftJoin(stockItem, eq(stockItem.productId, product.id))
+    .leftJoin(reviewAgg, eq(reviewAgg.productId, product.id));
 }
 
 export async function listProducts() {
