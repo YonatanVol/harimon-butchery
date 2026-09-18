@@ -6,7 +6,7 @@ import { expectNoHorizontalOverflow, langOf, staffLogin, watchErrors } from "./s
  * direction, one main heading, no sideways scroll, and no errors in the console.
  */
 
-const PUBLIC = ["", "/c/beef", "/p/beef-fillet", "/p/entrecote", "/o/shabbat", "/cuts", "/recipes", "/recipes/grilled-entrecote", "/search?q=chicken", "/kashrut", "/cart", "/account", "/staff/login", "/no-such-page"];
+const PUBLIC = ["", "/c/beef", "/p/beef-fillet", "/p/entrecote", "/o/shabbat", "/cuts", "/compare", "/compare?cuts=entrecote,beef-fillet", "/recipes", "/recipes/grilled-entrecote", "/search?q=chicken", "/kashrut", "/cart", "/account", "/staff/login", "/no-such-page"];
 const STAFF = ["/staff", "/staff/deliveries", "/staff/stock", "/staff/catalog", "/staff/zones", "/staff/messages", "/staff/reviews", "/staff/audit"];
 
 for (const path of PUBLIC) {

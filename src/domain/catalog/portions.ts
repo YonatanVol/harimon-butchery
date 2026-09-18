@@ -1,3 +1,5 @@
+import { snapToCut } from "../cart/cart";
+
 /**
  * "How much meat do I need?" — turns a number of people and how hungry they are into grams the butcher can cut.
  * Pure: integer grams in, integer grams out.
@@ -40,9 +42,7 @@ export function portionFor(input: PortionInput, limits: CutLimits): PortionResul
   const people = Math.max(1, Math.round(input.people));
   const wantedG = Math.round(input.servingG * people * APPETITE_FACTOR[input.appetite] * (input.withSides ? SIDES_FACTOR : 1));
 
-  const step = Math.max(1, limits.stepG);
-  const rounded = Math.round(wantedG / step) * step;
-  const grams = Math.min(limits.maxOrderG, Math.max(limits.minOrderG, rounded));
+  const grams = snapToCut(wantedG, limits);
 
   // Say so whenever the cut itself can't match the request — not for the small rounding to the next step.
   const adjusted = wantedG < limits.minOrderG ? "RAISED_TO_MIN" : wantedG > limits.maxOrderG ? "LOWERED_TO_MAX" : "NONE";

@@ -14,6 +14,7 @@ import { expireApprovals, rescheduleOptions } from "@/infra/orders/customer";
 import { loadTrackedOrder } from "@/infra/orders/queries";
 import { appUrl } from "@/infra/payments/factory";
 import { CancelOrder, ExtraApproval, Reschedule } from "@/ui/shop/tracking/OrderActions";
+import { ReorderButton } from "@/ui/shop/ReorderButton";
 import { cx } from "@/ui/cx";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/orders/[number]">): Promise<Metadata> {
@@ -110,6 +111,9 @@ export default async function TrackingPage({ params, searchParams }: PageProps<"
         )}
         {o.status === "DELIVERY_FAILED_NOT_HOME" && (
           <Reschedule target={{ by: "customer", orderNumber: o.orderNumber, token }} windows={windows.map((w) => ({ id: w.id, startsAt: w.startsAt.toISOString(), endsAt: w.endsAt.toISOString() }))} />
+        )}
+        {["DELIVERED", "CLOSED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(o.status) && (
+          <ReorderButton orderNumber={o.orderNumber} accessToken={token} variant="primary" />
         )}
         {o.status === "AUTHORIZED" && (
           <CancelOrder

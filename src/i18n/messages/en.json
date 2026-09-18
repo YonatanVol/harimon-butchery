@@ -561,6 +561,29 @@
         }
       }
     },
+    "compare": {
+      "title": "Compare cuts",
+      "lead": "Two or three cuts side by side: price, price per helping, fat, tenderness, method and time. The butcher's numbers, not marketing's.",
+      "slot": "Cut {n}",
+      "pick": "Choose a cut",
+      "empty": "Choose at least one cut to start.",
+      "price": "Price",
+      "perServing": "Price per helping",
+      "serving": "Per person",
+      "availability": "Availability",
+      "rating": "Rating",
+      "noReviews": "No reviews yet",
+      "methods": "Cooking methods",
+      "cookTime": "Cooking time",
+      "coreTemp": "Core temperature",
+      "fat": "Fat",
+      "tenderness": "Tenderness",
+      "aging": "Aged",
+      "origin": "Where it comes from",
+      "kashrut": "Kashrut",
+      "tip": "The butcher's tip",
+      "cta": "Compare with another cut"
+    },
     "recipes": {
       "title": "Recipes",
       "lead": "Recipes written for our cuts, with exact amounts per person. Choose how many you're feeding and the meat goes into the cart at the right weight.",
@@ -637,6 +660,14 @@
       "cta": "Share",
       "copied": "Link copied",
       "copyManually": "This browser would not copy it. Here is the link:"
+    },
+    "reorder": {
+      "cta": "Order this again",
+      "adding": "Adding to the cart…",
+      "added": "{count, plural, one {one cut added to the cart} other {# cuts added to the cart}} — at today's prices.",
+      "skipped": "{name} was not added:",
+      "nothing": "None of the cuts in that order are available right now.",
+      "notFound": "We could not find that order."
     },
     "reviews": {
       "title": "What customers said",

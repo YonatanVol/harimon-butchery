@@ -271,6 +271,12 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <AskButcher productName={name} productUrl={`${appUrl()}/${locale}/p/${p.slug}`} />
             <ShareButton title={name} text={he ? p.shortDescHe : p.shortDescEn} />
+            <Link href={`/compare?cuts=${p.slug}`} className="text-char-700 hover:text-char-900 inline-flex min-h-11 items-center gap-2 text-sm font-semibold">
+              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                <path d="M4 6h6M4 12h6M4 18h6M14 6h6M14 12h6M14 18h6" />
+              </svg>
+              {t("compare.cta")}
+            </Link>
           </div>
 
           {facts && (
