@@ -11,6 +11,7 @@ import { reviewableFor } from "@/infra/reviews/repository";
 import { Badge } from "@/ui/primitives/Badge";
 import { CustomerLogin } from "@/ui/shop/account/CustomerLogin";
 import { SignOutButton } from "@/ui/shop/account/SignOutButton";
+import { ReorderButton } from "@/ui/shop/ReorderButton";
 import { ReviewInvites } from "@/ui/shop/reviews/ReviewInvites";
 
 export const dynamic = "force-dynamic";
@@ -96,7 +97,7 @@ export default async function AccountPage({ params }: PageProps<"/[locale]/accou
                     ? t("notCharged")
                     : t("held", { amount: money(o.authorizationCeilingAgorot) });
               return (
-                <li key={o.orderNumber}>
+                <li key={o.orderNumber} className="flex flex-col gap-2">
                   <Link
                     href={`/orders/${o.orderNumber}?t=${o.accessToken}`}
                     className="bg-bone-50 ring-bone-300 hover:ring-char-900 flex flex-wrap items-center justify-between gap-3 rounded-[3px] p-5 ring-1"
@@ -129,6 +130,8 @@ export default async function AccountPage({ params }: PageProps<"/[locale]/accou
                       </span>
                     </div>
                   </Link>
+                  {/* Outside the link: a button inside a link is not a control anyone can use. */}
+                  {DONE.includes(o.status) && <ReorderButton orderNumber={o.orderNumber} />}
                 </li>
               );
             })}

@@ -3,11 +3,11 @@
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { z } from "zod";
-import { availabilityOf } from "@/domain/catalog/availability";
-import { type LineProblem, validateQuantity, validateWeight } from "@/domain/cart/cart";
+import type { LineProblem } from "@/domain/cart/cart";
 import { resolveZone } from "@/domain/delivery/zones";
 import { db } from "../db/client";
-import { cart, cartLine, deliveryZone, product, productVariant, slotHold, stockItem } from "../db/schema";
+import { cart, cartLine, deliveryZone, slotHold } from "../db/schema";
+import { addLine, cartLineCount, checkAmount, loadProductForVariant } from "./add";
 import { holdSlotForCart } from "./holds";
 import { findOpenCart, getOrCreateCart } from "./repository";
 import { ensureCartToken, readCartToken } from "./session";
@@ -29,50 +29,6 @@ export type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; problem
 
 const uuid = z.string().uuid();
 
-async function loadProductForVariant(variantId: string) {
-  const [row] = await db
-    .select({ variant: productVariant, product, stock: stockItem })
-    .from(productVariant)
-    .innerJoin(product, eq(product.id, productVariant.productId))
-    .leftJoin(stockItem, eq(stockItem.productId, product.id))
-    .where(eq(productVariant.id, variantId));
-  return row ?? null;
-}
-
-function checkAmount(
-  row: NonNullable<Awaited<ReturnType<typeof loadProductForVariant>>>,
-  amount: { requestedG: number | null; quantity: number | null },
-): LineProblem | null {
-  const { product: p, variant, stock } = row;
-  if (!p.published || !variant.published) return { key: "UNAVAILABLE" };
-  const availability = availabilityOf({
-    pricingMode: p.pricingMode,
-    onHandG: stock?.onHandG ?? 0,
-    reservedG: stock?.reservedG ?? 0,
-    onHandUnits: stock?.onHandUnits ?? 0,
-    reservedUnits: stock?.reservedUnits ?? 0,
-    lowThresholdG: 0,
-    lowThresholdUnits: 0,
-    minOrderG: p.minOrderG,
-    nextRestockDate: null,
-  });
-  if (p.pricingMode === "WEIGHT") {
-    if (amount.requestedG === null) return { key: "BELOW_MIN", minG: p.minOrderG! };
-    return validateWeight({
-      requestedG: amount.requestedG,
-      minG: p.minOrderG!,
-      maxG: p.maxOrderG!,
-      stepG: p.stepG!,
-      availableG: availability.kind === "OUT" ? 0 : availability.availableG,
-    });
-  }
-  if (amount.quantity === null) return { key: "QUANTITY_RANGE", max: 10 };
-  return validateQuantity({
-    quantity: amount.quantity,
-    availableUnits: availability.kind === "OUT" ? 0 : availability.availableUnits,
-  });
-}
-
 const addSchema = z.object({
   variantId: uuid,
   requestedG: z.number().int().positive().nullable(),
@@ -86,36 +42,12 @@ export async function addToCart(input: z.infer<typeof addSchema>): Promise<Actio
   if (!parsed.success) return { ok: false, problem: { key: "INVALID_INPUT" } };
   const { variantId, requestedG, quantity, note, locale } = parsed.data;
 
-  const row = await loadProductForVariant(variantId);
-  if (!row) return { ok: false, problem: { key: "UNAVAILABLE" } };
-  const isWeight = row.product.pricingMode === "WEIGHT";
-
   const token = await ensureCartToken();
   const current = await getOrCreateCart(token, locale);
-  const trimmedNote = note.trim() || null;
 
-  // Same cut with the same note: add to the existing line instead of duplicating it.
-  const [existing] = await db
-    .select()
-    .from(cartLine)
-    .where(and(eq(cartLine.cartId, current.id), eq(cartLine.variantId, variantId)));
-  const sameNote = existing && (existing.customerNote ?? null) === trimmedNote;
-
-  const amount = isWeight
-    ? { requestedG: (sameNote ? existing.requestedG ?? 0 : 0) + (requestedG ?? 0), quantity: null }
-    : { requestedG: null, quantity: (sameNote ? existing.quantity ?? 0 : 0) + (quantity ?? 0) };
-  const problem = checkAmount(row, amount);
-  if (problem) return { ok: false, problem };
-
-  if (sameNote) {
-    await db.update(cartLine).set(amount).where(eq(cartLine.id, existing.id));
-  } else {
-    await db.insert(cartLine).values({ cartId: current.id, variantId, ...amount, customerNote: trimmedNote });
-  }
-  await db.update(cart).set({ updatedAt: new Date() }).where(eq(cart.id, current.id));
-
-  const lines = await db.select({ id: cartLine.id }).from(cartLine).where(eq(cartLine.cartId, current.id));
-  return { ok: true, count: lines.length };
+  const added = await addLine(current.id, { variantId, requestedG, quantity, note });
+  if (!added.ok) return { ok: false, problem: added.problem };
+  return { ok: true, count: await cartLineCount(current.id) };
 }
 
 async function ownLine(lineId: string) {

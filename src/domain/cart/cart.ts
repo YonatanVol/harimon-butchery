@@ -34,6 +34,17 @@ export function validateWeight(req: {
   return null;
 }
 
+/**
+ * The nearest weight the butcher can actually cut: rounded to the cut's step and kept inside its limits.
+ * A weight that came off the scale (2,613 g) is not one the shop sells, so ordering "the same again"
+ * asks for the closest amount it does.
+ */
+export function snapToCut(requestedG: number, limits: { minOrderG: number; maxOrderG: number; stepG: number }): number {
+  const step = Math.max(1, limits.stepG);
+  const rounded = Math.round(requestedG / step) * step;
+  return Math.min(limits.maxOrderG, Math.max(limits.minOrderG, rounded));
+}
+
 export function validateQuantity(req: { quantity: number; availableUnits: number }): LineProblem | null {
   if (req.availableUnits < 1) return { key: "OUT_OF_STOCK" };
   if (!Number.isSafeInteger(req.quantity) || req.quantity < 1 || req.quantity > MAX_PACKAGES_PER_LINE) {

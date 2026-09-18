@@ -638,6 +638,14 @@
       "copied": "Link copied",
       "copyManually": "This browser would not copy it. Here is the link:"
     },
+    "reorder": {
+      "cta": "Order this again",
+      "adding": "Adding to the cart…",
+      "added": "{count, plural, one {one cut added to the cart} other {# cuts added to the cart}} — at today's prices.",
+      "skipped": "{name} was not added:",
+      "nothing": "None of the cuts in that order are available right now.",
+      "notFound": "We could not find that order."
+    },
     "reviews": {
       "title": "What customers said",
       "count": "{count, plural, one {one review} other {# reviews}}",

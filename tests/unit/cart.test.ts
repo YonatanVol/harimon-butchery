@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { quoteCart, validateQuantity, validateWeight } from "@/domain/cart/cart";
+import { quoteCart, snapToCut, validateQuantity, validateWeight } from "@/domain/cart/cart";
 import { agorot } from "@/domain/money/agorot";
 import type { PricedLine } from "@/domain/order/totals";
 import { grams } from "@/domain/weight/grams";
@@ -71,5 +71,24 @@ describe("quoteCart", () => {
     const q = quoteCart([entrecote], { deliveryFeeAgorot: 9000, freeDeliveryOverAgorot: null, minOrderAgorot: 50000 });
     expect(q.freeDeliveryGap).toBeNull();
     expect(q.deliveryFee).toBe(9000);
+  });
+});
+
+describe("snapToCut", () => {
+  const steak = { minOrderG: 250, maxOrderG: 5000, stepG: 250 };
+
+  it("rounds a weight off the scale to one the butcher cuts in", () => {
+    expect(snapToCut(2613, steak)).toBe(2500);
+    expect(snapToCut(2640, steak)).toBe(2750);
+    expect(snapToCut(2500, steak)).toBe(2500);
+  });
+
+  it("never leaves the cut's own limits", () => {
+    expect(snapToCut(10, steak)).toBe(250);
+    expect(snapToCut(90_000, steak)).toBe(5000);
+  });
+
+  it("survives a cut with no step recorded", () => {
+    expect(snapToCut(1234, { minOrderG: 100, maxOrderG: 9000, stepG: 0 })).toBe(1234);
   });
 });
