@@ -70,7 +70,7 @@ export default async function AuditPage({ params, searchParams }: PageProps<"/[l
       case e.action.startsWith("delivery."):
         return t("actions.delivery", { order: e.order?.number ?? "?", event: t(`deliveryEvents.${e.action.replace("delivery.", "").toUpperCase() as "DELIVERED"}`) });
       case e.action.startsWith("review."):
-        return t(`actions.${e.action.replace(".", "_") as "review_publish"}`);
+        return t(`actions.${e.action.replace(".", "_") as "review_publish"}`, { product: String((locale === "he" ? a?.nameHe : a?.nameEn) ?? a?.slug ?? t("deletedItem")) });
       case e.action === "GIVE_EXTRA_FREE":
         return t("actions.giveFree", { order: e.order?.number ?? "?", amount: money(a?.goodwillAgorot) });
       case e.entityType === "order":

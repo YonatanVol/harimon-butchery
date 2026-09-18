@@ -20,6 +20,8 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/staff/re
 }
 
 const STATUSES = ["PENDING", "PUBLISHED", "REJECTED"] as const satisfies readonly ReviewStatus[];
+/** One screen's worth. The banner above the list says so when there are more than this. */
+const PAGE = 100;
 
 export default async function StaffReviewsPage({ params, searchParams }: PageProps<"/[locale]/staff/reviews">) {
   const { locale: raw } = await params;
@@ -31,7 +33,7 @@ export default async function StaffReviewsPage({ params, searchParams }: PagePro
   const format = await getFormatter();
 
   const status = STATUSES.find((s) => s === sp.status) ?? "PENDING";
-  const [rows, pending] = await Promise.all([listForModeration(db, status), countPending(db)]);
+  const [rows, pending] = await Promise.all([listForModeration(db, status, PAGE), countPending(db)]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -57,6 +59,8 @@ export default async function StaffReviewsPage({ params, searchParams }: PagePro
         ))}
       </nav>
 
+      {rows.length >= PAGE && <p className="text-char-700 text-sm">{t("showingFirst", { count: PAGE })}</p>}
+
       {rows.length === 0 ? (
         <p className="bg-bone-50 text-char-700 rounded-2xl p-8 text-center text-lg">{t("empty")}</p>
       ) : (
@@ -77,7 +81,7 @@ export default async function StaffReviewsPage({ params, searchParams }: PagePro
                 </span>
               </div>
 
-              <p className="text-[17px] leading-relaxed whitespace-pre-line" lang={r.locale}>
+              <p className="text-[17px] leading-relaxed whitespace-pre-line" lang={r.locale} dir="auto">
                 {r.body}
               </p>
 

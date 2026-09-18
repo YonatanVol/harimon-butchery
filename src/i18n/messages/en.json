@@ -94,7 +94,8 @@
       "kashrut": "Kashrut & certificates",
       "shop": "Shop",
       "hours": "Sun–Thu 7:00–19:00 · Fri until two hours before Shabbat",
-      "rights": "Harimon Butchery · demo project"
+      "rights": "Harimon Butchery · demo project",
+      "install": "Add the shop to your home screen"
     },
     "home": {
       "eyebrow": "Kosher butcher · cut to order · delivered home",
@@ -289,7 +290,8 @@
         "MEDIUM_WELL": "Medium well",
         "WELL_DONE": "Well done"
       },
-      "recipesTitle": "Cook with {name}"
+      "recipesTitle": "Cook with {name}",
+      "perServing": "≈ {price} for a {weight} helping"
     },
     "search": {
       "title": "Search",
@@ -438,7 +440,7 @@
         }
       },
       "reviewsTitle": "Tell us how it turned out",
-      "reviewsBody": "These are the cuts delivered to you in the last three months that you have not reviewed yet.",
+      "reviewsBody": "These are the cuts delivered to you in the last {days} days that you have not reviewed yet.",
       "reviewsDelivered": "Delivered {date}",
       "reviewsWrite": "Write a review",
       "reviewsClose": "Close"
@@ -631,9 +633,13 @@
       "demoBody": "In a real shop this button would open WhatsApp with this message to the butcher. There is no real number here, so this is what would have been sent:",
       "close": "Close"
     },
+    "share": {
+      "cta": "Share",
+      "copied": "Link copied",
+      "copyManually": "This browser would not copy it. Here is the link:"
+    },
     "reviews": {
       "title": "What customers said",
-      "summary": "{average} out of 5",
       "count": "{count, plural, one {one review} other {# reviews}}",
       "ariaAverage": "Average rating {average} out of 5",
       "ariaRating": "{rating} out of 5 stars",
@@ -656,7 +662,7 @@
         "ratingMissing": "Choose a rating",
         "bodyMissing": "Write at least {min} characters",
         "nameNote": "Your first name and the initial of your surname will be shown. Your phone number is not.",
-        "sent": "Thank you. Your review will appear on the cut's page once we have read it."
+        "sent": "Thank you. We read every review before it appears on the cut's page."
       },
       "problems": {
         "RATING_INVALID": "Choose a rating between one and five stars",
@@ -668,7 +674,8 @@
         "WINDOW_CLOSED": "More than {days} days have passed since delivery",
         "ALREADY_REVIEWED": "You have already reviewed this cut on this order",
         "NETWORK": "No connection to the server. Try again."
-      }
+      },
+      "showing": "Showing the {shown} most recent of {count} reviews."
     }
   },
   "orders": {
@@ -1442,7 +1449,9 @@
         "NETWORK": "No connection to the server. Try again."
       },
       "cancel": "Cancel",
-      "noChange": "Nothing changed"
+      "noChange": "Nothing changed",
+      "showingFirst": "Showing the first {count}. Deal with these and the list refills.",
+      "noteUnpublish": "Why take it off the site? (internal note)"
     },
     "audit": {
       "title": "Activity log",
@@ -1497,9 +1506,9 @@
         "capture_reconcile": "Order {order}: unfinished charge checked",
         "payment_late_payment_returned": "Order {order}: late payment on an expired page returned ({amount})",
         "payment_late_payment_not_returned": "Order {order}: late payment on an expired page NOT returned ({amount}) — handle by hand",
-        "review_publish": "A review was published",
-        "review_reject": "A review was rejected",
-        "review_reply": "A review got a reply from the butcher"
+        "review_publish": "{product}: a review was published",
+        "review_reject": "{product}: a review was rejected",
+        "review_reply": "{product}: the butcher replied to a review"
       },
       "events": {
         "CANCELLED_BY_SHOP": "cancelled by the shop",

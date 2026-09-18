@@ -30,6 +30,11 @@ export interface CleanReview {
   body: string;
 }
 
+/** Characters as a person (and Postgres) counts them: an emoji is one, not the two units JS stores it in. */
+export function charCount(text: string): number {
+  return [...text].length;
+}
+
 /** Trim, collapse runs of blank lines, and check the two things a review must have. */
 export function validateReview(draft: ReviewDraft): { ok: true; value: CleanReview } | { ok: false; problem: ReviewProblem } {
   // Whole stars only: half a star was never offered, so a fractional rating is something we didn't send.
@@ -37,8 +42,10 @@ export function validateReview(draft: ReviewDraft): { ok: true; value: CleanRevi
   if (!Number.isInteger(rating) || rating < MIN_RATING || rating > MAX_RATING) return { ok: false, problem: { key: "RATING_INVALID" } };
 
   const body = draft.body.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-  if (body.length < MIN_BODY_CHARS) return { ok: false, problem: { key: "BODY_TOO_SHORT", min: MIN_BODY_CHARS } };
-  if (body.length > MAX_BODY_CHARS) return { ok: false, problem: { key: "BODY_TOO_LONG", max: MAX_BODY_CHARS } };
+  // Counted in characters, not in code units, so an emoji counts as the one character the database counts.
+  const length = charCount(body);
+  if (length < MIN_BODY_CHARS) return { ok: false, problem: { key: "BODY_TOO_SHORT", min: MIN_BODY_CHARS } };
+  if (length > MAX_BODY_CHARS) return { ok: false, problem: { key: "BODY_TOO_LONG", max: MAX_BODY_CHARS } };
 
   return { ok: true, value: { rating, body } };
 }
@@ -49,7 +56,8 @@ export function validateReview(draft: ReviewDraft): { ok: true; value: CleanRevi
  */
 export function displayNameOf(firstName: string, lastName: string): string {
   const first = firstName.trim().split(/\s+/)[0] ?? "";
-  const initial = lastName.trim().charAt(0);
+  // The first character, not the first code unit — half a surrogate pair is not a letter.
+  const initial = [...lastName.trim()][0] ?? "";
   if (!first) return initial ? `${initial}.` : "—";
   return initial ? `${first} ${initial}.` : first;
 }

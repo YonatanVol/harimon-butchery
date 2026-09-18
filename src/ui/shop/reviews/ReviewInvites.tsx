@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { REVIEW_WINDOW_DAYS } from "@/domain/catalog/reviews";
 import { ProductImage } from "../ProductImage";
 import { ReviewForm } from "./ReviewForm";
 
@@ -33,7 +34,7 @@ export function ReviewInvites({ invites }: { invites: ReviewInvite[] }) {
       <h2 id="reviews-title" className="text-xl font-bold">
         {t("reviewsTitle")}
       </h2>
-      <p className="text-char-700 mt-1">{t("reviewsBody")}</p>
+      <p className="text-char-700 mt-1">{t("reviewsBody", { days: REVIEW_WINDOW_DAYS })}</p>
       <ul className="mt-4 flex flex-col gap-3">
         {invites.map((i) => {
           const id = key(i);

@@ -18,7 +18,9 @@ test("a delivered cut is reviewed, published, and appears on its page", async ({
     join product_variant v on v.id = ol.variant_id
     join product p on p.id = v.product_id
     left join product_review r on r.order_id = o.id and r.product_id = p.id
-    where o.status = 'DELIVERED' and r.id is null and ol.substituted_with_variant_id is null
+    where o.status = 'DELIVERED' and r.id is null
+      and ol.substituted_with_variant_id is null
+      and ol.status not in ('SHORT', 'CANCELLED', 'SUBSTITUTED')
     limit 1`;
   expect(waiting, "the seed left no cut to review").toBeTruthy();
   const phone = String(waiting.phone).replace(/^\+972/, "0");
@@ -31,7 +33,9 @@ test("a delivered cut is reviewed, published, and appears on its page", async ({
   await expect(demo).toBeVisible();
   await page.getByLabel(m.account.login.code, { exact: true }).fill((await demo.textContent())!.match(/\d{6}/)![0]);
 
-  const invite = page.getByRole("listitem").filter({ hasText: String(waiting.name) }).first();
+  // Inside the invitations only: the order history below mentions the same cuts.
+  const invites = page.getByRole("region", { name: m.account.reviewsTitle });
+  const invite = invites.getByRole("listitem").filter({ hasText: String(waiting.name) }).first();
   await expect(invite).toBeVisible();
   await invite.getByRole("button", { name: m.account.reviewsWrite }).click();
 
@@ -58,7 +62,16 @@ test("a delivered cut is reviewed, published, and appears on its page", async ({
   await row.getByRole("button", { name: staff.publish }).click();
   await expect(row).toHaveCount(0);
 
-  await page.goto(`/he/p/${waiting.slug}`);
-  await expect(page.getByText(body)).toBeVisible();
+  // The cut's page is prerendered and revalidated in the background, so the first view after publishing
+  // can still be the old one. It catches up on the next view, within a second.
+  await expect
+    .poll(
+      async () => {
+        await page.goto(`/he/p/${waiting.slug}`);
+        return page.getByText(body).count();
+      },
+      { timeout: 20_000, message: "the published review never appeared on the cut's page" },
+    )
+    .toBe(1);
   await expect(page.getByRole("heading", { name: m.reviews.title })).toBeVisible();
 });

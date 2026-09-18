@@ -4,6 +4,7 @@ import { refresh, revalidatePath } from "next/cache";
 import { z } from "zod";
 import { can, type StaffRole } from "@/domain/auth/permissions";
 import { MAX_BODY_CHARS } from "@/domain/catalog/reviews";
+import { routing } from "@/i18n/routing";
 import { currentCustomerPhone } from "../customer/session";
 import { db } from "../db/client";
 import { auditEvent } from "../db/schema";
@@ -39,8 +40,8 @@ export async function staffModerateReview(input: { id: string; decision: "PUBLIS
   if (!staff || !can(staff.role as StaffRole, "MODERATE_REVIEWS")) return { ok: false, problem: { key: "NOT_PERMITTED" } };
   if (!id.safeParse(input.id).success || (input.decision !== "PUBLISHED" && input.decision !== "REJECTED")) return { ok: false, problem: { key: "NOT_FOUND" } };
 
-  const done = await moderateReview(db, { id: input.id, staffId: staff.id, decision: input.decision, note: input.note });
-  if (!done) return { ok: false, problem: { key: "NOT_FOUND" } };
+  const cut = await moderateReview(db, { id: input.id, staffId: staff.id, decision: input.decision, note: input.note });
+  if (!cut) return { ok: false, problem: { key: "NOT_FOUND" } };
 
   await db.insert(auditEvent).values({
     actorType: "STAFF",
@@ -48,7 +49,8 @@ export async function staffModerateReview(input: { id: string; decision: "PUBLIS
     entityType: "product_review",
     entityId: input.id,
     action: input.decision === "PUBLISHED" ? "review.publish" : "review.reject",
-    after: { decision: input.decision, note: input.note?.trim()?.slice(0, 300) || null },
+    // The cut's name goes in the entry itself: the log resolves orders and products, not reviews.
+    after: { decision: input.decision, slug: cut.slug, nameHe: cut.nameHe, nameEn: cut.nameEn, note: input.note?.trim()?.slice(0, 300) || null },
   });
 
   // A published review changes what every catalog page shows.
@@ -63,8 +65,8 @@ export async function staffReplyToReview(input: { id: string; body: string }): P
   if (!staff || !can(staff.role as StaffRole, "MODERATE_REVIEWS")) return { ok: false, problem: { key: "NOT_PERMITTED" } };
   if (!id.safeParse(input.id).success) return { ok: false, problem: { key: "NOT_FOUND" } };
 
-  const done = await replyToReview(db, { id: input.id, body: String(input.body ?? "") });
-  if (!done) return { ok: false, problem: { key: "NOT_FOUND" } };
+  const replied = await replyToReview(db, { id: input.id, body: String(input.body ?? "") });
+  if (!replied) return { ok: false, problem: { key: "NOT_FOUND" } };
 
   await db.insert(auditEvent).values({
     actorType: "STAFF",
@@ -72,10 +74,11 @@ export async function staffReplyToReview(input: { id: string; body: string }): P
     entityType: "product_review",
     entityId: input.id,
     action: "review.reply",
-    after: { replied: Boolean(String(input.body ?? "").trim()) },
+    after: { replied: Boolean(String(input.body ?? "").trim()), slug: replied.slug },
   });
 
-  revalidatePath("/[locale]", "layout");
+  // A reply shows on one cut's page and nowhere else, so only that page is rebuilt.
+  for (const locale of routing.locales) revalidatePath(`/${locale}/p/${replied.slug}`);
   refresh();
   return { ok: true };
 }
