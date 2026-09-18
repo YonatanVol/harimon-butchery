@@ -39,6 +39,9 @@ export default async function CutsPage({ params }: PageProps<"/[locale]/cuts">) 
               {t(`cuts.animal.${a}`)}
             </a>
           ))}
+          <Link href="/compare" className="border-char-900 hover:bg-char-900 hover:text-bone-50 inline-flex min-h-11 items-center border px-5 text-sm font-semibold transition-colors">
+            {t("compare.title")}
+          </Link>
         </nav>
       </header>
 
