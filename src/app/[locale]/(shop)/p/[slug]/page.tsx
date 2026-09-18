@@ -6,6 +6,7 @@ import { brand } from "@/config/brand";
 import { factsFor } from "@/content/productFacts";
 import { recipesForProduct } from "@/content/recipes";
 import { placementOf, REGIONS } from "@/domain/catalog/cutRegions";
+import { pricePerServing } from "@/domain/catalog/perServing";
 import { formatTenths } from "@/domain/catalog/reviews";
 import { agorot } from "@/domain/money/agorot";
 import { formatAgorot } from "@/domain/money/format";
@@ -26,6 +27,7 @@ import { ProductGallery } from "@/ui/shop/ProductGallery";
 import { ProductImage } from "@/ui/shop/ProductImage";
 import { ProductPurchase } from "@/ui/shop/ProductPurchase";
 import { RecipeCard } from "@/ui/shop/RecipeCard";
+import { ShareButton } from "@/ui/shop/ShareButton";
 import { ratingJsonLd, ReviewList } from "@/ui/shop/reviews/ReviewList";
 import { RatingLine } from "@/ui/shop/reviews/Stars";
 
@@ -195,6 +197,14 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
               </bdi>
               {availability.kind !== "IN_STOCK" && <AvailabilityChip availability={availability} />}
             </div>
+            {p.pricingMode === "WEIGHT" && facts?.servingG ? (
+              <p className="text-char-500 text-sm">
+                {t("product.perServing", {
+                  price: formatAgorot(pricePerServing(agorot(p.pricePerKgAgorot!), facts.servingG), locale),
+                  weight: formatGrams(grams(facts.servingG), locale),
+                })}
+              </p>
+            ) : null}
             {summary.count > 0 && (
               <a href="#reviews-title" className="hover:text-char-900 w-fit">
                 <RatingLine
@@ -258,7 +268,10 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/p/[sl
             }}
           />
 
-          <AskButcher productName={name} productUrl={`${appUrl()}/${locale}/p/${p.slug}`} />
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <AskButcher productName={name} productUrl={`${appUrl()}/${locale}/p/${p.slug}`} />
+            <ShareButton title={name} text={he ? p.shortDescHe : p.shortDescEn} />
+          </div>
 
           {facts && (
             <aside className="bg-bone-50 border-bone-300 flex flex-col gap-2 border p-5">

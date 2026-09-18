@@ -12,11 +12,11 @@ export function Stars({ averageTenths, label, size = "md" }: { averageTenths: nu
   return (
     <span role="img" aria-label={label} className="text-brass-500 inline-flex items-center gap-0.5 align-middle">
       {Array.from({ length: full }, (_, i) => (
-        <Star key={`f${i}`} className={px} fill="full" />
+        <Star key={`f${i}`} className={px} filled />
       ))}
-      {half && <Star className={px} fill="half" />}
+      {half && <HalfStar className={px} />}
       {Array.from({ length: empty }, (_, i) => (
-        <Star key={`e${i}`} className={px} fill="empty" />
+        <Star key={`e${i}`} className={px} filled={false} />
       ))}
     </span>
   );
@@ -27,29 +27,28 @@ export function RatingStars({ rating, label, size = "md" }: { rating: number; la
   return <Stars averageTenths={Math.min(MAX_RATING, Math.max(0, Math.trunc(rating))) * 10} label={label} size={size} />;
 }
 
-const PATH =
-  "M12 2.6l2.65 5.9 6.35.66-4.75 4.3 1.35 6.3L12 16.5l-5.6 3.26 1.35-6.3L3 9.16l6.35-.66L12 2.6z";
+const PATH = "M12 2.6l2.65 5.9 6.35.66-4.75 4.3 1.35 6.3L12 16.5l-5.6 3.26 1.35-6.3L3 9.16l6.35-.66L12 2.6z";
 
-function Star({ className, fill }: { className: string; fill: "full" | "half" | "empty" }) {
-  if (fill === "half") {
-    // One star drawn twice: the outline, then the same shape clipped to the leading half.
-    return (
-      <svg viewBox="0 0 24 24" className={className} aria-hidden>
-        <defs>
-          <clipPath id="half-star-clip">
-            <rect x="0" y="0" width="12" height="24" />
-          </clipPath>
-        </defs>
-        <path d={PATH} fill="none" stroke="currentColor" strokeWidth="1.4" />
-        {/* The clip is in the SVG's own coordinates, which do not flip with the page direction. */}
-        <path d={PATH} fill="currentColor" clipPath="url(#half-star-clip)" />
-      </svg>
-    );
-  }
+function Star({ className, filled }: { className: string; filled: boolean }) {
   return (
-    <svg viewBox="0 0 24 24" className={cx(className)} aria-hidden>
-      <path d={PATH} fill={fill === "full" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={fill === "full" ? 0 : 1.4} />
+    <svg viewBox="0 0 24 24" className={cx("shrink-0", className)} aria-hidden>
+      <path d={PATH} fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={filled ? 0 : 1.4} />
     </svg>
+  );
+}
+
+/**
+ * One star drawn twice: the outline, and a full star behind a box half as wide. The box is measured with
+ * `inline-size` from the inline start, so the filled half is the leading half in Hebrew as in English.
+ */
+function HalfStar({ className }: { className: string }) {
+  return (
+    <span className={cx("relative inline-grid shrink-0", className)}>
+      <Star className="size-full" filled={false} />
+      <span className="absolute inset-block-0 start-0 w-1/2 overflow-hidden">
+        <Star className={cx("max-w-none", className)} filled />
+      </span>
+    </span>
   );
 }
 

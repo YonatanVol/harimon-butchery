@@ -5,6 +5,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { brand } from "@/config/brand";
 import { localeDirection, routing } from "@/i18n/routing";
+import { resolveAppUrl } from "@/infra/runtimeEnv";
 import "../globals.css";
 
 const frank = Frank_Ruhl_Libre({
@@ -38,7 +39,16 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta" });
   const name = hasLocale(routing.locales, locale) ? brand.name[locale] : brand.name.he;
-  return { title: { default: t("title"), template: `%s · ${name}` }, description: t("description") };
+  return {
+    // Without this, a shared link's preview image resolves against nothing and WhatsApp shows no photo.
+    metadataBase: new URL(resolveAppUrl()),
+    title: { default: t("title"), template: `%s · ${name}` },
+    description: t("description"),
+    applicationName: name,
+    manifest: "/manifest.webmanifest",
+    appleWebApp: { capable: true, title: name, statusBarStyle: "default" },
+    openGraph: { type: "website", siteName: name, locale: locale === "he" ? "he_IL" : "en_IL" },
+  };
 }
 
 export default async function LocaleLayout({

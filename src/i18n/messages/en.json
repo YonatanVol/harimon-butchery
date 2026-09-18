@@ -94,7 +94,8 @@
       "kashrut": "Kashrut & certificates",
       "shop": "Shop",
       "hours": "Sun–Thu 7:00–19:00 · Fri until two hours before Shabbat",
-      "rights": "Harimon Butchery · demo project"
+      "rights": "Harimon Butchery · demo project",
+      "install": "Add the shop to your home screen"
     },
     "home": {
       "eyebrow": "Kosher butcher · cut to order · delivered home",
@@ -289,7 +290,8 @@
         "MEDIUM_WELL": "Medium well",
         "WELL_DONE": "Well done"
       },
-      "recipesTitle": "Cook with {name}"
+      "recipesTitle": "Cook with {name}",
+      "perServing": "≈ {price} for a {weight} helping"
     },
     "search": {
       "title": "Search",
@@ -630,6 +632,11 @@
       "demoTitle": "Demo shop — nothing is sent",
       "demoBody": "In a real shop this button would open WhatsApp with this message to the butcher. There is no real number here, so this is what would have been sent:",
       "close": "Close"
+    },
+    "share": {
+      "cta": "Share",
+      "copied": "Link copied",
+      "copyManually": "This browser would not copy it. Here is the link:"
     },
     "reviews": {
       "title": "What customers said",

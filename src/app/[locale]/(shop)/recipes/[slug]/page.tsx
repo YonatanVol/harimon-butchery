@@ -8,6 +8,7 @@ import { type Locale, routing } from "@/i18n/routing";
 import { getProduct } from "@/infra/db/queries/catalog";
 import { formatDuration, RecipeCard, recipePhoto, totalMinutes } from "@/ui/shop/RecipeCard";
 import { type KitchenMeat, RecipeKitchen, StepTimer } from "@/ui/shop/RecipeKitchen";
+import { ShareButton } from "@/ui/shop/ShareButton";
 
 export const revalidate = 60;
 
@@ -109,6 +110,7 @@ export default async function RecipePage({ params }: PageProps<"/[locale]/recipe
           <p className="text-brass-700 text-xs font-semibold tracking-[0.08em] first-letter:uppercase">{t(`occasion.${r.occasion}`)}</p>
           <h1 className="rise-1 font-display text-[42px] leading-[1.04] font-light sm:text-6xl">{title}</h1>
           <p className="rise-2 text-char-700 text-lg leading-relaxed">{he ? r.introHe : r.introEn}</p>
+          <ShareButton title={title} text={he ? r.introHe : r.introEn} />
           <dl className="border-bone-300 grid grid-cols-2 border-y sm:grid-cols-4">
             {meta.map((m) => (
               <div key={m.label} className="flex flex-col py-3">

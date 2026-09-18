@@ -2,6 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { brand } from "@/config/brand";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { InstallApp } from "./InstallApp";
 
 export async function SiteFooter() {
   const locale = (await getLocale()) as Locale;
@@ -31,6 +32,7 @@ export async function SiteFooter() {
           <Link href="/account" className="hover:text-bone-50 w-fit underline-offset-4 hover:underline">
             {nav("account")}
           </Link>
+          <InstallApp />
         </nav>
         <div role="note" className="border-bone-300/20 border-s ps-5">
           <p className="text-bone-50 text-sm font-semibold">{t("demoTitle")}</p>
