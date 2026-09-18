@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { cartLine, product, stockItem } from "@/infra/db/schema";
+import { cartLine, orderLine, product, stockItem } from "@/infra/db/schema";
 import { reorderInto } from "@/infra/orders/reorder";
 import * as w from "@/infra/orders/weighing";
 import { createMockProvider } from "@/infra/payments/mock";
@@ -31,8 +31,40 @@ describe("ordering a past order again", () => {
 
     expect(result).toMatchObject({ ok: true, count: 1 });
     expect(result.ok && result.lines.map((l) => ({ slug: l.slug, added: l.added }))).toEqual([{ slug: f.beef.product.slug, added: true }]);
-    // 2,600 g rounds to the 250 g the butcher cuts in.
+    // 2,600 g rounds to the 250 g the butcher cuts in — and says so rather than changing it quietly.
     expect((await linesOf(cart.id)).map((l) => l.requestedG)).toEqual([2500]);
+    expect(result.ok && result.lines[0].changed).toEqual({ fromG: 2600, toG: 2500 });
+  });
+
+  it("leaves the same cart whether it is pressed once or three times", async () => {
+    const f = await authorizedOrder(db, provider);
+    const zone = await makeZone(db, { slug: `z-${Math.random().toString(36).slice(2, 7)}` });
+    const cart = await makeCart(db, zone.id);
+    const again = () => reorderInto(cart.id, { orderNumber: f.order.orderNumber, phoneE164: PHONE, accessToken: null });
+
+    expect((await again()).ok).toBe(true);
+    expect((await again()).ok).toBe(true);
+    expect((await again()).ok).toBe(true);
+    expect((await linesOf(cart.id)).map((l) => l.requestedG)).toEqual([2500]);
+  });
+
+  it("is proved by the link even when someone else is signed in", async () => {
+    const f = await authorizedOrder(db, provider);
+    const zone = await makeZone(db, { slug: `z-${Math.random().toString(36).slice(2, 7)}` });
+    const cart = await makeCart(db, zone.id);
+
+    // A gift, or a household where one person checks out and another is signed in.
+    expect((await reorderInto(cart.id, { orderNumber: f.order.orderNumber, phoneE164: "+972500000000", accessToken: f.order.accessToken })).ok).toBe(true);
+  });
+
+  it("replays the cuts in the order they were written", async () => {
+    const f = await authorizedOrder(db, provider);
+    const zone = await makeZone(db, { slug: `z-${Math.random().toString(36).slice(2, 7)}` });
+    const cart = await makeCart(db, zone.id);
+    const sorted = await db.select({ id: orderLine.id, sortOrder: orderLine.sortOrder }).from(orderLine).where(eq(orderLine.orderId, f.orderId)).orderBy(asc(orderLine.sortOrder));
+
+    const result = await reorderInto(cart.id, { orderNumber: f.order.orderNumber, phoneE164: PHONE, accessToken: null });
+    expect(result.ok && result.lines).toHaveLength(sorted.length);
   });
 
   it("refuses an order that is not yours, by phone or by link", async () => {
@@ -73,7 +105,8 @@ describe("ordering a past order again", () => {
     const cart = await makeCart(db, zone.id);
     const result = await reorderInto(cart.id, { orderNumber: f.order.orderNumber, phoneE164: PHONE, accessToken: null });
 
-    expect(result).toEqual({ ok: false, problem: { key: "NOTHING_TO_ADD", lines: [] } });
+    // Nothing arrived is not the same as nothing being available — the customer is told which.
+    expect(result).toEqual({ ok: false, problem: { key: "NOTHING_ARRIVED" } });
   });
 
   it("does not offer a cut the shop no longer sells", async () => {

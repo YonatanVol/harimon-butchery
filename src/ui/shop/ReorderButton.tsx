@@ -2,6 +2,8 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
+import { formatGrams, grams } from "@/domain/weight/grams";
+import type { Locale } from "@/i18n/routing";
 import { reorder } from "@/infra/orders/actions";
 import type { ReorderLine } from "@/infra/orders/reorder";
 import { Button } from "../primitives/Button";
@@ -9,41 +11,44 @@ import { announceCartChange } from "./CartButton";
 import { useProblemText } from "./useProblemText";
 
 /**
- * "Order this again". Everything that could go in the cart does, and anything that could not is named
- * with its reason — a sold-out cut must not disappear from the list without a word.
+ * "Order this again". The cuts of a past order are set in the cart — pressing twice leaves the same cart
+ * as pressing once — and anything that could not go in, or whose weight had to change, is named.
  */
 export function ReorderButton({ orderNumber, accessToken, variant = "secondary" }: { orderNumber: string; accessToken?: string; variant?: "primary" | "secondary" }) {
   const t = useTranslations("shop.reorder");
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
   const he = locale === "he";
   const problemText = useProblemText();
   const [pending, start] = useTransition();
-  const [added, setAdded] = useState<number | null>(null);
-  const [skipped, setSkipped] = useState<ReorderLine[]>([]);
+  const [done, setDone] = useState<{ added: number; lines: ReorderLine[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
+
+  const nameOf = (l: ReorderLine) => {
+    const product = he ? l.nameHe : l.nameEn;
+    const cut = he ? l.variantNameHe : l.variantNameEn;
+    return cut ? `${product} · ${cut}` : product;
+  };
 
   const run = () => {
     if (busy.current) return;
     busy.current = true;
     setError(null);
-    setAdded(null);
-    setSkipped([]);
+    setDone(null);
     start(async () => {
       try {
         const r = await reorder({ orderNumber, accessToken, locale });
         if (!r.ok) {
           if (r.problem.key === "NOTHING_TO_ADD") {
-            setSkipped(r.problem.lines);
+            setDone({ added: 0, lines: r.problem.lines });
             setError(t("nothing"));
           } else {
-            setError(t("notFound"));
+            setError(t(r.problem.key === "NOTHING_ARRIVED" ? "nothingArrived" : "notFound"));
           }
           return;
         }
         announceCartChange(r.count);
-        setAdded(r.lines.filter((l) => l.added).length);
-        setSkipped(r.lines.filter((l) => !l.added));
+        setDone({ added: r.lines.filter((l) => l.added).length, lines: r.lines });
       } catch {
         setError(problemText({ key: "NETWORK" }));
       } finally {
@@ -52,15 +57,17 @@ export function ReorderButton({ orderNumber, accessToken, variant = "secondary" 
     });
   };
 
+  const notes = (done?.lines ?? []).filter((l) => !l.added || l.changed);
+
   return (
     <div className="flex flex-col items-start gap-2">
       <Button variant={variant} size="md" pendingLabel={pending ? t("adding") : null} onClick={run}>
         {t("cta")}
       </Button>
 
-      {added !== null && (
+      {done && done.added > 0 && (
         <p role="status" className="text-ok-600 text-sm font-medium">
-          {t("added", { count: added })}
+          {t("added", { count: done.added })}
         </p>
       )}
       {error && (
@@ -68,11 +75,13 @@ export function ReorderButton({ orderNumber, accessToken, variant = "secondary" 
           {error}
         </p>
       )}
-      {skipped.length > 0 && (
+      {notes.length > 0 && (
         <ul className="text-char-700 flex flex-col gap-1 text-sm">
-          {skipped.map((l) => (
-            <li key={l.slug}>
-              {t("skipped", { name: he ? l.nameHe : l.nameEn })} {l.problem ? problemText(l.problem) : ""}
+          {notes.map((l) => (
+            <li key={l.variantId}>
+              {l.added && l.changed
+                ? t("changed", { name: nameOf(l), from: formatGrams(grams(l.changed.fromG), locale), to: formatGrams(grams(l.changed.toG), locale) })
+                : `${t("skipped", { name: nameOf(l) })} ${l.problem ? problemText(l.problem) : ""}`}
             </li>
           ))}
         </ul>

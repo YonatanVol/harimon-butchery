@@ -10,16 +10,23 @@ export interface PickerGroup {
 
 /**
  * Choosing which cuts to line up. The choice lives in the address, so a comparison can be sent to
- * someone or kept open in a tab — and the page works with JavaScript off, since the form submits.
+ * someone, kept open in a tab, or undone with the browser's own Back button. Choosing a cut that is
+ * already in another column swaps the two rather than quietly refusing.
  */
 export function ComparePicker({ slots, groups, labels }: { slots: Array<string | null>; groups: PickerGroup[]; labels: string[] }) {
   const t = useTranslations("shop.compare");
   const router = useRouter();
 
   const change = (index: number, slug: string) => {
-    const next = slots.map((s, i) => (i === index ? slug || null : s));
+    const taken = slug ? slots.indexOf(slug) : -1;
+    const next = slots.map((s, i) => {
+      if (i === index) return slug || null;
+      // The column that held this cut takes the one being replaced, instead of the choice vanishing.
+      if (i === taken) return slots[index];
+      return s;
+    });
     const query = next.filter(Boolean).join(",");
-    router.replace(query ? `/compare?cuts=${query}` : "/compare");
+    router.push(query ? `/compare?cuts=${query}` : "/compare");
   };
 
   return (

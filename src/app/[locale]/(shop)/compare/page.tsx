@@ -91,11 +91,13 @@ export default async function ComparePage({ params, searchParams }: PageProps<"/
       </header>
 
       <ComparePicker slots={slots} groups={groups} labels={Array.from({ length: SLOTS }, (_, i) => t("compare.slot", { n: i + 1 }))} />
+      {cuts.length > 1 && <p className="text-char-500 mt-3 text-sm sm:hidden">{t("compare.swipe")}</p>}
 
       {cuts.length === 0 ? (
         <p className="text-char-700 mt-10 text-center text-lg">{t("compare.empty")}</p>
       ) : (
-        <div className="scrollbar-none mt-10 overflow-x-auto pb-24">
+        // A scroll region of its own: focusable and named, so it can be scrolled with a keyboard too.
+        <div role="region" aria-label={t("compare.title")} tabIndex={0} className="focus-visible:outline-wine-600 mt-10 overflow-x-auto pb-24 focus-visible:outline-2 focus-visible:outline-offset-4">
           <table className="w-full min-w-[640px] border-collapse text-[15px]">
             <caption className="sr-only">{t("compare.title")}</caption>
             <thead>

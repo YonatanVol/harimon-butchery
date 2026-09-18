@@ -53,12 +53,15 @@ export function checkAmount(row: VariantRow, amount: { requestedG: number | null
 }
 
 /**
- * Add one cut to an open cart, on top of what is already there. The same cut with the same note grows
- * the existing line instead of appearing twice.
+ * Put one cut in an open cart. The same cut with the same note becomes one line, not two.
+ *
+ * "ADD" grows that line by the amount asked for — what the add button does. "SET" makes the line hold
+ * exactly that amount, which is what ordering a past order again needs: pressing it twice must leave the
+ * same cart as pressing it once.
  */
 export async function addLine(
   cartId: string,
-  input: { variantId: string; requestedG: number | null; quantity: number | null; note: string | null },
+  input: { variantId: string; requestedG: number | null; quantity: number | null; note: string | null; mode?: "ADD" | "SET" },
 ): Promise<{ ok: true } | { ok: false; problem: LineProblem }> {
   const row = await loadProductForVariant(input.variantId);
   if (!row) return { ok: false, problem: { key: "UNAVAILABLE" } };
@@ -70,10 +73,11 @@ export async function addLine(
     .where(and(eq(cartLine.cartId, cartId), eq(cartLine.variantId, input.variantId)));
   const sameNote = existing && (existing.customerNote ?? null) === trimmedNote;
 
+  const onTop = sameNote && input.mode !== "SET";
   const amount =
     row.product.pricingMode === "WEIGHT"
-      ? { requestedG: (sameNote ? (existing.requestedG ?? 0) : 0) + (input.requestedG ?? 0), quantity: null }
-      : { requestedG: null, quantity: (sameNote ? (existing.quantity ?? 0) : 0) + (input.quantity ?? 0) };
+      ? { requestedG: (onTop ? (existing.requestedG ?? 0) : 0) + (input.requestedG ?? 0), quantity: null }
+      : { requestedG: null, quantity: (onTop ? (existing.quantity ?? 0) : 0) + (input.quantity ?? 0) };
 
   const problem = checkAmount(row, amount);
   if (problem) return { ok: false, problem };

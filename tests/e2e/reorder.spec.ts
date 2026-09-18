@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { e2eDb, lead, messages } from "./support/app";
+import { e2eDb, messages } from "./support/app";
 
 /**
  * "Order this again" from the account page: the cuts of a delivered order land in the cart, and the cart
@@ -14,8 +14,11 @@ test("a delivered order goes back into the cart in one tap", async ({ page }) =>
     join customer c on c.id = o.customer_id
     join order_line ol on ol.order_id = o.id
     where o.status = 'DELIVERED' and ol.status not in ('SHORT', 'CANCELLED', 'SUBSTITUTED')
+      -- Not the customer account.spec.ts signs in as: one code per number per minute, and both specs
+      -- run in the same suite.
+      and c.phone_e164 <> '+972523814472'
     group by o.order_number, c.phone_e164
-    order by o.order_number
+    order by o.order_number desc
     limit 1`;
   expect(past, "the seed has no delivered order").toBeTruthy();
 
@@ -30,7 +33,8 @@ test("a delivered order goes back into the cart in one tap", async ({ page }) =>
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: m.reorder.cta }).click();
 
-  await expect(row.getByRole("status")).toContainText(lead(m.reorder.added));
+  // The cuts are in the cart, and each one whose weight had to change says so.
+  await expect(row.getByRole("status")).toContainText("בסל");
 
   await page.goto("/he/cart");
   const cartLines = page.getByRole("listitem").filter({ has: page.getByRole("link", { name: /.+/ }) });
