@@ -17,6 +17,7 @@ function useRun() {
 
   const run = (call: () => Promise<{ ok: true } | { ok: false; problem: Problem }>) => {
     setProblem(null);
+    setDone(false);
     start(async () => {
       const r = await call().catch(() => null);
       if (!r) return setProblem(t("problems.NETWORK"));
@@ -51,7 +52,7 @@ export function ModerationButtons({ id, status }: { id: string; status: "PENDING
       {rejecting && (
         <div className="flex flex-col gap-2">
           <label className="text-char-700 text-sm font-medium" htmlFor={`note-${id}`}>
-            {t("note")}
+            {t(status === "PUBLISHED" ? "noteUnpublish" : "note")}
           </label>
           <textarea
             id={`note-${id}`}
@@ -68,7 +69,7 @@ export function ModerationButtons({ id, status }: { id: string; status: "PENDING
               pendingLabel={pending ? t("saving") : null}
               onClick={() => run(() => staffModerateReview({ id, decision: "REJECTED", note }))}
             >
-              {t("reject")}
+              {status === "PUBLISHED" ? t("unpublish") : t("reject")}
             </Button>
             <Button variant="ghost" size="md" onClick={() => setRejecting(false)}>
               {t("cancel")}

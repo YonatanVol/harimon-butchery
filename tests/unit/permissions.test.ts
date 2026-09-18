@@ -18,7 +18,7 @@ describe("staff permissions", () => {
     ["VIEWER", "PICK_AND_WEIGH", false],
     ["VIEWER", "VIEW_AUDIT", true],
     ["OWNER", "EDIT_PRICES", true],
-    ["BUTCHER", "MODERATE_REVIEWS", true],
+    ["BUTCHER", "MODERATE_REVIEWS", false],
     ["PACKER", "MODERATE_REVIEWS", false],
     ["VIEWER", "MODERATE_REVIEWS", false],
   ])("%s %s → %s", (role, capability, expected) => {
@@ -27,7 +27,8 @@ describe("staff permissions", () => {
 
   it("only owners and managers can move money backwards or override", () => {
     const roles: StaffRole[] = ["OWNER", "MANAGER", "BUTCHER", "PACKER", "DRIVER", "VIEWER"];
-    for (const cap of ["REFUND", "OVERRIDE", "CANCEL_ORDER", "EDIT_PRICES"] as const) {
+    // A butcher does not decide which reviews of their own butchering get published.
+    for (const cap of ["REFUND", "OVERRIDE", "CANCEL_ORDER", "EDIT_PRICES", "MODERATE_REVIEWS"] as const) {
       expect(roles.filter((r) => can(r, cap))).toEqual(["OWNER", "MANAGER"]);
     }
   });

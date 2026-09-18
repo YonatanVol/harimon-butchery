@@ -29,6 +29,13 @@ describe("validateReview", () => {
     expect(validateReview({ rating: 4, body: "א".repeat(MAX_BODY_CHARS) }).ok).toBe(true);
   });
 
+  it("counts an emoji as the one character the database counts, so it is refused kindly", () => {
+    // Five thumbs are ten JS code units but five characters: too short, and never an insert the database rejects.
+    const r = validateReview({ rating: 5, body: "👍👍👍👍👍" });
+    expect(r).toEqual({ ok: false, problem: { key: "BODY_TOO_SHORT", min: 10 } });
+    expect(validateReview({ rating: 5, body: "👍".repeat(10) }).ok).toBe(true);
+  });
+
   it("collapses runs of blank lines instead of rejecting them", () => {
     const r = validateReview({ rating: 4, body: "שורה ראשונה\n\n\n\nשורה שנייה" });
     expect(r.ok && r.value.body).toBe("שורה ראשונה\n\nשורה שנייה");
@@ -39,6 +46,10 @@ describe("displayNameOf", () => {
   it("shows a first name and one initial", () => {
     expect(displayNameOf("יונתן", "וולסקי")).toBe("יונתן ו.");
     expect(displayNameOf("Dana Bar", "Levi")).toBe("Dana L.");
+  });
+
+  it("takes a whole character as the initial, never half of one", () => {
+    expect(displayNameOf("דנה", "👍כהן")).toBe("דנה 👍.");
   });
 
   it("never shows an empty name", () => {

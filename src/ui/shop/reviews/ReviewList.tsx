@@ -7,6 +7,8 @@ export interface ShownReview {
   rating: number;
   body: string;
   displayName: string;
+  /** The language it was written in — a Hebrew review keeps its direction on the English site. */
+  locale: string;
   createdAt: Date;
   replyBody: string | null;
   repliedAt: Date | null;
@@ -57,6 +59,9 @@ export async function ReviewList({ summary, reviews }: { summary: RatingSummary;
           })}
         </ul>
 
+        {reviews.length < summary.count && (
+          <p className="text-char-500 text-sm">{t("showing", { shown: reviews.length, count: summary.count })}</p>
+        )}
         <p className="text-char-500 max-w-prose text-xs leading-relaxed">{t("moderation")}</p>
       </div>
 
@@ -65,15 +70,19 @@ export async function ReviewList({ summary, reviews }: { summary: RatingSummary;
           <li key={r.id} className="border-bone-300 flex flex-col gap-2 border-t py-6 first:border-t-0 first:pt-0">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <RatingStars rating={r.rating} label={t("ariaRating", { rating: r.rating })} size="sm" />
-              <span className="font-semibold">{r.displayName}</span>
+              <bdi className="font-semibold">{r.displayName}</bdi>
               <span className="text-brass-700 text-xs font-semibold">{t("verified")}</span>
               <span className="text-char-500 text-sm">{format.dateTime(r.createdAt, { day: "numeric", month: "long", year: "numeric" })}</span>
             </div>
-            <p className="text-[17px] leading-relaxed whitespace-pre-line">{r.body}</p>
+            <p lang={r.locale} dir="auto" className="text-[17px] leading-relaxed whitespace-pre-line">
+              {r.body}
+            </p>
             {r.replyBody && (
               <div className="bg-bone-100 border-brass-500 mt-1 flex flex-col gap-1 border-s-2 p-4">
                 <span className="text-xs font-semibold tracking-[0.06em]">{t("reply")}</span>
-                <p className="text-char-700 leading-relaxed whitespace-pre-line">{r.replyBody}</p>
+                <p dir="auto" className="text-char-700 leading-relaxed whitespace-pre-line">
+                  {r.replyBody}
+                </p>
               </div>
             )}
           </li>

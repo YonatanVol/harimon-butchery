@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import {
   averageTenths,
@@ -14,6 +14,17 @@ import { customer, order, orderLine, product, productReview, productVariant } fr
 
 type Database = NodePgDatabase<typeof schema>;
 
+/** The order states in which a cut has reached the customer. */
+const DELIVERED_ORDER: Array<(typeof order.$inferSelect)["status"]> = ["DELIVERED", "CLOSED"];
+
+/**
+ * A line the customer actually received. A cut that was short, cancelled, or swapped for another one
+ * never reached the kitchen, so it can never be reviewed — "verified purchase" has to mean it.
+ * A refunded line stays: it did arrive, and the money coming back is often exactly what to write about.
+ */
+const DID_NOT_ARRIVE: Array<(typeof orderLine.$inferSelect)["status"]> = ["SHORT", "CANCELLED", "SUBSTITUTED"];
+const lineArrived = () => and(notInArray(orderLine.status, DID_NOT_ARRIVE), isNull(orderLine.substitutedWithVariantId));
+
 export type SubmitProblem = ReviewProblem | { key: "NOT_SIGNED_IN" } | { key: "NOT_FOUND" } | { key: "NOT_DELIVERED" } | { key: "WINDOW_CLOSED"; days: number } | { key: "ALREADY_REVIEWED" };
 export type SubmitResult = { ok: true } | { ok: false; problem: SubmitProblem };
 
@@ -25,6 +36,7 @@ export async function reviewsFor(db: Database, productId: string, limit = 20) {
       rating: productReview.rating,
       body: productReview.body,
       displayName: productReview.displayName,
+      locale: productReview.locale,
       createdAt: productReview.createdAt,
       replyBody: productReview.replyBody,
       repliedAt: productReview.repliedAt,
@@ -55,21 +67,6 @@ export async function summaryFor(db: Database, productId: string): Promise<Ratin
   return { count, averageTenths: averageTenths(count, total), distribution };
 }
 
-/** Rating and count for many cuts at once, for product cards. Cuts with no reviews are simply absent. */
-export async function summariesFor(db: Database, productIds: readonly string[]): Promise<Map<string, { count: number; averageTenths: number }>> {
-  if (productIds.length === 0) return new Map();
-  const rows = await db
-    .select({
-      productId: productReview.productId,
-      count: sql<number>`count(*)::int`,
-      total: sql<number>`coalesce(sum(${productReview.rating}), 0)::int`,
-    })
-    .from(productReview)
-    .where(and(eq(productReview.status, "PUBLISHED"), inArray(productReview.productId, [...productIds])))
-    .groupBy(productReview.productId);
-  return new Map(rows.map((r) => [r.productId, { count: r.count, averageTenths: averageTenths(r.count, r.total) }]));
-}
-
 export interface ReviewableLine {
   orderId: string;
   orderNumber: string;
@@ -86,7 +83,7 @@ export interface ReviewableLine {
  * Cuts this customer was delivered and has not reviewed yet, newest delivery first. One row per cut per
  * order, because that is exactly what a review belongs to.
  */
-export async function reviewableFor(db: Database, phoneE164: string, now = new Date()): Promise<ReviewableLine[]> {
+export async function reviewableFor(db: Database, phoneE164: string, now = new Date(), limit = 12): Promise<ReviewableLine[]> {
   const rows = await db
     .selectDistinctOn([order.id, product.id], {
       orderId: order.id,
@@ -107,11 +104,14 @@ export async function reviewableFor(db: Database, phoneE164: string, now = new D
     .innerJoin(productVariant, eq(productVariant.id, orderLine.variantId))
     .innerJoin(product, eq(product.id, productVariant.productId))
     .leftJoin(productReview, and(eq(productReview.orderId, order.id), eq(productReview.productId, product.id)))
-    .where(and(eq(customer.phoneE164, phoneE164), inArray(order.status, ["DELIVERED", "CLOSED"]), isNull(orderLine.substitutedWithVariantId)));
+    .where(and(eq(customer.phoneE164, phoneE164), inArray(order.status, DELIVERED_ORDER), lineArrived()))
+    // A wide bound on the read; the review window and the limit below decide what is actually offered.
+    .limit(200);
 
   return rows
     .filter((r) => reviewGate({ status: r.status, deliveredAt: r.deliveredAt, alreadyReviewed: r.reviewId !== null, now }).kind === "ALLOWED")
     .sort((a, b) => (b.deliveredAt?.getTime() ?? 0) - (a.deliveredAt?.getTime() ?? 0))
+    .slice(0, limit)
     .map((r) => ({
       orderId: r.orderId,
       orderNumber: r.orderNumber,
@@ -160,7 +160,7 @@ export async function submitReview(db: Database, input: SubmitInput): Promise<Su
     .innerJoin(productVariant, eq(productVariant.id, orderLine.variantId))
     .innerJoin(product, eq(product.id, productVariant.productId))
     .leftJoin(productReview, and(eq(productReview.orderId, order.id), eq(productReview.productId, product.id)))
-    .where(and(eq(order.id, input.orderId), eq(customer.phoneE164, input.phoneE164), eq(product.slug, input.productSlug)))
+    .where(and(eq(order.id, input.orderId), eq(customer.phoneE164, input.phoneE164), eq(product.slug, input.productSlug), lineArrived()))
     .limit(1);
 
   if (!row) return { ok: false, problem: { key: "NOT_FOUND" } };
@@ -222,7 +222,14 @@ export async function countPending(db: Database): Promise<number> {
 export async function moderateReview(
   db: Database,
   input: { id: string; staffId: string; decision: "PUBLISHED" | "REJECTED"; note?: string | null },
-): Promise<boolean> {
+): Promise<{ slug: string; nameHe: string; nameEn: string } | null> {
+  const [cut] = await db
+    .select({ slug: product.slug, nameHe: product.nameHe, nameEn: product.nameEn })
+    .from(productReview)
+    .innerJoin(product, eq(product.id, productReview.productId))
+    .where(eq(productReview.id, input.id));
+  if (!cut) return null;
+
   const rows = await db
     .update(productReview)
     .set({
@@ -233,16 +240,23 @@ export async function moderateReview(
     })
     .where(eq(productReview.id, input.id))
     .returning({ id: productReview.id });
-  return rows.length > 0;
+  return rows.length > 0 ? cut : null;
 }
 
 /** The butcher's public answer. An empty reply removes one that was there. */
-export async function replyToReview(db: Database, input: { id: string; body: string }): Promise<boolean> {
+export async function replyToReview(db: Database, input: { id: string; body: string }): Promise<{ slug: string } | null> {
   const body = input.body.trim().slice(0, 600);
-  const rows = await db
+  const [current] = await db
+    .select({ repliedAt: productReview.repliedAt, slug: product.slug })
+    .from(productReview)
+    .innerJoin(product, eq(product.id, productReview.productId))
+    .where(eq(productReview.id, input.id));
+  if (!current) return null;
+
+  await db
     .update(productReview)
-    .set(body ? { replyBody: body, repliedAt: new Date() } : { replyBody: null, repliedAt: null })
-    .where(eq(productReview.id, input.id))
-    .returning({ id: productReview.id });
-  return rows.length > 0;
+    // Fixing a typo in a reply does not make it a new reply, so its date stands.
+    .set(body ? { replyBody: body, repliedAt: current.repliedAt ?? new Date() } : { replyBody: null, repliedAt: null })
+    .where(eq(productReview.id, input.id));
+  return { slug: current.slug };
 }
