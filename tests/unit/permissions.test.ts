@@ -18,6 +18,9 @@ describe("staff permissions", () => {
     ["VIEWER", "PICK_AND_WEIGH", false],
     ["VIEWER", "VIEW_AUDIT", true],
     ["OWNER", "EDIT_PRICES", true],
+    ["BUTCHER", "MODERATE_REVIEWS", true],
+    ["PACKER", "MODERATE_REVIEWS", false],
+    ["VIEWER", "MODERATE_REVIEWS", false],
   ])("%s %s → %s", (role, capability, expected) => {
     expect(can(role, capability)).toBe(expected);
   });

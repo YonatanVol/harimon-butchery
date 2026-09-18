@@ -5,10 +5,13 @@ import { formatAgorot } from "@/domain/money/format";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { loadOrderHistory } from "@/infra/customer/history";
+import { db } from "@/infra/db/client";
 import { currentCustomerPhone } from "@/infra/customer/session";
+import { reviewableFor } from "@/infra/reviews/repository";
 import { Badge } from "@/ui/primitives/Badge";
 import { CustomerLogin } from "@/ui/shop/account/CustomerLogin";
 import { SignOutButton } from "@/ui/shop/account/SignOutButton";
+import { ReviewInvites } from "@/ui/shop/reviews/ReviewInvites";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +46,7 @@ export default async function AccountPage({ params }: PageProps<"/[locale]/accou
     );
   }
 
-  const orders = await loadOrderHistory(phone);
+  const [orders, reviewable] = await Promise.all([loadOrderHistory(phone), reviewableFor(db, phone)]);
   const money = (a: number) => formatAgorot(agorot(a), locale);
   const display = phone.replace(/^\+972/, "0").replace(/^(\d{3})(\d{3})(\d{4})$/, "$1-$2-$3");
 
@@ -58,6 +61,18 @@ export default async function AccountPage({ params }: PageProps<"/[locale]/accou
         </div>
         <SignOutButton />
       </header>
+
+      <ReviewInvites
+        invites={reviewable.map((r) => ({
+          orderId: r.orderId,
+          orderNumber: r.orderNumber,
+          slug: r.slug,
+          name: locale === "he" ? r.nameHe : r.nameEn,
+          image: r.image,
+          animal: r.animal,
+          deliveredLabel: t("reviewsDelivered", { date: format.dateTime(r.deliveredAt, { day: "numeric", month: "long" }) }),
+        }))}
+      />
 
       {orders.length === 0 ? (
         <section className="bg-bone-100 flex flex-col items-start gap-4 rounded-[3px] p-8">

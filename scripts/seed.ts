@@ -40,7 +40,7 @@ async function main() {
     notification, notification_suppression, payment_webhook_event, payment_refund, payment_capture,
     payment_intent, invoice, invoice_counter, order_status_event, order_line, orders, cart_line, cart,
     slot_hold, delivery_slot, delivery_slot_template, calendar_blackout, address, customer,
-    stock_movement, stock_item, product_variant, product_kashrut, product, category,
+    product_review, stock_movement, stock_item, product_variant, product_kashrut, product, category,
     kashrut_authority, delivery_zone, staff_user, audit_event, setting, idempotency_key, order_counter, mock_psp_transaction, customer_login_code, interest_signup, mock_psp_operation
     RESTART IDENTITY CASCADE`);
 
@@ -203,7 +203,7 @@ async function main() {
   const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(s.product);
   const withOrders = !process.argv.includes("--empty");
   const orders = withOrders ? await seedDemoOrders(db, process.env.APP_URL ?? "http://localhost:3000") : null;
-  console.log(`✓ Seeded ${count} products, ${categories.length} categories, ${zones.length} zones, ${slots.planned} delivery windows (${slots.open} open)${orders ? `, ${Object.values(orders.counts).reduce((a, b) => a + b, 0)} demo orders and ${orders.sent} customer messages` : ", no orders (--empty)"} in ${Date.now() - started} ms`);
+  console.log(`✓ Seeded ${count} products, ${categories.length} categories, ${zones.length} zones, ${slots.planned} delivery windows (${slots.open} open)${orders ? `, ${Object.values(orders.counts).reduce((a, b) => a + b, 0)} demo orders and ${orders.sent} customer messages, ${orders.reviews.published} published reviews (${orders.reviews.waiting} waiting)` : ", no orders (--empty)"} in ${Date.now() - started} ms`);
 }
 
 main()

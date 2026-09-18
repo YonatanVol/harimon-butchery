@@ -5,5 +5,6 @@ export * from "./notifications";
 export * from "./orders";
 export * from "./payments";
 export * from "./people";
+export * from "./reviews";
 export * from "./stock";
 export * from "./system";

@@ -7,7 +7,7 @@ import { expectNoHorizontalOverflow, langOf, staffLogin, watchErrors } from "./s
  */
 
 const PUBLIC = ["", "/c/beef", "/p/beef-fillet", "/p/entrecote", "/o/shabbat", "/cuts", "/recipes", "/recipes/grilled-entrecote", "/search?q=chicken", "/kashrut", "/cart", "/account", "/staff/login", "/no-such-page"];
-const STAFF = ["/staff", "/staff/deliveries", "/staff/stock", "/staff/catalog", "/staff/zones", "/staff/messages", "/staff/audit"];
+const STAFF = ["/staff", "/staff/deliveries", "/staff/stock", "/staff/catalog", "/staff/zones", "/staff/messages", "/staff/reviews", "/staff/audit"];
 
 for (const path of PUBLIC) {
   test(`public ${path || "/"}`, async ({ page }, info) => {
